@@ -611,6 +611,34 @@ function regionIndexKey(ix, iz) {
 }
 
 // === INICJALIZACJA SCENY BABYLON ===
+
+	
+// === Skybox ===
+let skybox = null;
+let skyboxMaterial = null;
+
+function setSkybox(name) {
+  // usuń stary skybox jeśli istnieje
+  if (skybox) skybox.dispose();
+
+  skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 10000 }, babylonScene);
+  skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMat", babylonScene);
+  skyboxMaterial.backFaceCulling = false;
+  skyboxMaterial.disableLighting = true;
+  skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+  skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+
+  skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+    `https://raw.githubusercontent.com/eLeRCreative84/NMS-Planet-Atlas/main/textures/skybox/${name}`,
+    babylonScene
+  );
+  skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+  skybox.material = skyboxMaterial;
+  skybox.infiniteDistance = true;
+
+  babylonScene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+}
+
 function initBabylonLite(canvas) {
   // Prosty silnik z redukcją pamięci
   babylonEngine = new BABYLON.Engine(canvas, true, {
@@ -663,8 +691,7 @@ setSkybox("sky1");
     }
   }
 	
-  console.log("Lite Babylon scene initialized (mobile safe)");
-
+  
   // Start renderowania
   babylonEngine.runRenderLoop(() => {
     if (babylonScene && babylonScene.activeCamera) {
@@ -677,32 +704,6 @@ setSkybox("sky1");
   });
 }
 	
-// === Skybox ===
-let skybox = null;
-let skyboxMaterial = null;
-
-function setSkybox(name) {
-  // usuń stary skybox jeśli istnieje
-  if (skybox) skybox.dispose();
-
-  skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 10000 }, babylonScene);
-  skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMat", babylonScene);
-  skyboxMaterial.backFaceCulling = false;
-  skyboxMaterial.disableLighting = true;
-  skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
-  skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
-
-  skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
-    `https://raw.githubusercontent.com/eLeRCreative84/NMS-Planet-Atlas/main/textures/skybox/${name}`,
-    babylonScene
-  );
-  skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-  skybox.material = skyboxMaterial;
-  skybox.infiniteDistance = true;
-
-  babylonScene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
-}
-
 function initBabylon() {
 	
 	if (isMobile) {
