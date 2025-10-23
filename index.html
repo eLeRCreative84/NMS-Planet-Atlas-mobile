@@ -860,19 +860,82 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
 }
 
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
+
 function showBabylonScene() {
+  console.log("▶ Przełączanie na scenę Babylon");
+
+  // 🔹 Pauzuj GlobeGL, jeśli istnieje
+  if (window.globe) {
+    try {
+      if (typeof globe.pause === "function") {
+        globe.pause();
+        console.log("🌍 GlobeGL: pauzowany");
+      } else if (globe.controls) {
+        globe.controls.autoRotate = false; // awaryjnie wyłącz rotację
+        console.log("🌍 GlobeGL: auto-rotate wyłączony (brak metody pause)");
+      }
+    } catch (e) {
+      console.warn("Nie udało się zatrzymać GlobeGL:", e);
+    }
+  }
+
+  // 🔹 Ukryj GlobeGL wrapper
   document.getElementById("globeWrapper").style.display = "none";
+
+  // 🔹 Pokaż Babylon wrapper
   document.getElementById("babylonWrapper").style.display = "block";
 
-  if (!babylonEngine) initBabylon();
+  // 🔹 Jeśli silnik nie istnieje — inicjuj
+  if (!babylonEngine) {
+    if (isMobile) {
+      console.log("📱 Tryb mobilny: initBabylonLite()");
+      initBabylonLite();
+    } else {
+      console.log("💻 Tryb desktop: initBabylon()");
+      initBabylon();
+    }
+  }
+
+  // 🔹 Aktywuj renderowanie
   babylonRenderLoopActive = true;
   setTimeout(() => babylonEngine.resize(), 100);
 }
 
+// === WYŁĄCZ BABYLON I WRÓĆ DO GLOBE ===
 function hideBabylonScene() {
-  document.getElementById("babylonWrapper").style.display = "none";
-  document.getElementById("globeWrapper").style.display = "block";
+  console.log("⏹ Wyłączanie sceny Babylon");
+
+  // 🔹 Dezaktywuj render loop
   babylonRenderLoopActive = false;
+
+  // 🔹 Zniszcz scenę i silnik (zwolnienie GPU)
+  if (babylonScene) {
+    babylonScene.dispose();
+    babylonScene = null;
+  }
+  if (babylonEngine) {
+    babylonEngine.dispose();
+    babylonEngine = null;
+  }
+
+  // 🔹 Ukryj Babylon wrapper
+  document.getElementById("babylonWrapper").style.display = "none";
+
+  // 🔹 Pokaż GlobeGL wrapper i wznow rotację
+  document.getElementById("globeWrapper").style.display = "block";
+  if (window.globe) {
+    try {
+      if (typeof globe.resume === "function") {
+        globe.resume();
+        console.log("🌍 GlobeGL: wznowiony");
+      } else if (globe.controls) {
+        globe.controls.autoRotate = true; // fallback
+        console.log("🌍 GlobeGL: auto-rotate ponownie włączony");
+      }
+    } catch (e) {
+      console.warn("Nie udało się wznowić GlobeGL:", e);
+    }
+  }
 }
 	
 ///////////////////////////////////////////////////////// Tłumaczenie //////////////////////////////////////////
