@@ -640,25 +640,31 @@ function setSkybox(name) {
 }
 
 function initBabylonLite(canvas) {
-  const canvas = document.getElementById("babylonCanvas");
-   canvas.style.display = "block";
-  babylonEngine = new BABYLON.Engine(canvas, true);
-  babylonScene = new BABYLON.Scene(babylonEngine);
+  // Prosty silnik z redukcją pamięci
+  babylonEngine = new BABYLON.Engine(canvas, true, {
+    preserveDrawingBuffer: false,
+    stencil: false,
+    disableWebGL2Support: false
+  });
 
-  // === Kamera i światło ===
+  babylonScene = new BABYLON.Scene(babylonEngine);
+  babylonScene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+
+  // Minimalna kamera
   babylonCamera = new BABYLON.ArcRotateCamera(
-    " babylonCamera",
+    "liteCam",
+    Math.PI / 3,
     Math.PI / 4,
-    Math.PI / 4,
-    600,
-    new BABYLON.Vector3(REGION_WIDTH / 2, 128, REGION_DEPTH / 2),
+    1000,
+    new BABYLON.Vector3(0, 0, 0),
     babylonScene
   );
   babylonCamera.attachControl(canvas, true);
-  babylonCamera.minZ = 0.1;
-  babylonCamera.maxZ = 20000;
+  babylonCamera.panningSensibility = 30;
+  babylonCamera.upperRadiusLimit = 2000;
   babylonCamera.lowerRadiusLimit = 50;
-  babylonCamera.upperRadiusLimit = 8000;
+
+  new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
   
 	  //zwiększamy szybkość przesuwania sceny (prawy przycisk myszy)
 	babylonCamera.panningSensibility = 10;  // mniejsza liczba = szybsze przesuwanie
