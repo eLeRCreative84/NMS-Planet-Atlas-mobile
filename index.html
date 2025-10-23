@@ -1,0 +1,4371 @@
+<!DOCTYPE html> 
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas Planetarny</title>
+<script src="https://unpkg.com/three@0.155.0/build/three.min.js"></script>
+<script src="https://unpkg.com/globe.gl"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="icons.js"></script>
+<link rel="stylesheet" href="style.css">
+<script src="translate.js"></script>
+</head>
+<body>
+  <div id="form">
+  <div id="tabs">
+    <button class="lock-while-edit active" onclick="openTab('start')" data-i18n="tab_start">Start</button>
+    <button class="lock-while-edit" onclick="openTab('planety')" data-i18n="tab_planety">Planety</button>
+    <button class="lock-while-edit" onclick="openTab('punkty')" data-i18n="tab_punkty">Punkty</button>
+    <button class="lock-while-edit" onclick="openTab('detale')" data-i18n="tab_detale">Detale</button>
+	<button class="lock-while-edit" onclick="openTab('journey')" data-i18n="tab_journey">Podróż</button>
+  </div>
+
+  <!-- Zakładka START -->
+  <div id="start" class="tab-content active">
+    <div id="noPlanetsMessage" style="color: #ffcc00; font-weight: bold; text-align: center; margin: 0.5rem 0;" data-i18n="start_noPlanets">
+      Stwórz nową planetę lub importuj dane JSON
+    </div>
+
+    <h2 data-i18n="start_addPoint">Dodaj punkt</h2>
+    <div class="xy-inputs">
+      <div>
+        <label data-i18n="start_label_x">X (−90 do 90)</label>
+        <input type="number" id="lat" step="1" min="-90" max="90" />
+      </div>
+      <div>
+        <label data-i18n="start_label_y">Y (−180 do 180)</label>
+        <input type="number" id="lng" step="1" min="-180" max="180" />
+      </div>
+    </div>
+     
+    <label data-i18n="start_label_pointName">Nazwa punktu</label>
+    <input type="text" id="name" onkeydown="if(event.key === 'Enter') addPoint()" />
+
+    <label data-i18n="start_label_type">Typ</label>
+    <select id="type">
+      <option data-i18n="type_resource">Zasób</option>
+      <option data-i18n="type_base">Baza</option>
+      <option data-i18n="type_ruins">Ruiny</option>
+      <option data-i18n="type_structure">Struktura</option>
+      <option data-i18n="type_other">Inne</option>
+    </select>
+
+    <label data-i18n="start_label_notes">Notatki</label>
+    <textarea id="notes"></textarea>
+
+    <button onclick="addPoint()" data-i18n="start_btn_addPoint">Dodaj punkt</button>
+    <button id="pickOnGlobeBtn">Zaznacz na globie</button>
+    <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+
+    <h2 data-i18n="start_scaling">Skalowanie globu i punktów</h2>
+
+    <!-- Suwak 1: Skalowanie punktów -->
+    <label data-i18n="start_pointScale">Skalowanie punktów</label>
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+      <input type="range" id="pointScale" min="0.1" max="1" step="0.1" value="0.4" oninput="updatePointScale()" style="flex:1;" />
+      <span id="pointScaleValue" style="width:2rem; text-align:center;">0.4</span>
+      <button onclick="resetPointScale()" style="padding:0.2rem 0.3rem; font-size:12px; width:auto;" data-i18n="start_btn_reset">Reset</button>
+    </div>
+
+    <!-- Suwak 2: Wysokość słupka -->
+    <label data-i18n="start_pointsDistanceMultiplier">Wysokość słupka</label>
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+      <input type="range" id="pointsDistanceMultiplier" min="0.5" max="30" step="0.5" value="1" oninput="updatePointsDistanceMultiplier()" style="flex:1;" />
+      <span id="pointsDistanceMultiplierValue" style="width:2rem; text-align:center;">1</span>
+      <button onclick="resetPointsDistanceMultiplier()" style="padding:0.2rem 0.3rem; font-size:12px; width:auto;" data-i18n="start_btn_reset">Reset</button>
+    </div>
+
+    <!-- Suwak 3: Zoom globu -->
+    <label data-i18n="start_globeZoom">Zoom globu</label>
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+      <input type="range" id="globeZoomMultiplier" min="0.5" max="2" step="0.05" value="1" oninput="updateGlobeZoomMultiplier()" style="flex:1;" />
+      <span id="globeZoomMultiplierValue" style="width:2rem; text-align:center;">1</span>
+      <button onclick="resetGlobeZoomMultiplier()" style="padding:0.2rem 0.3rem; font-size:12px; width:auto;" data-i18n="start_btn_reset">Reset</button>
+    </div>
+
+    <!-- Autoobrót -->
+    <table style="width: 100%; margin-top: 0.5rem; border-collapse: collapse;">
+      <tr>
+        <td style="width: 70%; text-align: left;" data-i18n="start_autoRotate">Obracanie globu</td>
+        <td style="width: 30%; text-align: left;">
+          <input type="checkbox" id="autoRotateCheckbox" onchange="toggleAutoRotate()" />
+        </td>
+      </tr>
+    </table>
+
+    <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+  
+<div id="gridControls" style="text-align:center; margin-top:10px;">
+
+<!-- Sekcja siatki -->
+<div style="margin-bottom:10px;">
+  <strong>Siatka:</strong>
+  <table style="width: 100%; margin-top: 0.5rem; border-collapse: collapse;">
+    <tr>
+      <td style="width: 70%; text-align: left;">Co 30°</td>
+      <td style="width: 30%; text-align: left;">
+        <input type="checkbox" id="grid30">
+      </td>
+    </tr>
+    <tr>
+      <td style="width: 70%; text-align: left;">Co 10°</td>
+      <td style="width: 30%; text-align: left;">
+        <input type="checkbox" id="grid10">
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Sekcja etykiet -->
+<div style="margin-bottom:10px;">
+  <strong>Etykiety:</strong>
+  <table style="width: 100%; margin-top: 0.5rem; border-collapse: collapse;">
+    <tr>
+      <td style="width: 70%; text-align: left;">Co 30°</td>
+      <td style="width: 30%; text-align: left;">
+        <input type="checkbox" id="labels30">
+      </td>
+    </tr>
+    <tr>
+      <td style="width: 70%; text-align: left;">Co 10°</td>
+      <td style="width: 30%; text-align: left;">
+        <input type="checkbox" id="labels10">
+      </td>
+    </tr>
+    <tr>
+      <td style="width: 70%; text-align: left;">Dodatkowe ±90°</td>
+      <td style="width: 30%; text-align: left;">
+        <input type="checkbox" id="labelsSides">
+      </td>
+    </tr>
+  </table>
+</div>
+
+  <!-- Kolor siatki -->
+  <div style="margin-bottom:10px; text-align:center;">
+    <label for="gridColor">Kolor siatki:</label><br>
+    <input type="color" id="gridColor" value="#888888"
+           style="width:100%; height:35px; border:none; border-radius:6px; margin-top:5px;">
+  </div>
+
+  <!-- Przezroczystość -->
+  <div style="margin-bottom:5px;">
+    <label for="gridOpacity">Przezroczystość:</label><br>
+    <input type="range" id="gridOpacity" min="0" max="1" step="0.05" value="0.3" 
+           style="width:100%;">
+  </div>
+</div>
+
+
+
+
+  <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+    <h2 data-i18n="start_importExport">Import/Eksport</h2>
+    <button class="lock-while-edit" onclick="exportAtlas()" data-i18n="start_btn_export">Eksport JSON</button>
+    <input class="lock-while-edit" type="file" id="importFile" accept="application/json" onchange="importAtlas(event)" />
+
+<div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+<label data-i18n="start_languageSelector">Wybierz język</label>
+<select id="languageSelector">
+  <option value="pl">Polski</option>
+  <option value="en">English</option>
+  
+</select>
+ <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+    <button id="toggleMusicBtn" class="music-btn">🎵 Muzyka: OFF</button>
+<audio id="bgMusic" src="audio/background.mp3" loop></audio>
+   <input type="range" id="musicVolume" min="0" max="100" value="40" />
+  </div>
+
+    <!-- Zakładka PLANETY -->
+<div id="planety" class="tab-content">
+
+<!-- Sub-zakładka Szukaj -->
+<div id="planetSearchTab">
+  <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap;">
+    <input type="text" id="planetSearchInput" placeholder="Nazwa planety..." data-i18n-placeholder="planet_search_placeholder" oninput="refreshPlanetList()" />
+    <select id="biomeFilter" onchange="refreshPlanetList()" data-i18n="planet_filter_biome"></select>
+    <select id="biomeAliasFilter" onchange="refreshPlanetList()" data-i18n="planet_filter_biomeAlias"></select>
+    <select id="resourceFilter" onchange="refreshPlanetList()" data-i18n="planet_filter_resource">
+      <option value="" data-i18n="planet_filter_allResources">Wszystkie pierwiastki</option>
+      <option value="Miedź" data-i18n="res_copper">Miedź</option>
+      <option value="Kadm" data-i18n="res_cadmium">Kadm</option>
+      <option value="Emeril" data-i18n="res_emeril">Emeril</option>
+      <option value="Ind" data-i18n="res_indium">Ind</option>
+      <option value="Kwarcyt" data-i18n="res_quartz">Kwarcyt</option>
+      <option value="Metal chromatyczny" data-i18n="res_chromatic_metal">Metal chromatyczny</option>
+      <option value="Parafin" data-i18n="res_paraffinium">Parafin</option>
+      <option value="Piryt" data-i18n="res_pyrite">Piryt</option>
+      <option value="Amoniak" data-i18n="res_ammonia">Amoniak</option>
+      <option value="Uran" data-i18n="res_uranium">Uran</option>
+      <option value="Dioksyt" data-i18n="res_dioxite">Dioksyt</option>
+      <option value="Fosfor" data-i18n="res_phosphorus">Fosfor</option>
+      <option value="Bazalt" data-i18n="res_basalt">Bazalt</option>
+      <option value="Skrystalizowany hel" data-i18n="res_crystal_helium">Skrystalizowany hel</option>
+      <option value="Lit" data-i18n="res_lithium">Lit</option>
+      <option value="Kobalt" data-i18n="res_cobalt">Kobalt</option>
+      <option value="Srebro" data-i18n="res_silver">Srebro</option>
+      <option value="Złoto" data-i18n="res_gold">Złoto</option>
+      <option value="Namagnesowany ferryt" data-i18n="res_magnetised_ferrite">Namagnesowany ferryt</option>
+      <option value="Sód" data-i18n="res_sodium">Sód</option>
+      <option value="Sól" data-i18n="res_salt">Sól</option>
+      <option value="Zardzewiały metal" data-i18n="res_rusty_metal">Zardzewiały metal</option>
+    </select>
+  </div>
+  <div id="planetList"></div>
+</div>
+
+  <!-- Główna część zakładki Planety -->
+  <div id="planetMainTab" style="display:block;">
+    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
+
+      <!-- Przyciski w zakładce Planety -->
+      <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+        <button onclick="showPlanetSearchTab()" data-i18n="planet_btn_search">Szukaj</button>
+      </div>
+
+      <!-- nazwa planety -->
+      <input type="text" id="newPlanetName" class="lock-while-edit" placeholder="Nazwa nowej planety" data-i18n-placeholder="planet_new_name" oninput="checkNewPlanetInput()" onkeydown="if(event.key === 'Enter') addNewPlanet()" />
+
+      <!-- guzik tworzenia planety -->
+      <button id="addPlanetBtn" class="lock-while-edit" onclick="addNewPlanet()" data-i18n="planet_btn_create">Stwórz nową planetę</button>
+	  
+	  <table style="width: 100%; border-collapse: collapse; margin-top: 0; margin-bottom: 0;">
+		  <tr style="margin:0; padding:0;">
+			<td style="width: 70%; text-align: left; padding: 0; margin: 0; line-height: 1;" data-i18n="planet_label_isMoon">
+			  Twórz jako księżyc
+			</td>
+			<td style="width: 30%; text-align: left; padding: 0; margin: 0;">
+			  <input type="checkbox" id="isMoonCheckbox" style="margin:0;" />
+			</td>
+		  </tr>
+		</table>
+	  
+      <button id="generatePlanetNameBtn" onclick="generatePlanetName()" style="flex:1;" data-i18n="planet_btn_generateName">Generuj nazwę</button>
+	  	  
+    </div>
+
+      <!-- label + piker -->
+      <div style="text-align:center">
+        <label data-i18n="planet_label_color">Wybierz kolor</label>
+        <input type="color" id="PlanetColor" value="#000000" class="lock-while-edit" style="width:100%; height:40px;">
+      </div>
+      
+    <!-- Przycisk dodaj texturę i zmień kolor -->
+    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
+      <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+      <input type="text" id="planetTextureUrl" class="lock-while-edit" placeholder="URL tekstury" data-i18n-placeholder="planet_texture_url" oninput="checkTextureInput()" />
+      <div class="planet-buttons-row">
+        <button id="setTextureBtn" class="lock-while-edit" onclick="addTextureUrl()" data-i18n="planet_btn_setTexture">Ustaw teksturę</button>
+        <button id="setColorBtn" class="lock-while-edit" onclick="changePlanetColor()" data-i18n="planet_btn_setColor">Zmień kolor</button>
+      </div>
+    </div>
+
+    <!-- Galeria miniatur -->
+    <div id="textureGalleryContainer" class="lock-while-edit">
+      <div id="textureGallery"></div>
+      <div id="textureGalleryControls">
+     	<button id="prevTexturePage" onclick="changeTexturePage(-1)">◀</button>
+      		   <button id="nextTexturePage" onclick="changeTexturePage(1)">▶</button>
+      </div>
+    </div>
+
+    <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+
+    <div class="planet-buttons-row" style="margin-bottom:1rem;">
+      <button id="editSelectedPlanetBtn" onclick="editSelectedPlanet()" disabled data-i18n="planet_btn_rename">Zmień nazwę</button>
+      <button id="deleteSelectedPlanetBtn" class="lock-while-edit" onclick="deleteSelectedPlanet()" disabled data-i18n="planet_btn_delete">Usuń planetę</button>
+    </div>
+
+    <!-- Ukryty kontener na edycję -->
+    <div id="editPlanetBox" style="display:none; margin-bottom:1rem;">
+      <input type="text" id="editPlanetName" placeholder="Nowa nazwa planety" data-i18n-placeholder="planet_edit_name" style="width:100%; margin-bottom:0.5rem;">
+      <div style="display:flex; gap:0.5rem;">
+        <button onclick="acceptEditPlanet()" data-i18n="planet_btn_accept">Akceptuj</button>
+        <button onclick="cancelEditPlanet()" data-i18n="planet_btn_cancel">Anuluj</button>
+      </div>
+    </div>
+
+    <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+
+    <!-- Pierwiastki planety -->
+    <div id="planet-resources"></div>
+  </div>
+</div>
+
+   <!-- Zakładka PUNKTY -->
+<div id="punkty" class="tab-content">
+  <div><label data-i18n="points_filter_label">Filtruj</label></div>
+  <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+  <div id="pointFilters">
+    <label data-i18n="points_filter_resource">Zasób <input type="checkbox" class="pointFilter" value="Zasób" checked></label>
+    <label data-i18n="points_filter_base">Baza <input type="checkbox" class="pointFilter" value="Baza" checked></label>
+    <label data-i18n="points_filter_ruins">Ruiny <input type="checkbox" class="pointFilter" value="Ruiny" checked></label>
+    <label data-i18n="points_filter_structure">Struktura <input type="checkbox" class="pointFilter" value="Struktura" checked></label>
+    <label data-i18n="points_filter_other">Inne <input type="checkbox" class="pointFilter" value="Inne" checked></label>
+    <label data-i18n="points_filter_poles">Bieguny <input type="checkbox" class="pointFilter" value="Pole" checked></label>
+    <label data-i18n="points_filter_myloc">Moja lokalizacja <input type="checkbox" class="pointFilter" value="Moja" checked></label>
+  </div>
+
+  <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+  <label data-i18n="points_extra_filters_label">Filtry dodatkowe</label>
+  <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+
+  <div id="extraFilters">
+    <label data-i18n="points_extra_mined">Wydobyty <input type="checkbox" class="extraFilter" value="Wydobyty" checked></label>
+    <label data-i18n="points_extra_visited">Odwiedzony <input type="checkbox" class="extraFilter" value="Odwiedzony" checked></label>
+    <label data-i18n="points_extra_unmined">Niewydobyty <input type="checkbox" class="extraFilter" value="Niewydobyty" checked></label>
+    <label data-i18n="points_extra_unvisited">Nieodwiedzony <input type="checkbox" class="extraFilter" value="Nieodwiedzony" checked></label>
+  </div>
+
+  <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+  <label data-i18n="points_sort_label">Sortuj:</label>
+  <select id="sortPoints" onchange="refreshPointsList()">
+    <option value="nameAsc" data-i18n="sort_name_asc">Nazwa A–Z</option>
+    <option value="nameDesc" data-i18n="sort_name_desc">Nazwa Z–A</option>
+    <option value="type" data-i18n="sort_type">Typ</option>
+    <option value="newest" data-i18n="sort_newest">Najnowsze</option>
+    <option value="oldest" data-i18n="sort_oldest">Najstarsze</option>
+  </select>
+  <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+  <ul id="pointsList"></ul>
+</div>
+
+<!-- Zakładka DETALE PLANETY -->
+<div id="detale" class="tab-content">
+  <label data-i18n="detail_galaxy_label">Galaktyka</label>
+  <div class="galaxy-selector">
+    <input type="text" id="galaxyInput" placeholder="Wybierz galaktykę..." data-i18n-placeholder="detail_galaxy_placeholder">
+    <div id="galaxyDropdown" class="dropdown"></div>
+  </div>
+
+  <label data-i18n="detail_star_system_label">Układ gwiezdy</label>
+  <input type="text" id="detailStarSystem" />
+
+  <label data-i18n="detail_planet_system_label">Układ planetarny</label>
+  <input type="text" id="detailPlanetSystem" />
+
+ <div class="biome-selector" style="position: relative;">
+  <label for="biomeAliasInput">Biom / Alias biomu</label>
+  <input type="text" id="biomeAliasInput" placeholder="Wpisz nazwę biomu lub alias..." data-i18n-placeholder="biome_search_name">
+  <div id="biomeAliasDropdown" class="dropdown"></div>
+</div>
+
+  <label data-i18n="detail_weather_label">Pogoda</label>
+  <select id="detailWeather">
+    <option value="" data-i18n="weather_none">-- wybierz --</option>
+    <option data-i18n="weather_none_atmosphere">Brak atmosfery</option>
+    <option data-i18n="weather_sunny">Słonecznie</option>
+    <option data-i18n="weather_cool">Chłodno</option>
+    <option data-i18n="weather_frosty">Mroźno</option>
+    <option data-i18n="weather_warm">Ciepło</option>
+    <option data-i18n="weather_hot">Gorąco</option>
+    <option data-i18n="weather_humid">Wilgotno</option>
+    <option data-i18n="weather_rainy">Deszczowo</option>
+    <option data-i18n="weather_stormy">Burzowo</option>
+    <option data-i18n="weather_radioactive">Radioaktywne</option>
+    <option data-i18n="weather_toxic">Toksyczne</option>
+    <option data-i18n="weather_acidic">Kwasyczne</option>
+    <option data-i18n="weather_dusty">Pyłowe</option>
+    <option data-i18n="weather_volcanic">Wulkaniczne</option>
+    <option data-i18n="weather_sandstorm">Burze piaskowe</option>
+    <option data-i18n="weather_tornado">Tornada</option>
+    <option data-i18n="weather_meteor">Meteoryty</option>
+    <option data-i18n="weather_firestorm">Burze ogniste</option>
+    <option data-i18n="weather_high_pressure">Wysokie ciśnienie</option>
+    <option data-i18n="weather_low_pressure">Niskie ciśnienie</option>
+    <option data-i18n="weather_magnetic">Burze magnetyczne</option>
+    <option data-i18n="weather_electric">Burze elektryczne</option>
+  </select>
+
+  <label data-i18n="detail_sentinels_label">Strażnicy</label>
+  <select id="detailSentinels">
+    <option value="" data-i18n="sentinels_none">-- wybierz --</option>
+    <option data-i18n="sentinels_passive">Pasywne</option>
+    <option data-i18n="sentinels_no">Brak</option>
+    <option data-i18n="sentinels_relaxed">Zrelaksowane</option>
+    <option data-i18n="sentinels_limited">Ograniczone</option>
+    <option data-i18n="sentinels_low">Niskie</option>
+    <option data-i18n="sentinels_low_security">Niskie bezpieczeństwo</option>
+    <option data-i18n="sentinels_minimal">Minimalne</option>
+    <option data-i18n="sentinels_active">Aktywne</option>
+    <option data-i18n="sentinels_medium">Średnie</option>
+    <option data-i18n="sentinels_standard">Standardowe</option>
+    <option data-i18n="sentinels_typical">Typowe</option>
+    <option data-i18n="sentinels_alert">Uważne</option>
+  </select>
+
+  <label data-i18n="detail_flora_label">Flora</label>
+  <select id="detailFlora">
+    <option value="" data-i18n="flora_none">-- wybierz --</option>
+    <option data-i18n="flora_none2">Brak</option>
+    <option data-i18n="flora_sparse">Sporadyczna</option>
+    <option data-i18n="flora_low">Skąpa</option>
+    <option data-i18n="flora_medium">Średnia</option>
+    <option data-i18n="flora_rich">Obfita</option>
+    <option data-i18n="flora_extreme">Ekstremalna</option>
+  </select>
+
+  <label data-i18n="detail_fauna_label">Fauna</label>
+  <select id="detailFauna">
+    <option value="" data-i18n="fauna_none">-- wybierz --</option>
+    <option data-i18n="fauna_none2">Brak</option>
+    <option data-i18n="fauna_sparse">Sporadyczna</option>
+    <option data-i18n="fauna_low">Skąpa</option>
+    <option data-i18n="fauna_medium">Średnia</option>
+    <option data-i18n="fauna_rich">Obfita</option>
+    <option data-i18n="fauna_extreme">Ekstremalna</option>
+  </select>
+
+  <label data-i18n="detail_discovered_label">Odkryty przez</label>
+  <input type="text" id="detailDiscovered" />
+
+  <label data-i18n="detail_mode_label">Tryb gry</label>
+  <select id="detailMode">
+    <option value="" data-i18n="mode_none">-- wybierz --</option>
+    <option data-i18n="mode_normal">Normalny</option>
+    <option data-i18n="mode_creative">Kreatywny</option>
+    <option data-i18n="mode_survival">Survival</option>
+    <option data-i18n="mode_permadeath">Permadeath</option>
+  </select>
+
+  <label data-i18n="detail_updated_label">Zaktualizowano</label>
+  <input type="text" id="detailUpdated" />
+
+  <label data-i18n="detail_coords_label">Koordynaty</label>
+  <input type="text" id="detailCoords" />
+
+  <button onclick="window.open('https://nmsportals.github.io', '_blank')" 
+          style="margin-top:0.5rem; background:#1976d2; color:white; padding:0.5rem; border:none; border-radius:4px; cursor:pointer;"
+          data-i18n="detail_portal_btn">Przejdź do NMS Portals</button>
+
+  <label data-i18n="detail_notes_label">Notatki</label>
+  <textarea id="detailNotes"></textarea>
+  <button onclick="savePlanetDetails()" data-i18n="detail_save_btn">Zapisz detale</button>
+</div>
+
+<!-- Zakładka PODRÓŻ -->
+<div id="journey" class="tab-content">
+
+<div id="coordRow" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+  X: <input type="number" id="xInput" value="0">
+  Y: <input type="number" id="yInput" value="0">
+  Z: <input type="number" id="zInput" value="0">
+</div>
+  
+  <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+  
+	<div class="field">
+	  <label for="coordInput">Koordynaty:</label>
+	  <input id="coordInput" placeholder="AAAA:BBBB:CCCC:DDDD" type="text">
+	</div>
+
+	<div class="field">
+	  <label for="nameInput">Nazwa układu:</label>
+	  <input id="nameInput" placeholder="Podaj nazwę nowego układu gwiezdnego" type="text">
+	</div>
+  
+  <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+  <div>
+    <button id="addPointSolarSystem">Dodaj układ</button>
+    <button id="editPointSolarSystem">Edytuj</button>
+    <button id="deletePointSolarSystem">Usuń</button>
+  </div>
+ 
+<div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div> 
+  <div>
+    <button id="zoomToPointSolarSystem">Zoom</button>
+	<button id="movePointsMode">Przemieszczaj układy</button>
+<button id="confirmMove" style="display:none;">Zatwierdź zmiany</button>
+<button id="cancelMove" style="display:none;">Anuluj</button>
+<select id="skyboxSelect" onchange="setSkybox(this.value)">
+  <option value="sky1">Skybox 1</option>
+  <option value="sky2">Skybox 2</option>
+  <option value="sky3">Skybox 3</option>
+  </select>
+  </div>
+ 
+
+</div>  
+</div>
+	
+  <!-- Obszar wizualizacji globu -->
+  <div id="globeWrapper" style="position: relative;">
+    <!-- nagłówek overlay -->
+    <div id="planetOverlayHeader"></div>
+    <!-- nagłówek moja lokalizacja -->
+    <div id="myLocationBox" style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); color:white; padding:0.5rem; border-radius:8px; z-index:10;">
+      <div style="font-weight:bold; margin-bottom:0.5rem;" data-i18n="header_My_loc">Moja lokalizacja</div>
+      <label>X: <input type="number" id="myLat" step="1" style="width:70px;"></label>
+      <label>Y: <input type="number" id="myLng" step="1" style="width:70px;"></label>
+    </div>
+    <!-- glob -->
+    <div id="globeViz"></div>
+    <!-- Panel z listą planet po prawej stronie -->
+    
+    <div id="planetSidebar">
+  <h3 data-i18n="header_planet_list">Lista planet</h3>
+  <div id="planetListSidebar"></div>
+</div>
+
+<div id="galaxySidebar">
+  <h3 data-i18n="header_galaxy_list">Galaktyki</h3>
+  <ul id="galaxyList"></ul>
+</div>
+    <!-- Przycisk do pokazywania/ukrywania panelu -->
+   <button id="togglePlanetSidebarBtn">▶</button>
+   
+     <!-- Info o planecie -->
+<div id="planetMiniPanel">
+		  <!-- Przycisk do pokazywania/ukrywania minipanelu -->
+	  <button id="toggleMiniPanelBtn">▼</button>
+  <div id="miniPanelBiome"></div>
+  <div id="miniPanelResources"></div>
+  <div id="miniPanelSentinels"></div>
+</div>
+   
+   <!-- Panel z notatkami punktu -->
+<div id="pointNotesPanel"></div>
+</div>
+
+	<!--  Wrapper Babylon -->	
+ <div id="babylonWrapper" style="position: relative; width:100%; height:100%; display:none;">
+
+	 <!-- Babylon.js (ukryty na start) -->
+<canvas id="babylonCanvas" style="width:100%; height:100%; display:none;"></canvas> 
+	
+	<!-- Tooltip z podpowiedziami -->
+	  <div id="moveTooltip" class="floating-tooltip">
+		💡 <b>Ctrl</b> – przesuwanie tylko w osi <b>Y</b><br>
+		💡 <b>Shift</b> – przesuwanie tylko po płaszczyźnie <b>X/Z</b>
+	  </div>
+ 
+<!-- Sidebar Mapa galaktyki - nagłowek -->
+<div id="regionMapHeader">Mapa galaktyki</div>
+<div id="galaxyCenter">☀</div>
+<div id="regionMap"></div>
+<div id="regionControls">
+  <button id="enterGroup">+</button>
+  <button id="exitGroup">-</button>
+</div>
+<div id="groupNameLabel"></div>
+ <!-- Sidebar lista układów - nagłowek -->
+<div id="solarListHeader">
+  Lista układów gwiezdnych
+</div>
+  <!-- Sidebar lista układów -->
+<div id="solarList"></div>
+</div>
+	
+<script>
+let atlas = {};
+let planetDetails = {}; // szczegóły każdej planety
+let planetData = []; // lista planet z dodatkowymi info
+let currentPlanet = null; // aktualnie wybrana planeta
+let pointScale = parseFloat(document.getElementById("pointScale").value);
+let editIndex = null;
+let pointsDistanceMultiplier = 1;
+let globeZoomMultiplier = 1;
+let autoRotate = false;
+let rotateSpeed = 0.001; // prędkość obrotu w radianach na frame
+let myLocationPoint = null;  
+let isEditing = false; // globalna flaga
+let highlightTimeout = null;
+let headerLock = true; // blokada na starcie celem zablokowania możliwości nadpisania nagłówka
+		
+////////////////////////////////////////////////////////////////////
+//----------------- Zakładki i inne elementy UI -----------------//
+//////////////////////////////////////////////////////////////////// 
+
+// === GLOBALNE ZMIENNE ===
+let babylonEngine = null;
+let babylonScene = null;
+let babylonCamera = null;
+let babylonRenderLoopActive = false;
+
+// === PARAMETRY SCENY BABYLON ===
+const REGION_WIDTH = 4096;
+const REGION_DEPTH = 4096;
+const REGION_HEIGHT = 256;
+const GROUPS_PER_AXIS = 4;
+const REGIONS_PER_GROUP = 4;
+const REGIONS_AXIS = GROUPS_PER_AXIS * REGIONS_PER_GROUP; // 16 regionów w osi
+
+let renderedPoints = [];
+let renderedEdges = [];
+let selectedPoint = null;
+let regions = {};
+let uniqueIdCounter = 0;
+let loadedRegionKey = null;
+
+// globalne zmienne materiałów
+let pointMat = null;
+let selectedMat = null;
+
+// ======= FUNKCJA TWORZĄCA KLUCZ REGIONU =======
+function regionIndexKey(ix, iz) {
+  return `${ix}_${iz}`;
+}
+
+// === INICJALIZACJA SCENY BABYLON ===
+
+// === Skybox ===
+let skybox = null;
+let skyboxMaterial = null;
+
+function setSkybox(name) {
+  // usuń stary skybox jeśli istnieje
+  if (skybox) skybox.dispose();
+
+  skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 10000 }, babylonScene);
+  skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMat", babylonScene);
+  skyboxMaterial.backFaceCulling = false;
+  skyboxMaterial.disableLighting = true;
+  skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+  skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+
+  skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+    `https://raw.githubusercontent.com/eLeRCreative84/NMS-Planet-Atlas/main/textures/skybox/${name}`,
+    babylonScene
+  );
+  skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+  skybox.material = skyboxMaterial;
+  skybox.infiniteDistance = true;
+
+  babylonScene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+}
+
+function initBabylon() {
+  const canvas = document.getElementById("babylonCanvas");
+   canvas.style.display = "block";
+  babylonEngine = new BABYLON.Engine(canvas, true);
+  babylonScene = new BABYLON.Scene(babylonEngine);
+
+  // === Kamera i światło ===
+  babylonCamera = new BABYLON.ArcRotateCamera(
+    " babylonCamera",
+    Math.PI / 4,
+    Math.PI / 4,
+    600,
+    new BABYLON.Vector3(REGION_WIDTH / 2, 128, REGION_DEPTH / 2),
+    babylonScene
+  );
+  babylonCamera.attachControl(canvas, true);
+  babylonCamera.minZ = 0.1;
+  babylonCamera.maxZ = 20000;
+  babylonCamera.lowerRadiusLimit = 50;
+  babylonCamera.upperRadiusLimit = 8000;
+  
+	  //zwiększamy szybkość przesuwania sceny (prawy przycisk myszy)
+	babylonCamera.panningSensibility = 10;  // mniejsza liczba = szybsze przesuwanie
+	babylonCamera.panningInertia = 0.8;      // mniejsza = mniej bezwładności (bardziej responsywne)
+	babylonCamera.panningAxis = new BABYLON.Vector3(1, 1, 0); // standardowe przesuwanie w poziomie i pionie
+
+
+  new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
+ 
+ setSkybox("sky1");
+
+//Materiały
+    pointMat = new BABYLON.StandardMaterial("pointMat", babylonScene);
+    pointMat.emissiveColor = new BABYLON.Color3(0,1,0); // zielony
+
+    selectedMat = new BABYLON.StandardMaterial("selectedMat", babylonScene);
+    selectedMat.emissiveColor = new BABYLON.Color3(1,0,0); // czerwony
+
+  // === Inicjalizacja struktur regionów ===
+  for (let iz = 0; iz < REGIONS_AXIS; iz++) {
+    for (let ix = 0; ix < REGIONS_AXIS; ix++) {
+      const key = regionIndexKey(ix, iz);
+      regions[key] = { pointsData: [], edges: [] };
+    }
+  }
+
+// === Interakcja myszką: przesuwanie istniejących punktów ===
+let pickedMesh = null;
+let dragPlane = null;
+let dragOffset = null;
+
+babylonScene.onPointerObservable.add((pointerInfo) => {
+	//Blokada – tylko w trybie przemieszczania
+  if (!moveModeActive) return;
+  switch (pointerInfo.type) {
+    case BABYLON.PointerEventTypes.POINTERDOWN: {
+      const pickInfo = pointerInfo.pickInfo;
+      if (pickInfo.hit && pickInfo.pickedMesh && renderedPoints.includes(pickInfo.pickedMesh)) {
+        pickedMesh = pickInfo.pickedMesh;
+
+        // utwórz płaszczyznę prostopadłą do kierunku patrzenia kamery,
+        // przechodzącą przez pozycję punktu
+        const camForward = babylonCamera.getDirection(BABYLON.Axis.Z);
+        dragPlane = BABYLON.Plane.FromPositionAndNormal(pickedMesh.position, camForward);
+
+        // oblicz offset między punktem a miejscem kliknięcia na płaszczyźnie
+        const ray = babylonScene.createPickingRay(babylonScene.pointerX, babylonScene.pointerY, BABYLON.Matrix.Identity(), babylonCamera);
+        const distance = ray.intersectsPlane(dragPlane);
+        if (distance) {
+          const pickedPoint = ray.origin.add(ray.direction.scale(distance));
+          dragOffset = pickedPoint.subtract(pickedMesh.position);
+        }
+
+        babylonScene.activeCamera.detachControl(canvas);
+      }
+      break;
+    }
+
+    case BABYLON.PointerEventTypes.POINTERUP: {
+      if (pickedMesh) {
+        babylonScene.activeCamera.attachControl(canvas, true);
+        pickedMesh = null;
+        dragPlane = null;
+        dragOffset = null;
+      }
+      break;
+    }
+
+    case BABYLON.PointerEventTypes.POINTERMOVE: {
+      if (!pickedMesh || !dragPlane) return;
+
+      // twórz promień z pozycji myszy
+      const ray = babylonScene.createPickingRay(
+        babylonScene.pointerX,
+        babylonScene.pointerY,
+        BABYLON.Matrix.Identity(),
+        babylonCamera
+      );
+
+      // przecięcie promienia z dynamiczną płaszczyzną
+      const distance = ray.intersectsPlane(dragPlane);
+      if (distance) {
+        const pickedPoint = ray.origin.add(ray.direction.scale(distance));
+        const newPos = pickedPoint.subtract(dragOffset);
+
+        //tryby przesuwania:
+        const ctrl = pointerInfo.event.ctrlKey;
+        const shift = pointerInfo.event.shiftKey;
+
+        if (ctrl) {
+          // tylko Y
+          pickedMesh.position.y = newPos.y;
+        } else if (shift) {
+          // tylko X i Z
+          pickedMesh.position.x = newPos.x;
+          pickedMesh.position.z = newPos.z;
+        } else {
+          // pełna swoboda
+          pickedMesh.position.copyFrom(newPos);
+        }
+		
+		//aktualizacja węzłów
+    updateEdgesForPoint(pickedMesh);
+      }
+      break;
+    }
+  }
+});
+
+  // === Render loop (raz na zawsze) ===
+  babylonEngine.runRenderLoop(() => {
+    if (babylonRenderLoopActive && babylonScene.activeCamera) {
+      babylonScene.render();
+    }
+  });
+
+  // === Reakcja na resize okna ===
+  window.addEventListener("resize", () => {
+    if (babylonEngine) babylonEngine.resize();
+  });
+
+  console.log("Babylon.js scene initialized");
+}
+
+// === WŁĄCZ / WYŁĄCZ BABYLON ===
+function showBabylonScene() {
+  document.getElementById("globeWrapper").style.display = "none";
+  document.getElementById("babylonWrapper").style.display = "block";
+
+  if (!babylonEngine) initBabylon();
+  babylonRenderLoopActive = true;
+  setTimeout(() => babylonEngine.resize(), 100);
+}
+
+function hideBabylonScene() {
+  document.getElementById("babylonWrapper").style.display = "none";
+  document.getElementById("globeWrapper").style.display = "block";
+  babylonRenderLoopActive = false;
+}
+	
+///////////////////////////////////////////////////////// Tłumaczenie //////////////////////////////////////////
+let currentLang = "pl"; // domyślny język
+
+function setLanguage(lang) {
+  if (!translations[lang]) {
+    return console.warn(`Brak tłumaczeń dla języka: ${lang}`);
+  }
+  currentLang = lang;
+
+  const input = document.getElementById("biomeAliasInput");
+  if (input && input.value.trim()) {
+    const event = new Event("input");
+    input.dispatchEvent(event);
+  }
+
+
+document.querySelectorAll("[data-i18n], [data-i18n-placeholder]").forEach(el => {
+  const key = el.getAttribute("data-i18n") || el.getAttribute("data-i18n-placeholder");
+  if (!translations[lang][key]) return;
+
+  if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+    el.placeholder = translations[lang][key];
+  }
+    // LABEL => zachowanie checkboxów/radiobuttonów
+    else if (el.tagName === "LABEL") {
+      const input = el.querySelector("input");
+      if (input) {
+        // Sprawdzenie czy istnieje textNode po input
+        let textNode = Array.from(el.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+        if (textNode) {
+          textNode.textContent = " " + translations[lang][key]; // nadpisanie tekstu
+        } else {
+          el.appendChild(document.createTextNode(" " + translations[lang][key]));
+        }
+      } else {
+        el.textContent = translations[lang][key];
+      }
+    } 
+    // Inne elementy (div, span, button, p) => zwykły tekst
+    else {
+      el.textContent = translations[lang][key];
+    }
+  });
+		// odśwież filtry i interfejsy
+		document.dispatchEvent(new Event("languageChanged"));
+		
+          updateCurrentPlanetHeader();
+          refreshGlobePoints();
+          refreshPointsList();
+          refreshPlanetSidebar();
+          refreshGalaxySidebar();
+	      updatePlanetMiniPanel();
+		  renderPlanetResourcesPanel();
+		  initPlanetFilters();
+}
+
+// Zakładki
+function openTab(tabId) {
+  // zawsze chowaj sub-tab wyszukiwania po zmianie zakładki
+  document.getElementById("planetSearchTab").style.display = "none";
+  const planetMain = document.getElementById("planetMainTab");
+  if (planetMain) planetMain.style.display = "block";
+
+  // ukryj wszystkie zakładki
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+  
+  // usuń active z przycisków
+  document.querySelectorAll("#tabs button").forEach(el => el.classList.remove("active"));
+
+  // aktywuj odpowiednią zakładkę
+  const tab = document.getElementById(tabId);
+  if (tab) tab.classList.add("active");
+
+  // zaznacz przycisk zakładki jako active
+  document.querySelectorAll("#tabs button").forEach(btn => {
+    if (btn.getAttribute("onclick") && btn.getAttribute("onclick").includes(`'${tabId}'`)) {
+      btn.classList.add("active");
+    }
+  });
+  
+    // fragment odpowiedzialny za Babylon.js
+  if (tabId === "journey") {
+    showBabylonScene();
+  } else {
+    hideBabylonScene();
+  }
+
+  // odśwież nagłówek planety 
+  updateCurrentPlanetHeader();
+}
+
+function showPlanetSearchTab() {
+  document.getElementById("planetMainTab").style.display = "none";
+  document.getElementById("planetSearchTab").style.display = "block";
+}
+
+function backToPlanets() {
+  document.getElementById("planetSearchTab").style.display = "none";
+  document.getElementById("planetMainTab").style.display = "block";
+  refreshPlanetList();
+}
+  
+//zmiana nagłówka z nazwą planety
+function updateCurrentPlanetHeader() {
+  const overlay = document.getElementById("planetOverlayHeader");
+  if (!overlay) return;
+
+  // Jeśli blokada jest aktywna i currentPlanet jest null → ustaw raz i zablokuj nadpisanie
+  if (headerLock && !currentPlanet) {
+    overlay.textContent = "Brak wybranej planety";
+    return; // wychodzimy bez nadpisywania dalej
+  }
+
+  // Normalne działanie po starcie - brak wybranej planety
+  overlay.textContent = currentPlanet
+    ? `${currentPlanet}`
+    : translations[currentLang].planet_noSelected;
+}
+
+// odblokowanie blokady po starcie (0ms po załadowaniu strony)
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    headerLock = false;
+    updateCurrentPlanetHeader(); // odśwież jeszcze raz po zdjęciu blokady
+  }, 0);
+});
+
+function updateNoPlanetsMessage() {
+  const msg = document.getElementById("noPlanetsMessage");
+  const planets = Object.keys(atlas);
+  if (planets.length === 0) {
+    msg.style.display = "block";
+  } else {
+    msg.style.display = "none";
+  }
+  updateCurrentPlanetHeader();
+}
+  
+// Detale planety 
+
+function loadPlanetDetails(){
+  if(!currentPlanet) return;
+  const details = planetDetails[currentPlanet] || {};
+
+  // galaxyInput - selektor z autouzupełnianiem)
+  const galaxyEl = document.getElementById("galaxyInput");
+  if (galaxyEl) {
+    galaxyEl.value = details.galaxy || "";
+    // synchronizuj zmienną globalną
+    currentGalaxy = details.galaxy || currentGalaxy;
+  }
+
+  const starSystemEl = document.getElementById("detailStarSystem");
+  const planetSystemEl = document.getElementById("detailPlanetSystem");
+
+  starSystemEl.value = details.starSystem || "";
+  planetSystemEl.value = details.planetSystem || "";
+
+  // jeśli to księżyc – blokujemy edycję pól układów
+  if (details.parentPlanetId) {
+    starSystemEl.disabled = true;
+    planetSystemEl.disabled = true;
+    starSystemEl.style.backgroundColor = "#f0f0f0"; // wyszarzenie
+    planetSystemEl.style.backgroundColor = "#f0f0f0";
+  } else {
+    starSystemEl.disabled = false;
+    planetSystemEl.disabled = false;
+    starSystemEl.style.backgroundColor = "";
+    planetSystemEl.style.backgroundColor = "";
+  }
+  
+  const biomeInput = document.getElementById("biomeAliasInput");
+if (biomeInput) {
+    biomeInput.value = details.biomeAlias || "";
+}
+  document.getElementById("detailWeather").value = details.weather || "";
+  document.getElementById("detailSentinels").value = details.sentinels || "";
+  document.getElementById("detailFlora").value = details.flora || "";
+  document.getElementById("detailFauna").value = details.fauna || "";
+  document.getElementById("detailDiscovered").value = details.discovered || "";
+  document.getElementById("detailMode").value = details.mode || "";
+  document.getElementById("detailUpdated").value = details.updated || "";
+  document.getElementById("detailCoords").value = details.coords || "";
+  document.getElementById("detailNotes").value = details.notes || "";
+	
+	// Przywróć checkboxy pierwiastków
+  if (icons && icons.length) {
+    icons.forEach(res => {
+      const checkbox = document.getElementById(`resCheckbox-${res.name}`);
+      if (checkbox) {
+        checkbox.checked = details.resources?.includes(res.name) || false;
+      }
+    });
+  }
+}
+
+function savePlanetDetails(){
+  if(!currentPlanet) return;
+
+  // pobierz galaktykę z inputa (fallback na currentGalaxy)
+  const galaxyEl = document.getElementById("galaxyInput");
+  const galaxyVal = (galaxyEl && galaxyEl.value) ? galaxyEl.value : (currentGalaxy || "");
+  let starSystemVal = document.getElementById("detailStarSystem").value.trim();
+  let planetSystemVal = document.getElementById("detailPlanetSystem").value.trim();
+
+  // Jeśli podano tylko planetSystem, spróbuj odnaleźć istniejący starSystem, gdzie ten planetSystem już występuje
+  if (!starSystemVal && planetSystemVal) {
+    for (const details of Object.values(planetDetails)) {
+      if (details.planetSystem === planetSystemVal && details.starSystem) {
+        starSystemVal = details.starSystem;
+        break;
+      }
+    }
+  }
+
+  // Jeśli podano starSystem ale nie planetSystem — blokujemy zapisu (zgodnie z regułą)
+  if (starSystemVal && !planetSystemVal) {
+    alert(translations[currentLang].alert_enterPlanetSystem);
+    return;
+  }
+    //Sprawdza, czy w ogóle istnieje wpis w planetDetails dla aktualnej planety/księżyca.
+    //Jeśli istnieje — przypisuje jego dane do existing.
+    //Jeśli nie istnieje (np. nowo utworzony obiekt jeszcze nie ma zapisanych detali) — tworzy pusty obiekt {} jako „bezpieczny fallback”.
+       const existing = planetDetails[currentPlanet] || {};
+	
+	const biomeInput = document.getElementById("biomeAliasInput");
+        const biomeAliasVal = biomeInput ? biomeInput.value : "";
+
+       // jeśli użytkownik wybrał coś z dropdowna – pobierz prawdziwy biom
+       const { biome: biomeVal, biomeAlias: aliasVal } = window.getSelectedBiomeData();
+
+	// zachowaj istniejące resources jeśli są
+      const existingResources = planetDetails[currentPlanet]?.resources || [];
+
+	// 🔒 Zachowujemy typ obiektu (czy to księżyc, czy planeta)
+	  const isMoon = existing.isMoon || false;
+	  const parentPlanet = existing.parentPlanet || null;
+	  const system = existing.system || null;
+	  const starSystem = existing.starSystem || null;
+
+  planetDetails[currentPlanet] = {
+    galaxy: galaxyVal,
+    starSystem: starSystemVal,
+    planetSystem: planetSystemVal || "Nieznany", // jeśli brak – ląduje w „Nieznany”
+    biome: biomeVal,
+    biomeAlias: aliasVal,
+    weather: document.getElementById("detailWeather").value,
+    sentinels: document.getElementById("detailSentinels").value,
+    flora: document.getElementById("detailFlora").value,
+    fauna: document.getElementById("detailFauna").value,
+    discovered: document.getElementById("detailDiscovered").value,
+    mode: document.getElementById("detailMode").value,
+    updated: document.getElementById("detailUpdated").value,
+    coords: document.getElementById("detailCoords").value,
+    notes: document.getElementById("detailNotes").value,
+	resources: existingResources,
+	
+	// przywrócenie identyfikatora rodzica i flagi księżyca
+	parentPlanetId: existing.parentPlanetId || null,
+	isMoon: !!existing.parentPlanetId
+  };
+ 
+ // synchronizuj globalną zmienną (opcjonalne, ale wygodne)
+  currentGalaxy = galaxyVal;
+
+	// automatyczne nadpisanie układów dla księżyców
+	  Object.keys(planetDetails).forEach(name => {
+		const moon = planetDetails[name];
+		if (moon.parentPlanetId === currentPlanet) {
+		  moon.galaxy = galaxyVal;
+		  moon.starSystem = starSystemVal;
+		  moon.planetSystem = planetSystemVal || "Nieznany";
+		}
+	  });
+
+  alert(translations[currentLang].alert_savedPlanetDetails);
+  refreshPlanetList();
+  updateCurrentPlanetHeader();
+  refreshPlanetSidebar();
+  refreshGalaxySidebar();
+	updatePlanetMiniPanel();
+}
+
+// Renderowanie list planet na wizualizacji globu
+function refreshPlanetSidebar() {
+  const sidebar = document.getElementById("planetSidebar");
+  if (!sidebar) return;
+
+  // Jeśli panel jest ukryty, nic nie rób aby nie blokować pokaż / ukryj listy planet
+  if (sidebar.classList.contains("hidden")) return;
+
+  if (!atlas) return;
+
+  const listContainer = document.getElementById("planetListSidebar");
+  if (!listContainer) return;
+  listContainer.innerHTML = ""; // WAŻNE: czyścimy listę przed ponownym renderowaniem
+
+  const grouped = getGroupedPlanets(); // zachowuje układy gwiezdne i systemy planetarne
+
+  grouped.forEach(starGroup => {
+    // filtrujemy całe układy gwiezdne wg wybranej galaktyki
+    const hasPlanetsInGalaxy = starGroup.planetSystems.some(sys =>
+      sys.planets.some(planetName => {
+        if (!currentGalaxy) return true; // jeśli nic nie wybrano, pokaż wszystkie
+        return planetDetails[planetName]?.galaxy === currentGalaxy;
+      })
+    );
+
+    if (!hasPlanetsInGalaxy) return; // pomiń układ gwiezdny, jeśli w tej galaktyce brak planet
+
+   // nagłówek układu gwiezdnego
+const starHeader = document.createElement("h5");
+starHeader.textContent = starGroup.starSystem === "Nieznany"
+  ? translations[currentLang].unknown_starSystem
+  : starGroup.starSystem;
+
+starHeader.style.color = starGroup.starSystem === "Nieznany" ? "#aaa" : "#ffcc00";
+
+listContainer.appendChild(starHeader);
+
+    // teraz iteracja po systemach planetarnych wewnątrz tego układu gwiezdnego
+    starGroup.planetSystems.forEach(planetSystem => {
+      // filtrujemy planety tego systemu wg planetDetails (GALAKTYKA)
+      const planetsInGalaxy = planetSystem.planets.filter(planetName => {
+        if (!currentGalaxy) return true; // jeśli nic nie wybrano, pokaż wszystkie
+        return planetDetails[planetName]?.galaxy === currentGalaxy;
+      });
+
+      if (planetsInGalaxy.length === 0) return; // pomiń system, jeśli nie ma pasujących planet
+
+      // nagłówek systemu
+		const header = document.createElement("h4");
+		header.textContent = planetSystem.name === "Nieznany"
+		  ? translations[currentLang].unknown_planetSystem
+		  : planetSystem.name;
+		header.style.fontSize = "0.9rem";
+		header.style.margin = "0.5rem 0";
+		header.style.color = planetSystem.name === "Nieznany" ? "#aaa" : "#ffcc00";
+		
+		// WYŚRODKUJ tylko jeśli to "Nieznany układ planetarny"
+		if (planetSystem.name === "Nieznany") {
+		  header.style.textAlign = "center";
+		}
+		
+		listContainer.appendChild(header);
+
+      // tylko planety główne (nie księżyce)
+		const mainPlanets = planetsInGalaxy.filter(p => !planetDetails[p].parentPlanetId);
+		mainPlanets.forEach(planetName => {
+        const li = document.createElement("li");
+        li.style.cursor = "pointer";
+        li.style.padding = "2px 0";
+        li.textContent = planetName;
+
+        // podświetlenie wybranej planety
+        if (planetName === currentPlanet) {
+          li.style.fontWeight = "bold";
+          li.style.color = "#1976d2";
+        }
+
+        li.onclick = () => {
+          currentPlanet = planetName;
+          updateCurrentPlanetHeader();
+          addPoles(planetName);
+          refreshGlobePoints();
+          globe.htmlElementsData(atlas[planetName].filter(pt => pt.type === "Pole"));
+          refreshPointsList();
+          selectPlanet(planetName);
+          updateSelectedPlanetButtons();
+          refreshPlanetSidebar(); // odświeżamy sidebar, żeby podświetlenie działało
+          loadPlanetDetails();
+			renderPlanetResourcesPanel();
+			updatePlanetMiniPanel();
+        };
+
+        listContainer.appendChild(li);
+		
+		const moons = Object.keys(planetDetails).filter(m => planetDetails[m].parentPlanetId === planetName);
+			moons.forEach(moonName => {
+			  const moonLi = document.createElement("li");
+			  moonLi.textContent = moonName;
+			  moonLi.style.fontSize = "0.8rem"; // mniejsza czcionka
+			  moonLi.style.marginLeft = "1rem"; // wcięcie
+			  moonLi.style.fontStyle = "italic";
+			  moonLi.style.cursor = "pointer";
+				// podświetlenie
+				  if (moonName === currentPlanet) {
+					moonLi.style.fontWeight = "bold";
+					moonLi.style.color = "#1976d2"; // ciemnoniebieski
+				  }
+			  moonLi.onclick = () => {
+				currentPlanet = moonName;
+				updateCurrentPlanetHeader();
+				addPoles(moonName);
+				refreshGlobePoints();
+				globe.htmlElementsData(atlas[moonName].filter(pt => pt.type === "Pole"));
+				refreshPointsList();
+				selectPlanet(moonName);
+				updateSelectedPlanetButtons();
+				refreshPlanetSidebar();
+				loadPlanetDetails();
+				renderPlanetResourcesPanel();
+				updatePlanetMiniPanel();
+			  };
+
+			  listContainer.appendChild(moonLi);
+			});
+      });
+    });
+  });
+}
+ 
+// Funkcja do toggle panelu
+function togglePlanetSidebar() {
+  const sidebar = document.getElementById("planetSidebar");
+  const galaxySidebar = document.getElementById("galaxySidebar"); // panel galaktyk
+  const btn = document.getElementById("togglePlanetSidebarBtn");
+
+  sidebar.classList.toggle("hidden");
+  galaxySidebar.classList.toggle("hidden");
+
+  if (sidebar.classList.contains("hidden")) {
+    btn.textContent = "◀"; // panel ukryty → strzałka w prawo
+  } else {
+    btn.textContent = "▶"; // panel widoczny → strzałka w lewo
+    refreshPlanetSidebar();
+	refreshGalaxySidebar();
+  }
+}
+
+// Podłącz przycisk
+document.getElementById("togglePlanetSidebarBtn").addEventListener("click", togglePlanetSidebar);
+
+// Generator nazw
+function generatePlanetName() {
+  const syllables = [
+    // krótkie, twarde
+    "Ar", "As", "At", "Az", "Bal", "Bel", "Bor", "Bran", "Cal", "Cer",
+    "Cor", "Cyn", "Dal", "Dar", "Den", "Dor", "Dur", "El", "Er", "Eth",
+    "Fal", "Fen", "For", "Gal", "Gar", "Gor", "Grav", "Hal", "Hor", "Hun",
+    "Ira", "Ist", "Jar", "Jor", "Kal", "Kar", "Kor", "Kri", "Kul", "Lar",
+    "Len", "Lor", "Lun", "Mal", "Mar", "Mer", "Mor", "Mun", "Nal", "Nar",
+    "Nel", "Nor", "Nyr", "Oph", "Or", "Ost", "Pal", "Par", "Pel", "Por",
+    "Pyr", "Qua", "Quel", "Quor", "Rad", "Ral", "Ran", "Rel", "Rev", "Rho",
+    "Rin", "Ryn", "Sal", "Sar", "Sel", "Sen", "Ser", "Sha", "Sol", "Sor",
+    "Sul", "Syn", "Tal", "Tan", "Tar", "Tel", "Tor", "Tyr", "Ula", "Um",
+    "Ur", "Val", "Var", "Vel", "Ven", "Ver", "Vor", "Vul", "Xan", "Xen",
+    "Xor", "Yl", "Yra", "Zal", "Zan", "Zar", "Zen", "Zor", "Zyn", "Zyr"
+  ];
+
+  const suffixes = [
+    "Prime","Major","Minor","Alpha","Beta","Gamma","Delta",
+    "Omega","Sigma","Tau"
+  ];
+
+  // Losuj 2–3 sylaby
+  const parts = [];
+  const count = Math.random() < 0.5 ? 2 : 3; 
+  for (let i = 0; i < count; i++) {
+    const s = syllables[Math.floor(Math.random() * syllables.length)];
+    // Pierwsza sylaba = z dużej litery, kolejne = z małej
+    if (i === 0) {
+      parts.push(s.charAt(0).toUpperCase() + s.slice(1).toLowerCase());
+    } else {
+      parts.push(s.toLowerCase());
+    }
+  }
+
+  let name = parts.join("");
+
+  // 30% szans na dodanie ozdobnika
+  if (Math.random() < 0.3) {
+    name += " " + suffixes[Math.floor(Math.random() * suffixes.length)];
+  }
+
+  // Pierwsza litera wielka (dla pewności)
+  name = name.charAt(0).toUpperCase() + name.slice(1);
+
+  // Wstaw do pola tekstowego
+  document.getElementById("newPlanetName").value = name;
+  checkNewPlanetInput();
+}
+
+// Tłumaczenie biomów 
+const biomeNames = {
+  Lush: { pl: "Bujny", en: "Lush" },
+  Barren: { pl: "Jałowy", en: "Barren" },
+  Dead: { pl: "Martwy", en: "Dead" },
+  Exotic: { pl: "Egzotyczny", en: "Exotic" },
+  Mega_Exotic: { pl: "Mega egzotyczny", en: "Mega exotic" },
+  Scorched: { pl: "Spalony", en: "Scorched" },
+  Frozen: { pl: "Zamarznięty", en: "Frozen" },
+  Toxic: { pl: "Toksyczny", en: "Toxic" },
+  Irradiated: { pl: "Napromieniowany", en: "Irradiated" },
+  Marsh: { pl: "Bagienny", en: "Marsh" },
+  Volcanic: { pl: "Wulkaniczny", en: "Volcanic" },
+  Gas_Giant: { pl: "Gazowy gigant", en: "Gas Giant" },
+};
+
+// Dane biomów i aliasów
+
+const biomeAliases = [
+  { biome: "Lush", alias: { pl: "Deszczowy", en: "Rainy" } },
+  { biome: "Lush", alias: { pl: "Bujny", en: "Lush" } },
+  { biome: "Lush", alias: { pl: "Tropikalny", en: "Tropical" } },
+  { biome: "Lush", alias: { pl: "Zielonkawy", en: "Viridescent" } },
+  { biome: "Lush", alias: { pl: "Rajski", en: "Paradise" } },
+  { biome: "Lush", alias: { pl: "Umiarkowana", en: "Temperate" } },
+  { biome: "Lush", alias: { pl: "Wilgotny", en: "Humid" } },
+  { biome: "Lush", alias: { pl: "Porośnięty", en: "Overgrown" } },
+  { biome: "Lush", alias: { pl: "Kwitnący", en: "Flourishing" } },
+  { biome: "Lush", alias: { pl: "Trawiasty", en: "Grassy" } },
+  { biome: "Lush", alias: { pl: "Obfity", en: "Bountiful" } },
+
+  { biome: "Barren", alias: { pl: "Jałowy", en: "Barren" } },
+  { biome: "Barren", alias: { pl: "Pustynny", en: "Desert" } },
+  { biome: "Barren", alias: { pl: "Skalisty", en: "Rocky" } },
+  { biome: "Barren", alias: { pl: "Ponury", en: "Bleak" } },
+  { biome: "Barren", alias: { pl: "Wyschnięty", en: "Parched" } },
+  { biome: "Barren", alias: { pl: "Opustoszały", en: "Abandoned" } },
+  { biome: "Barren", alias: { pl: "Pylisty", en: "Dusty" } },
+  { biome: "Barren", alias: { pl: "Bezkresny", en: "Desolate" } },
+  { biome: "Barren", alias: { pl: "Smagany wiatrem", en: "Wind-swept" } },
+
+  { biome: "Dead", alias: { pl: "Katastrofa Terraformacji", en: "Terraforming Catastrophe" } },
+  { biome: "Dead", alias: { pl: "Martwy", en: "Dead" } },
+  { biome: "Dead", alias: { pl: "Pusty", en: "Empty" } },
+  { biome: "Dead", alias: { pl: "Pustkowie", en: "Desolate" } },
+  { biome: "Dead", alias: { pl: "Bez życia", en: "Lifeless" } },
+  { biome: "Dead", alias: { pl: "Porzucony", en: "Forsaken" } },
+  { biome: "Dead", alias: { pl: "Niezdatny do życia", en: "Life-Incompatible" } },
+  { biome: "Dead", alias: { pl: "Niska atmosfera", en: "Low Atmosphere" } },
+  { biome: "Dead", alias: { pl: "Bezatmosferyczny", en: "Airless" } },
+  { biome: "Dead", alias: { pl: "Opuszczony", en: "Abandoned" } },
+
+  { biome: "Exotic", alias: { pl: "Szczelinowy", en: "Fissured" } },
+  { biome: "Exotic", alias: { pl: "Świetlny", en: "of Light" } },
+  { biome: "Exotic", alias: { pl: "Przerwany", en: "Breached" } },
+  { biome: "Exotic", alias: { pl: "Trzaskający", en: "Rattling" } },
+  { biome: "Exotic", alias: { pl: "Kolczasty", en: "Spined" } },
+  { biome: "Exotic", alias: { pl: "Szkieletowy", en: "Skeletal" } },
+  { biome: "Exotic", alias: { pl: "Bulgoczący", en: "Bubbling" } },
+  { biome: "Exotic", alias: { pl: "Pieniący się", en: "Frothing" } },
+  { biome: "Exotic", alias: { pl: "Pienisty", en: "Foaming" } },
+  { biome: "Exotic", alias: { pl: "Profilowany", en: "Contoured" } },
+  { biome: "Exotic", alias: { pl: "Okablowany", en: "Cabled" } },
+  { biome: "Exotic", alias: { pl: "Sieciowy", en: "Webbed" } },
+  { biome: "Exotic", alias: { pl: "Mechaniczny", en: "Mechanical" } },
+  { biome: "Exotic", alias: { pl: "Metaliczny", en: "Metallic" } },
+  { biome: "Exotic", alias: { pl: "Metalurgiczny", en: "Metallurgic" } },
+  { biome: "Exotic", alias: { pl: "Sześciokątny", en: "Hexagonal" } },
+  { biome: "Exotic", alias: { pl: "Płytowy", en: "Plated" } },
+  { biome: "Exotic", alias: { pl: "Łuskowy", en: "Scaly" } },
+  { biome: "Exotic", alias: { pl: "Grzybowy", en: "Fungal" } },
+  { biome: "Exotic", alias: { pl: "Zarodnikowy", en: "Sporal" } },
+  { biome: "Exotic", alias: { pl: "Płetwowy", en: "Capped" } },
+  { biome: "Exotic", alias: { pl: "Ostrzowy", en: "Finned" } },
+  { biome: "Exotic", alias: { pl: "Pokryty skorupami", en: "Bladed" } },
+  { biome: "Exotic", alias: { pl: "Zasklepiony", en: "Shell-Strewn" } },
+  { biome: "Exotic", alias: { pl: "Kostniejący", en: "Ossified" } },
+  { biome: "Exotic", alias: { pl: "Skamieniały", en: "Petrified" } },
+  { biome: "Exotic", alias: { pl: "Zwapniały", en: "Calcified" } },
+  { biome: "Exotic", alias: { pl: "Kolumnowy", en: "Columned" } },
+  { biome: "Exotic", alias: { pl: "Słupowy", en: "Sharded" } },
+  { biome: "Exotic", alias: { pl: "Rozszczepiony", en: "Pillared" } },
+  { biome: "Exotic", alias: { pl: "Zmiażdżony", en: "Shattered" } },
+  { biome: "Exotic", alias: { pl: "Pęknięty", en: "Fractured" } },
+  { biome: "Exotic", alias: { pl: "Fragmentaryczny", en: "Fragmented" } },
+  { biome: "Exotic", alias: { pl: "Karmazynowy", en: "Crimson" } },
+  { biome: "Exotic", alias: { pl: "Anomalia Planetarna", en: "Planetary Anomaly" } },
+  { biome: "Exotic", alias: { pl: "Niesprawny", en: "Malfunctioning" } },
+  { biome: "Exotic", alias: { pl: "Zainfekowany", en: "Infected" } },
+  { biome: "Exotic", alias: { pl: "[ZASTRZEŻONE]", en: "[REDACTED]" } },
+  { biome: "Exotic", alias: { pl: "Szklany", en: "Glassy" } },
+  { biome: "Exotic", alias: { pl: "Spragniony", en: "Thirsty" } },
+  { biome: "Exotic", alias: { pl: "Skazany", en: "Doomed" } },
+  { biome: "Exotic", alias: { pl: "Wymazany", en: "Erased" } },
+  { biome: "Exotic", alias: { pl: "Tymczasowy", en: "Temporary" } },
+  { biome: "Exotic", alias: { pl: "Uszkodzony", en: "Corrupted" } },
+
+  { biome: "Mega_Exotic", alias: { pl: "Karmazynowy - Czerwony biom", en: "Crimson - Red biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Anomalia Planetarna - Czerwony biom", en: "Planetary Anomaly - Red biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Anomalia Planetarna - Zielony biom", en: "Planetary Anomaly - Green biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Anomalia Planetarna - Niebieski biom", en: "Planetary Anomaly - Blue biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Zaginiona Czerwień", en: "Lost Red" } },
+  { biome: "Mega_Exotic", alias: { pl: "Zaginiona Zieleń", en: "Lost Green" } },
+  { biome: "Mega_Exotic", alias: { pl: "Zaginiony Błękit", en: "Lost Blue" } },
+  { biome: "Mega_Exotic", alias: { pl: "[ZASTRZEŻONE] - Czerwony biom", en: "[REDACTED] - Red biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "[ZASTRZEŻONE] - Zielony biom", en: "[REDACTED] - Green biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "[ZASTRZEŻONE] - Niebieski biom", en: "[REDACTED] - Blue biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Wykryto Korupcję Gwiezdną - Czerwony biom", en: "Stellar Corruption Detected - Red biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Wykryto Korupcję Gwiezdną - Zielony biom", en: "Stellar Corruption Detected - Green biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Wykryto Korupcję Gwiezdną - Niebieski biom", en: "Stellar Corruption Detected - Blue biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Chromatyczna Mgła - Czerwony biom", en: "Chromatic Fog - Red biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Chromatyczna Mgła - Zielony biom", en: "Chromatic Fog - Green biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Chromatyczna Mgła - Niebieski biom", en: "Chromatic Fog - Blue biome" } },
+  { biome: "Mega_Exotic", alias: { pl: "Czerwonawy Glob", en: "Vile Anomaly" } },
+  { biome: "Mega_Exotic", alias: { pl: "Szkarłatny", en: "Scarlet" } },
+  { biome: "Mega_Exotic", alias: { pl: "Krew", en: "Blood" } },
+  { biome: "Mega_Exotic", alias: { pl: "Ciemnoczerwone Wino", en: "Wine Dark" } },
+  { biome: "Mega_Exotic", alias: { pl: "Złośliwa Anomalia", en: "Vermillion Globe" } },
+  { biome: "Mega_Exotic", alias: { pl: "Toksyczna Anomalia", en: "Toxic Anomaly" } },
+  { biome: "Mega_Exotic", alias: { pl: "Skazany Szmaragd", en: "Doomed Jade" } },
+  { biome: "Mega_Exotic", alias: { pl: "Nawiedzony Emeril", en: "Haunted Emeril" } },
+  { biome: "Mega_Exotic", alias: { pl: "Śmiertelna Zielona Anomalia", en: "Deathly Green Anomaly" } },
+  { biome: "Mega_Exotic", alias: { pl: "Azur", en: "Azure" } },
+  { biome: "Mega_Exotic", alias: { pl: "Lazurowy", en: "Cerulean" } },
+  { biome: "Mega_Exotic", alias: { pl: "Ultramaryna", en: "Ultramarine" } },
+  
+  { biome: "Scorched", alias: { pl: "Zwęglony", en: "Charred" } },
+  { biome: "Scorched", alias: { pl: "Suchy", en: "Arid" } },
+  { biome: "Scorched", alias: { pl: "Spalony", en: "Scorched" } },
+  { biome: "Scorched", alias: { pl: "Gorący", en: "Hot" } },
+  { biome: "Scorched", alias: { pl: "Ognisty", en: "Fiery" } },
+  { biome: "Scorched", alias: { pl: "Wrzący", en: "Boiling" } },
+  { biome: "Scorched", alias: { pl: "Wysoka Temperatura", en: "High Temperature" } },
+  { biome: "Scorched", alias: { pl: "Parujący", en: "Torrid" } },
+  { biome: "Scorched", alias: { pl: "Rozżarzony", en: "Incandescent" } },
+  { biome: "Scorched", alias: { pl: "Poparzeniowy", en: "Scalding" } },
+  
+  { biome: "Frozen", alias: { pl: "Zamarznięty", en: "Frozen" } },
+  { biome: "Frozen", alias: { pl: "Pokryty Lodem", en: "Icebound" } },
+  { biome: "Frozen", alias: { pl: "Arktyczny", en: "Arctic" } },
+  { biome: "Frozen", alias: { pl: "Lodowcowy", en: "Glacial" } },
+  { biome: "Frozen", alias: { pl: "Poniżej Zera", en: "Sub-zero" } },
+  { biome: "Frozen", alias: { pl: "Lodowy", en: "Icy" } },
+  { biome: "Frozen", alias: { pl: "Mroźny", en: "Frostbound" } },
+  { biome: "Frozen", alias: { pl: "Lodowaty", en: "Freezing" } },
+  { biome: "Frozen", alias: { pl: "Zimowy", en: "Hiemal" } },
+  { biome: "Frozen", alias: { pl: "Hiperborejski", en: "Hyperborean" } },
+  
+  { biome: "Toxic", alias: { pl: "Toksyczny", en: "Toxic" } },
+  { biome: "Toxic", alias: { pl: "Trujący", en: "Poisonous" } },
+  { biome: "Toxic", alias: { pl: "Szkodliwy", en: "Noxious" } },
+  { biome: "Toxic", alias: { pl: "Korozyjny", en: "Corrosive" } },
+  { biome: "Toxic", alias: { pl: "Kwasowy", en: "Acidic" } },
+  { biome: "Toxic", alias: { pl: "Żrący", en: "Caustic" } },
+  { biome: "Toxic", alias: { pl: "Ostry", en: "Acrid" } },
+  { biome: "Toxic", alias: { pl: "Zniszczony", en: "Blighted" } },
+  { biome: "Toxic", alias: { pl: "Miasmatyczny", en: "Miasmatic" } },
+  { biome: "Toxic", alias: { pl: "Rozkładający się", en: "Rotting" } },
+  
+  { biome: "Irradiated", alias: { pl: "Napromieniowany", en: "Irradiated" } },
+  { biome: "Irradiated", alias: { pl: "Radioaktywny", en: "Radioactive" } },
+  { biome: "Irradiated", alias: { pl: "Skażony", en: "Contaminated" } },
+  { biome: "Irradiated", alias: { pl: "Nuklearny", en: "Nuclear" } },
+  { biome: "Irradiated", alias: { pl: "Izotopowy", en: "Isotopic" } },
+  { biome: "Irradiated", alias: { pl: "Rozkładający się Nuklearnie", en: "Decaying Nuclear" } },
+  { biome: "Irradiated", alias: { pl: "Wysokogamowy", en: "Gamma-Intensive" } },
+  { biome: "Irradiated", alias: { pl: "Źródło Wysokiego Promieniowania", en: "High Radio Source" } },
+  { biome: "Irradiated", alias: { pl: "Nadkrytyczny", en: "Supercritical" } },
+  { biome: "Irradiated", alias: { pl: "Wysokoenergetyczny", en: "High Energy" } },
+  
+  { biome: "Marsh", alias: { pl: "Bagienny", en: "Marshy" } },
+  { biome: "Marsh", alias: { pl: "Moczarowy", en: "Swamp" } },
+  { biome: "Marsh", alias: { pl: "Podzwrotnikowy", en: "Tropical" } },
+  { biome: "Marsh", alias: { pl: "Mglisty", en: "Foggy" } },
+  { biome: "Marsh", alias: { pl: "Zamglony", en: "Misty" } },
+  { biome: "Marsh", alias: { pl: "Błotnisty", en: "Boggy" } },
+  { biome: "Marsh", alias: { pl: "Nieskończone Bagno", en: "Endless Morass" } },
+  { biome: "Marsh", alias: { pl: "Grzęzawisko", en: "Quagmire" } },
+  { biome: "Marsh", alias: { pl: "Lekko Zamglony", en: "Hazy" } },
+  { biome: "Marsh", alias: { pl: "Pochmurny", en: "Cloudy" } },
+  { biome: "Marsh", alias: { pl: "Parowy", en: "Vapour" } },
+  { biome: "Marsh", alias: { pl: "Wydzielający odór", en: "Reeking" } },
+  { biome: "Marsh", alias: { pl: "Mętny", en: "Murky" } },
+  { biome: "Marsh", alias: { pl: "Przemoczony", en: "Damp" } },
+  
+  { biome: "Volcanic", alias: { pl: "Lawa", en: "Lava" } },
+  { biome: "Volcanic", alias: { pl: "Magma", en: "Magma" } },
+  { biome: "Volcanic", alias: { pl: "Wybuchowy", en: "Erupting" } },
+  { biome: "Volcanic", alias: { pl: "Wulkaniczny", en: "Volcanic" } },
+  { biome: "Volcanic", alias: { pl: "Pokryty Popiołem", en: "Ash-Shrouded" } },
+  { biome: "Volcanic", alias: { pl: "Popielaty", en: "Ashen" } },
+  { biome: "Volcanic", alias: { pl: "Tektoniczny", en: "Tectonic" } },
+  { biome: "Volcanic", alias: { pl: "Niestabilny", en: "Unstable" } },
+  { biome: "Volcanic", alias: { pl: "Burzliwy", en: "Violent" } },
+  { biome: "Volcanic", alias: { pl: "Roztopiony", en: "Molten" } },
+  { biome: "Volcanic", alias: { pl: "Rozżarzony", en: "Flame-Ruptured" } },
+  { biome: "Volcanic", alias: { pl: "Nadchodząca Detonacja Jądra", en: "Imminent Core Detonation" } },
+  { biome: "Volcanic", alias: { pl: "Obsydianowy", en: "Obsidian Bead" } },
+  { biome: "Volcanic", alias: { pl: "Bazaltowy", en: "Basalt" } },
+  
+  { biome: "Gas_Giant", alias: { pl: "Gazowy Gigant", en: "Gas Giant" } },
+];
+  
+// 🔎 Wyszukiwarka biomów / aliasów
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("biomeAliasInput");
+  const dropdown = document.getElementById("biomeAliasDropdown");
+
+  window.selectedBiome = "";
+  window.selectedAlias = "";
+
+	input.addEventListener("input", () => {
+	  const val = input.value.trim().toLowerCase();
+	  dropdown.innerHTML = "";
+
+	  if (!val) {
+		dropdown.style.display = "none";
+		return;
+	  }
+
+	  // filtracja po aliasie LUB nazwie biomu w aktualnym języku
+	  const filtered = biomeAliases.filter(a =>
+		a.alias[currentLang].toLowerCase().includes(val) ||
+		biomeNames[a.biome][currentLang].toLowerCase().includes(val)
+	  );
+
+	  if (filtered.length === 0) {
+		dropdown.style.display = "none";
+		return;
+	  }
+
+	  filtered.forEach(a => {
+		const option = document.createElement("div");
+		option.innerHTML = `
+		  <strong>${a.alias[currentLang]}</strong>
+		  <span style="opacity:0.6;">(${biomeNames[a.biome][currentLang]})</span>
+		`;
+		option.addEventListener("click", () => {
+		  input.value = a.alias[currentLang];
+		  window.selectedBiome = a.biome;
+		  window.selectedAlias = a.alias[currentLang];
+		  dropdown.style.display = "none";
+		});
+		dropdown.appendChild(option);
+	  });
+
+	  dropdown.style.display = "block";
+	});
+
+  // zamykanie dropdownu po kliknięciu poza
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".biome-selector")) dropdown.style.display = "none";
+  });
+
+  // eksport do savePlanetDetails
+  window.getSelectedBiomeData = () => ({
+    biome: window.selectedBiome,
+    biomeAlias: window.selectedAlias
+  });
+});
+
+// tłumaczenie pierwiastków
+
+const resourceNames = {
+  "Kobalt": { pl: "Kobalt", en: "Cobalt" },
+  "Sód": { pl: "Sód", en: "Sodium" },
+  "Miedź": { pl: "Miedź", en: "Copper" },
+  "Sól": { pl: "Sól", en: "Salt" },
+  "Cytofosforan": { pl: "Cytofosforan", en: "Cyto-Phosphate" },
+  "Metal chromatyczny": { pl: "Metal chromatyczny", en: "Chromatic Metal" },
+  "Piryt": { pl: "Piryt", en: "Pyrite" },
+  "Amoniak": { pl: "Amoniak", en: "Ammonia" },
+  "Uran": { pl: "Uran", en: "Uranium" },
+  "Dioksyt": { pl: "Dioksyt", en: "Dioxite" },
+  "Fosfor": { pl: "Fosfor", en: "Phosphorus" },
+  "Grzybowa pleśń": { pl: "Grzybowa pleśń", en: "Fungal Mould" },
+  "Kryształ Mrozu": { pl: "Kryształ Mrozu", en: "Frost Crystal" },
+  "Korzeń gamma": { pl: "Korzeń gamma", en: "Gamma Root" },
+  "Miąższ kaktusa": { pl: "Miąższ kaktusa", en: "Cactus Flesh" },
+  "Solanium": { pl: "Solanium", en: "Solanium" },
+  "Gwiezdny pąk": { pl: "Gwiezdny pąk", en: "Star Bulb" },
+  "Bulwa rdzeniowa": { pl: "Bulwa rdzeniowa", en: "Marrow Bulb" },
+  "Pęcherz wodorostu": { pl: "Pęcherz wodorostu", en: "Kelp Sac" },
+  "Namagnesowany ferryt": { pl: "Namagnesowany ferryt", en: "Magnetised Ferrite" },
+  "Kadm": { pl: "Kadm", en: "Cadmium" },
+  "Emeril": { pl: "Emeril", en: "Emeril" },
+  "Ind": { pl: "Ind", en: "Indium" },
+  "Kwarcyt": { pl: "Kwarcyt", en: "Quartzite" },
+  "Parafin": { pl: "Parafin", en: "Paraffinium" },
+  "Bazalt": { pl: "Bazalt", en: "Basalt" },
+  "Skrystalizowany hel": { pl: "Skrystalizowany hel", en: "Crystallised Helium" },
+  "Lit": { pl: "Lit", en: "Lithium" },
+  "Srebro": { pl: "Srebro", en: "Silver" },
+  "Złoto": { pl: "Złoto", en: "Gold" },
+  "Zardzewiały metal": { pl: "Zardzewiały metal", en: "Rusted Metal" },
+  "Siarka": { pl: "Siarka", en: "Sulphurine" },
+  "Radon": { pl: "Radon", en: "Radon" },
+  "Azot": { pl: "Azot", en: "Nitrogen" },
+  "Metan": { pl: "Metan", en: "Methane" }
+};
+
+// 🎵 MUZYKA W TLE
+document.addEventListener("DOMContentLoaded", () => {
+  const bgMusic = document.getElementById("bgMusic");
+  const musicBtn = document.getElementById("toggleMusicBtn");
+  const volumeSlider = document.getElementById("musicVolume");
+
+  if (!bgMusic || !musicBtn || !volumeSlider) return;
+
+  // ustawienia początkowe (z lokalStorage jeśli istnieją)
+  const savedVol = localStorage.getItem("musicVolume");
+  bgMusic.volume = savedVol !== null ? parseFloat(savedVol) : 0.4;
+  volumeSlider.value = bgMusic.volume * 100;
+
+  // ▶️ Obsługa przycisku ON/OFF
+  musicBtn.addEventListener("click", () => {
+    if (bgMusic.paused) {
+      bgMusic.play()
+        .then(() => {
+          musicBtn.textContent = "🎵 Muzyka: ON";
+        })
+        .catch(err => console.warn("Autoodtwarzanie zablokowane:", err));
+    } else {
+      bgMusic.pause();
+      musicBtn.textContent = "🎵 Muzyka: OFF";
+    }
+  });
+
+  // 🔊 Suwak głośności (płynna regulacja)
+  volumeSlider.addEventListener("input", e => {
+    const vol = e.target.value / 100;
+    bgMusic.volume = vol;
+    localStorage.setItem("musicVolume", vol); // zapamiętaj głośność
+  });
+});
+
+////////////////////////////////////////////////////////////////////
+//------------------- Sidebar galaktyk ----------------------------//
+////////////////////////////////////////////////////////////////////
+
+function refreshGalaxySidebar() {
+  const galaxyList = document.getElementById("galaxyList");
+  galaxyList.innerHTML = "";
+
+  // zbierz unikalne galaktyki z detali planet
+  const galaxies = [...new Set(Object.values(planetDetails)
+    .map(d => d.galaxy)
+    .filter(Boolean))];
+
+  // jeśli nic nie ma, pokaż Euclid jako domyślną
+  if (galaxies.length === 0) galaxies.push("Euclid");
+
+  galaxies.forEach(g => {
+    const li = document.createElement("li");
+    li.textContent = g;
+    li.style.cursor = "pointer";
+
+    // podświetlenie wybranej galaktyki
+        if (g === currentGalaxy) {
+          li.style.fontWeight = "bold";
+          li.style.color = "#1976d2";
+        }
+
+    li.onclick = () => {
+      currentGalaxy = g;          // ustawiamy globalną zmienną
+      refreshPlanetSidebar();     // odśwież listę planet dla tej galaktyki
+      refreshGalaxySidebar();
+
+      // ustaw input galaktyki w szczegółach planety (jeśli jest aktywna planeta)
+      const galaxyInput = document.getElementById("galaxyInput");
+      if (galaxyInput) {
+        galaxyInput.value = currentGalaxy;
+      }
+     };
+    galaxyList.appendChild(li);
+  });
+}
+
+// Selektor galaktyk
+const galaxies = [
+  "Euclid", "Hilbert Dimension", "Calypso", "Hesperius Dimension", "Hyades", "Ickjamatew", "Budullangr", "Kikolgallr", "Eltiensleen", "Eissentam", "Elkupalos", "Aptarkaba", "Ontiniangp", "Odiwagiri", "Ogtialabi", "Muhacksonto", "Hitonskyer", "Rerasmutul", "Isdoraijung", "Doctinawyra", "Loychazinq", "Zukasizawa", "Ekwathore", "Yeberhahne", "Twerbetek", "Sivarates", "Eajerandal", "Aldukesci", "Wotyarogii", "Sudzerbal", "Maupenzhay", "Sugueziume", "Brogoweldian", "Ehbogdenbu", "Ijsenufryos", "Nipikulha", "Autsurabin", "Lusontrygiamh", "Rewmanawa", "Ethiophodhe", "Urastrykle", "Xobeurindj", "Oniijialdu", "Wucetosucc", "Ebyeloof", "Odyavanta", "Milekistri", "Waferganh", "Agnusopwit", "Teyaypilny", "Zalienkosm", "Ladgudiraf", "Mushonponte", "Amsentisz", "Fladiselm", "Laanawemb", "Ilkerloor", "Davanossi", "Ploehrliou", "Corpinyaya", "Leckandmeram", "Quulngais", "Nokokipsechl", "Rinblodesa", "Loydporpen", "Ibtrevskip", "Elkowaldb", "Heholhofsko", "Yebrilowisod", "Husalvangewi", "Ovna'uesed", "Bahibusey", "Nuybeliaure", "Doshawchuc", "Ruckinarkh", "Thorettac", "Nuponoparau", "Moglaschil", "Uiweupose", "Nasmilete", "Ekdaluskin", "Hakapanasy", "Dimonimba", "Cajaccari", "Olonerovo", "Umlanswick", "Henayliszm", "Utzenmate", "Umirpaiya", "Paholiang", "Iaereznika", "Yudukagath", "Boealalosnj", "Yaevarcko", "Coellosipp", "Wayndohalou", "Smoduraykl", "Apmaneessu", "Hicanpaav", "Akvasanta", "Tuychelisaor", "Rivskimbe", "Daksanquix", "Kissonlin", "Aediabiel", "Ulosaginyik", "Roclaytonycar", "Kichiaroa", "Irceauffey", "Nudquathsenfe", "Getaizakaal", "Hansolmien", "Bloytisagra", "Ladsenlay", "Luyugoslasr", "Ubredhatk", "Cidoniana", "Jasinessa", "Torweierf", "Saffneckm", "Thnistner", "Dotusingg", "Luleukous", "Jelmandan", "Otimanaso", "Enjaxusanto", "Sezviktorew", "Zikehpm", "Bephembah", "Broomerrai", "Meximicka", "Venessika", "Gaiteseling", "Zosakasiro", "Drajayanes", "Ooibekuar", "Urckiansi", "Dozivadido", "Emiekereks", "Meykinunukur", "Kimycuristh", "Roansfien", "Isgarmeso", "Daitibeli", "Gucuttarik", "Enlaythie", "Drewweste", "Akbulkabi", "Homskiw", "Zavainlani", "Jewijkmas", "Itlhotagra", "Podalicess", "Hiviusauer", "Halsebenk", "Puikitoac", "Gaybakuaria", "Grbodubhe", "Rycempler", "Indjalala", "Fontenikk", "Pasycihelwhee", "Ikbaksmit", "Telicianses", "Oyleyzhan", "Uagerosat", "Impoxectin", "Twoodmand", "Hilfsesorbs", "Ezdaranit", "Wiensanshe", "Ewheelonc", "Litzmantufa", "Emarmatosi", "Mufimbomacvi", "Wongquarum", "Hapirajua", "Igbinduina", "Wepaitvas", "Sthatigudi", "Yekathsebehn", "Ebedeagurst", "Nolisonia", "Ulexovitab", "Iodhinxois", "Irroswitzs", "Bifredait", "Beiraghedwe", "Yeonatlak", "Cugnatachh", "Nozoryenki", "Ebralduri", "Evcickcandj", "Ziybosswin", "Heperclait", "Sugiuniam", "Aaseertush", "Uglyestemaa", "Horeroedsh", "Drundemiso", "Ityanianat", "Purneyrine", "Dokiessmat", "Nupiacheh", "Dihewsonj", "Rudrailhik", "Tweretnort", "Snatreetze", "Iwundaracos", "Digarlewena", "Erquagsta", "Logovoloin", "Boyaghosganh", "Kuolungau", "Pehneldept", "Yevettiiqidcon", "Sahliacabru", "Noggalterpor", "Chmageaki", "Veticueca", "Vittesbursul", "Nootanore", "Innebdjerah", "Kisvarcini", "Cuzcogipper", "Pamanhermonsu", "Brotoghek", "Mibittara", "Huruahili", "Raldwicarn", "Ezdartlic", "Badesclema", "Isenkeyan", "Iadoitesu", "Yagrovoisi", "Ewcomechio", "Inunnunnoda", "Dischiutun", "Yuwarugha", "Ialmendra", "Reponudrle", "Rinjanagrbo", "Zeziceloh", "Oeileutasc", "Zicniijinis", "Dugnowarilda", "Neuxoisan", "Ilmenhorn", "Rukwatsuku", "Nepitzaspru", "Chcehoemig", "Haffneyrin", "Uliciawai", "Tuhgrespod", "Iousongola", "Odyalutai"
+];
+
+let currentGalaxy = "Euclid"; // domyślna
+
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("galaxyInput");
+  const dropdown = document.getElementById("galaxyDropdown");
+
+  // ustaw wartość inputa i odśwież sidebary na starcie
+  if (input) input.value = currentGalaxy || "";
+  refreshGalaxySidebar();
+  refreshPlanetSidebar();
+
+  if (!input || !dropdown) return;
+
+  // pokazanie listy przy wpisywaniu
+  input.addEventListener("input", () => {
+    const val = input.value.toLowerCase();
+    dropdown.innerHTML = "";
+
+    if (!val) {
+      dropdown.style.display = "none";
+      return;
+    }
+
+    const filtered = galaxies.filter(g => g.toLowerCase().includes(val));
+
+    if (filtered.length === 0) {
+      dropdown.style.display = "none";
+      return;
+    }
+
+    filtered.forEach(g => {
+      const option = document.createElement("div");
+      option.textContent = g;
+      option.addEventListener("click", () => {
+        input.value = g;
+        currentGalaxy = g; // ustawiamy aktualną galaktykę
+        dropdown.style.display = "none";
+        // od razu odświeżamy listy aby widać było filtrację
+        refreshGalaxySidebar();
+        refreshPlanetSidebar();
+        console.log("Wybrano galaktykę:", currentGalaxy);
+      });
+      dropdown.appendChild(option);
+    });
+
+    dropdown.style.display = "block";
+  });
+
+  // zamknięcie dropdownu po kliknięciu poza
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".galaxy-selector")) {
+      dropdown.style.display = "none";
+    }
+  });
+});
+
+////////////////////////////////////////////////////////////////////
+//------------------ Moduł podróż -------------------//
+//////////////////////////////////////////////////////////////////// 
+
+// ==== pomocnik: klucz regionu bazowany na indeksie regionu (0..15)
+function regionIndexKey(ix, iz) {
+    return `${ix}_${iz}`; // klucz do obiektów i tablic w kodzie
+}
+
+// ==== funkcja określająca indeks regionu z globalnych współrzędnych x,z
+// (zachowujemy, ale w nowym modelu X/Z punktów są w zakresie 0..REGION_WIDTH/DEPTH)
+function regionKeyFromPosition(x,z){
+  const ix = Math.floor(x / REGION_WIDTH);
+  const iz = Math.floor(z / REGION_DEPTH);
+  const clampedX = Math.max(0, Math.min(REGIONS_AXIS-1, ix));
+  const clampedZ = Math.max(0, Math.min(REGIONS_AXIS-1, iz));
+  return regionIndexKey(clampedX, clampedZ);
+}
+
+// Wprowadzenie koordynatów AAAA:BBBB:CCCC:DDDD
+function galacticToRegionCoords(address) {
+  if (!address || !address.includes(":")) return null;
+  const parts = address.split(":");
+
+  if (parts.length !== 4) return null;
+
+  const [A_str, B_str, C_str, D_str] = parts;
+
+  // konwertujemy tylko B,C,D na liczby
+  const B = parseInt(B_str, 16);
+  const C = parseInt(C_str, 16);
+  const D = parseInt(D_str, 16);
+
+  if ([B,C,D].some(isNaN)) return null;
+
+  // Normalizacja: 0–65535 → 0–REGION_WIDTH / REGION_DEPTH / REGION_HEIGHT
+  const normX = (C / 65535) * REGION_WIDTH;
+  const normZ = (D / 65535) * REGION_DEPTH;
+  const normY = (B / 65535) * REGION_HEIGHT;
+
+  // Wskaż region (16x16)
+  const ix = Math.floor((C / 65535) * REGIONS_AXIS);
+  const iz = Math.floor((D / 65535) * REGIONS_AXIS);
+  const regionKey = regionIndexKey(ix, iz);
+
+  return {
+    x: normX,
+    y: normY,
+    z: normZ,
+    regionKey,
+    AAAA: A_str  // <-- przechowujemy jako string
+  };
+}
+
+// === Kamera na punkt ===
+function focusCameraOn(pointMesh, distance = 200) {
+  if (!pointMesh) return;
+
+  const target = pointMesh.position.clone();
+  const dir = babylonCamera.position.subtract(babylonCamera.target || new BABYLON.Vector3(REGION_WIDTH/2, REGION_HEIGHT/2, REGION_DEPTH/2))
+               .normalize()
+               .scale(distance);
+  const newPos = target.add(dir);
+
+  // policz dystans i dopasuj długość animacji
+  const dist = BABYLON.Vector3.Distance(babylonCamera.position, newPos);
+  const frameCount = Math.min(120, Math.max(30, dist / 20)); // im dalej, tym dłuższy lot
+
+  // animacja pozycji kamery z easingiem
+  const posAnim = new BABYLON.Animation("camMoveSmooth", "position", 60,
+    BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  posAnim.setKeys([
+    { frame: 0, value: babylonCamera.position.clone() },
+    { frame: frameCount, value: newPos }
+  ]);
+
+  // easing – bardzo miękki ease-in-out
+  const easing = new BABYLON.CubicEase();
+  easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+  posAnim.setEasingFunction(easing);
+
+  // animacja celu kamery
+  const targetAnim = new BABYLON.Animation("camTargetSmooth", "target", 60,
+    BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  targetAnim.setKeys([
+    { frame: 0, value: babylonCamera.target.clone() },
+    { frame: frameCount, value: target }
+  ]);
+  targetAnim.setEasingFunction(easing);
+
+  // przypisz i uruchom
+  babylonCamera.animations = [posAnim, targetAnim];
+  babylonScene.beginAnimation(babylonCamera, 0, frameCount, false);
+}
+
+
+function createEdgeBetweenPoints(pd1, pd2) {
+  // pd1 i pd2 to obiekty z x,y,z
+  const points = [
+    new BABYLON.Vector3(pd1.x, pd1.y, pd1.z),
+    new BABYLON.Vector3(pd2.x, pd2.y, pd2.z)
+  ];
+  const line = BABYLON.MeshBuilder.CreateLines(`edge_${pd1.id}_${pd2.id}`, { points, updatable: true }, babylonScene);
+  line.color = new BABYLON.Color3(1, 1, 0); // żółty
+  line.isPickable = false; // żeby nie przeszkadzało przy kliku
+  
+  // zapisujemy referencje do punktów
+  line.metadata = { fromId: pd1.id, toId: pd2.id };
+
+  renderedEdges.push(line); // dodaj do tablicy
+  return line;              // zwróć dla logiki w addSolarSystemPoint
+}
+
+/* === addSolarSystemPoint: teraz dodaje dane do logicznego regionu (regions[key].pointsData)
+   i ewentualnie przeładowuje scenę jeśli to ten region jest aktualnie załadowany.
+*/
+function addSolarSystemPoint(x, y, z, gal, targetRegionKey = null) {
+  // jeśli podano współrzędne globalne (w obrębie jednego regionu), możemy policzyć klucz:
+  // ALE często targetRegionKey zostanie przekazany (np. przy ręcznym dodawaniu)
+  let key;
+  if (targetRegionKey) {
+    key = targetRegionKey;
+  } else {
+    key = regionKeyFromPosition(x, z);
+  }
+
+  // upewnij się, że punkt mieści się w obrębie jednego regionu (0..REGION_WIDTH), przyjmujemy clamp
+  x = Math.min(Math.max(isNaN(x) ? REGION_WIDTH / 2 : x, 0), REGION_WIDTH);
+  y = Math.min(Math.max(isNaN(y) ? REGION_HEIGHT / 2 : y, 0), REGION_HEIGHT);
+  z = Math.min(Math.max(isNaN(z) ? REGION_DEPTH / 2 : z, 0), REGION_DEPTH);
+
+  // inicjalizacja regionu jeśli nie istnieje
+  if (!regions[key]) regions[key] = { pointsData: [], edges: [] };
+
+  //sprawdzenie, czy w tym regionie już istnieje punkt o identycznych współrzędnych
+	const EPS = 0.01; // tolerancja błędu
+	const duplicate = regions[key].pointsData.find(
+	  p => Math.abs(p.x - x) < EPS &&
+		   Math.abs(p.y - y) < EPS &&
+		   Math.abs(p.z - z) < EPS
+	);
+
+  if (duplicate) {
+    //Alert i pytanie o losowe przesunięcie
+    const result = confirm(
+      "Układ o takich współrzędnych już istnieje.\n" +
+      "Czy chcesz utworzyć nowy układ w losowym położeniu?"
+    );
+
+    if (!result) {
+      alert("Tworzenie układu zostało anulowane.");
+      return null;
+    }
+
+    //Losujemy nowe współrzędne w promieniu 100 jednostek od miejsca kolizji
+    const offset = 100;
+    const randomOffset = () => (Math.random() * 2 - 1) * offset;
+    x = Math.min(Math.max(x + randomOffset(), 0), REGION_WIDTH);
+    y = Math.min(Math.max(y + randomOffset(), 0), REGION_HEIGHT);
+    z = Math.min(Math.max(z + randomOffset(), 0), REGION_DEPTH);
+  }
+
+  //tworzymy nowy punkt
+  const id = `pt_${uniqueIdCounter++}`;
+  const pd = { id, x, y, z, galactic: gal || "", name: nameInput.value.trim() || "" };
+
+  regions[key].pointsData.push(pd);
+
+  // rysujemy węzeł od zaznaczonego punktu, tylko jeśli istnieje zaznaczony w tym regionie
+  if (selectedPoint && selectedPoint.metadata && selectedPoint.metadata.regionKey === key) {
+    // upewnij się, że nie tworzymy krawędzi do samego siebie (czyli duplikatu)
+    const isSamePos = (
+      selectedPoint.position.x === x &&
+      selectedPoint.position.y === y &&
+      selectedPoint.position.z === z
+    );
+
+    if (!isSamePos) {
+      const prevPd = {
+        x: selectedPoint.position.x,
+        y: selectedPoint.position.y,
+        z: selectedPoint.position.z,
+        id: selectedPoint.metadata.id
+      };
+      const edgeMesh = createEdgeBetweenPoints(prevPd, pd);
+
+      regions[key].edges.push({ fromId: prevPd.id, toId: pd.id });
+      renderedEdges.push(edgeMesh); // dodajemy do globalnej tablicy
+      pd.connectedToPrev = true;    // flaga, że jest połączony z poprzednim
+    } else {
+      pd.connectedToPrev = false;
+    }
+  } else {
+    pd.connectedToPrev = false;
+  }
+
+  // oznacz kafelek w mapie (jeśli pokazujemy grupę)
+  markRegionTileHasPoints(key);
+
+  // jeśli aktualnie załadowany region to ten do którego dodano punkt, przeładuj widok
+  if (loadedRegionKey === key) {
+    loadRegionByKey(key, { selectId: id });
+  }
+
+  return id;
+}
+
+/* ==============================
+--- TUTAJ DOPISUJEMY SIATKĘ ---
+ ============================== */
+
+const regionMapEl = document.getElementById("regionMap");
+const enterBtn = document.getElementById("enterGroup");
+const exitBtn = document.getElementById("exitGroup");
+const groupNameLabel = document.getElementById("groupNameLabel");
+
+// ustaw tekst startowy
+groupNameLabel.textContent = "Wybierz regiony";
+
+function updateControlsState() {
+  if (level === 0) {
+    // na poziomie galaktyki: można wejść, ale nie można wyjść
+    enterBtn.disabled = false;
+    exitBtn.disabled = true;
+  } else if (level === 1) {
+    // na poziomie grupy: można wyjść, ale nie można dalej wchodzić
+    enterBtn.disabled = true;
+    exitBtn.disabled = false;
+  }
+}
+ 
+let level = 0; 
+let selectedTile = null;
+let currentGroupX = 0;
+let currentGroupZ = 0;
+
+// helper: wyczysc selection
+function clearSelectionTile(){
+  if(selectedTile) { selectedTile.classList.remove("selected"); selectedTile = null; }
+}
+
+// rysowanie widoku GALAKTYKI (4x4 grup)
+function drawGalaxyGrid(){
+  regionMapEl.innerHTML = "";
+  clearSelectionTile();
+  for(let gz=0; gz<4; gz++){
+    for(let gx=0; gx<4; gx++){
+      const tile = document.createElement("div");
+      tile.className = "regionTile";
+      tile.dataset.gx = gx;
+      tile.dataset.gz = gz;
+      tile.textContent = `G${gz*4+gx+1}`;
+      tile.addEventListener("click", ()=> {
+        if(selectedTile) selectedTile.classList.remove("selected");
+        selectedTile = tile;
+        tile.classList.add("selected");
+      });
+      regionMapEl.appendChild(tile);
+    }
+  }
+  updateControlsState();
+}
+
+// helper: dodaje/usuwa klasę hasPoints dla kafelka regionu (jeśli jest aktualnie widoczny)
+function markRegionTileHasPoints(regionKey) {
+  // only applies when we're on level 1 (grupa widoczna)
+  if (level !== 1) return;
+  const parts = regionKey.split("_");
+  const ix = parseInt(parts[0],10), iz = parseInt(parts[1],10);
+  const el = regionMapEl.querySelector(`.regionTile[data-ix='${ix}'][data-iz='${iz}']`);
+  if (el) {
+    const has = regions[regionKey] && regions[regionKey].pointsData && regions[regionKey].pointsData.length>0;
+    if (has) el.classList.add("hasPoints"); else el.classList.remove("hasPoints");
+  }
+}
+
+// rysowanie widoku GRUPY (4x4 regionów)
+function drawGroupGrid(groupX, groupZ){
+  regionMapEl.innerHTML = "";
+  clearSelectionTile();
+  for(let rz=0; rz<4; rz++){
+    for(let rx=0; rx<4; rx++){
+      const tile = document.createElement("div");
+      tile.className = "regionTile";
+      const regionX = groupX * REGIONS_PER_GROUP + rx;
+      const regionZ = groupZ * REGIONS_PER_GROUP + rz;
+
+      // numeracja od 1 do 256 (tylko wizualna)
+      const regionNumber = regionZ * REGIONS_AXIS + regionX + 1;
+      tile.textContent = regionNumber;
+      
+      tile.dataset.ix = regionX;
+      tile.dataset.iz = regionZ;
+      
+      // pokaż czy region ma punkty
+      const key = regionIndexKey(regionX, regionZ);
+      if (regions[key] && regions[key].pointsData && regions[key].pointsData.length>0) {
+        tile.classList.add("hasPoints");
+      }
+      tile.addEventListener("click", ()=>{
+        if(selectedTile) selectedTile.classList.remove("selected");
+        selectedTile = tile;
+        tile.classList.add("selected");
+
+        // === Ładujemy logiczny region do sceny (scena zawsze ten sam obszar)
+        const key = regionIndexKey(regionX, regionZ);
+        loadRegionByKey(key);
+        // ustaw kamere nad środkiem obszaru (nie przestawiamy sceny)
+        babylonCamera.setTarget(new BABYLON.Vector3(REGION_WIDTH/2, REGION_HEIGHT/2, REGION_DEPTH/2));
+        babylonCamera.alpha = Math.PI / 4;
+        babylonCamera.beta = Math.PI / 4;
+        babylonCamera.radius = 600;
+      });
+      regionMapEl.appendChild(tile);
+    }
+  }
+}
+
+enterBtn.addEventListener("click", ()=>{
+  if(level !== 0) return;
+  if(!selectedTile) return alert("Zaznacz grupę, w którą chcesz wejść.");
+  const gx = parseInt(selectedTile.dataset.gx);
+  const gz = parseInt(selectedTile.dataset.gz);
+  currentGroupX = gx; currentGroupZ = gz;
+  level = 1;
+  const groupIndex = gz * GROUPS_PER_AXIS + gx + 1;
+  groupNameLabel.textContent = `Grupa regionów ${groupIndex}`;
+  drawGroupGrid(currentGroupX, currentGroupZ);
+  updateControlsState();
+
+  updateGalaxyCenterPosition(currentGroupX, currentGroupZ);
+
+  // === Po wejściu do grupy, ustaw kamerę nad środkiem obszaru
+  babylonCamera.setTarget(new BABYLON.Vector3(REGION_WIDTH/2, REGION_HEIGHT/2, REGION_DEPTH/2));
+  babylonCamera.alpha = Math.PI / 4;
+  babylonCamera.beta = Math.PI / 4;
+  babylonCamera.radius = 600;
+  babylonCamera.minZ = 0.1;
+  babylonCamera.maxZ = 20000;
+});
+
+exitBtn.addEventListener("click", ()=>{
+  if(level !== 1) return;
+  level = 0;
+  currentGroupX = 0; currentGroupZ = 0;
+  drawGalaxyGrid();
+  // wróć do napisu podpowiedzi
+  groupNameLabel.textContent = "Wybierz regiony";
+  // czyścimy załadowany region ze sceny (jeśli chcesz, możesz zostawić)
+  clearRenderedPoints();
+  updateControlsState();
+  loadedRegionKey = null;
+  updateGalaxyTilesHasPoints();
+  updateGalaxyCenterPosition(145, 113);
+});
+
+drawGalaxyGrid();
+updateGalaxyTilesHasPoints();
+
+
+// Funkcja aktualizuje kafelki grup (poziom galaktyki) pod kątem obecności punktów w regionach
+function updateGalaxyTilesHasPoints() {
+  if (level !== 0) return; // tylko w widoku GALAKTYKI
+
+  const tiles = regionMapEl.querySelectorAll(".regionTile");
+
+  tiles.forEach(tile => {
+    const gx = parseInt(tile.dataset.gx, 10);
+    const gz = parseInt(tile.dataset.gz, 10);
+
+    let hasPoints = false;
+
+    // sprawdzamy wszystkie 4x4 regiony należące do tej grupy
+    for (let rz = 0; rz < REGIONS_PER_GROUP; rz++) {
+      for (let rx = 0; rx < REGIONS_PER_GROUP; rx++) {
+        const regionX = gx * REGIONS_PER_GROUP + rx;
+        const regionZ = gz * REGIONS_PER_GROUP + rz;
+        const key = regionIndexKey(regionX, regionZ);
+
+        if (
+          regions[key] &&
+          regions[key].pointsData &&
+          regions[key].pointsData.length > 0
+        ) {
+          hasPoints = true;
+          break;
+        }
+      }
+      if (hasPoints) break;
+    }
+
+    // dodaj lub usuń klasę (żółta obwódka)
+    if (hasPoints) tile.classList.add("hasPointsGroup");
+    else tile.classList.remove("hasPointsGroup");
+  });
+}
+
+const galaxyCenter = document.getElementById("galaxyCenter");
+
+// funkcja do aktualizacji pozycji centrum galaktyki
+function updateGalaxyCenterPosition(groupX, groupZ) {
+  // domyślnie (w widoku całej galaktyki) środek
+  galaxyCenter.style.top = "146px";
+  galaxyCenter.style.right = "128px";
+
+  // jeśli jesteśmy w trybie grupy — dopasuj narożnik
+  if (level === 1) {
+    // G6 (gx=1, gz=1)
+    if (groupX === 1 && groupZ === 1) {
+      
+      galaxyCenter.style.top = "249px";
+      galaxyCenter.style.right = "25px";
+      
+    }
+
+    // G7 (gx=2, gz=1)
+    else if (groupX === 2 && groupZ === 1) {
+      
+      galaxyCenter.style.top = "249px";
+      galaxyCenter.style.right = "233px";
+      
+    }
+
+    // G10 (gx=1, gz=2)
+    else if (groupX === 1 && groupZ === 2) {
+      galaxyCenter.style.top = "42px";
+      galaxyCenter.style.right = "25px";
+      
+    }
+
+    // G11 (gx=2, gz=2)
+    else if (groupX === 2 && groupZ === 2) {
+      galaxyCenter.style.top = "42px";
+      galaxyCenter.style.right = "233px";
+      
+    }
+	
+    // inne grupy — ukryj centrum galaktyki
+    else {
+      galaxyCenter.style.display = "none";
+    }
+  }
+
+  // jeśli wyjdziemy z trybu grupy, przywróć widoczność w centrum
+  else {
+    galaxyCenter.style.display = "block";
+  }
+}
+
+
+
+/* ===============================
+   SIDEBAR – lista układów
+   =============================== */
+const solarListEl = document.getElementById("solarList");
+
+// funkcja tworząca nowy wpis w liście (tylko dla aktualnie załadowanego regionu)
+function refreshSolarListForLoadedRegion() {
+  solarListEl.innerHTML = "";
+  if (!loadedRegionKey) return;
+  const region = regions[loadedRegionKey];
+  if (!region || !region.pointsData) return;
+  region.pointsData.forEach(pd => {
+    const item = document.createElement("div");
+    item.className = "solarItem";
+    item.textContent = pd.name || pd.galactic || `Układ ${pd.id}`;
+    item.dataset.id = pd.id;
+    item.addEventListener("click", () => {
+      // usuwamy zaznaczenie poprzedniego
+      document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
+      item.classList.add("selected");
+
+      // znajdź mesh odpowiadający temu id w renderedPoints i zaznacz
+      const mesh = renderedPoints.find(m => m.metadata && m.metadata.id === pd.id);
+      if (mesh) {
+        if (selectedPoint) selectedPoint.material = pointMat.clone();
+        selectedPoint = mesh;
+        selectedPoint.material = selectedMat;
+        // wypełnij inputy
+        xInput.value = mesh.position.x.toFixed(2);
+        yInput.value = mesh.position.y.toFixed(2);
+        zInput.value = mesh.position.z.toFixed(2);
+        coordInput.value = mesh.metadata.galactic || "";
+        focusCameraOn(mesh);
+      }
+    });
+    solarListEl.appendChild(item);
+  });
+}
+
+// aktualizacja listy po usunięciu punktu (reload region)
+function removeFromSolarListById(id) {
+  if (!loadedRegionKey) return;
+  refreshSolarListForLoadedRegion();
+}
+
+/* ================================
+   Reszta Twojego HUD (bez zmian)
+   ================================ */
+
+const xInput=document.getElementById("xInput");
+const yInput=document.getElementById("yInput");
+const zInput=document.getElementById("zInput");
+const coordInput=document.getElementById("coordInput");
+const nameInput=document.getElementById("nameInput");
+
+
+// --- WALIDACJA GALACTIC ---
+coordInput.addEventListener("input", () => {
+  // zamień na wielkie litery
+  coordInput.value = coordInput.value.toUpperCase();
+
+  const val = coordInput.value.trim();
+
+  // regex: 4x hex + ":" + 4x hex + ":" + 4x hex + ":" + 4x hex
+  const galacticRegex = /^[0-9A-F]{4}:[0-9A-F]{4}:[0-9A-F]{4}:[0-9A-F]{4}$/;
+
+  if (galacticRegex.test(val)) {
+    coordInput.style.borderColor = "#0f0"; // zielony – poprawny
+  } else {
+    coordInput.style.borderColor = "#f00"; // czerwony – niepoprawny
+  }
+});
+
+// === Pomocnicze funkcje do renderowania/zarządzania mesh'ami w scenie ===
+function clearRenderedPoints(){
+  renderedPoints.forEach(m => {
+    try { m.dispose(); } catch(e){ /* ignore */ }
+  });
+  renderedPoints = [];
+  selectedPoint = null;
+  
+  // czyszczenie węzłów
+  renderedEdges.forEach(e => {
+    try { e.dispose(); } catch(e){ }
+  });
+  renderedEdges = [];
+}
+
+function createMeshForPointData(pd) {
+  const sphere = BABYLON.MeshBuilder.CreateSphere(`m_${pd.id}`, { diameter: 2 }, babylonScene);
+  sphere.position.set(pd.x, pd.y, pd.z);
+  sphere.material = pointMat.clone();
+  sphere.metadata = { id: pd.id, galactic: pd.galactic, name: pd.name || "" };
+  sphere.actionManager = new BABYLON.ActionManager(babylonScene);
+  sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger,()=>{
+    if(selectedPoint) selectedPoint.material = pointMat.clone();
+    selectedPoint = sphere; selectedPoint.material = selectedMat;
+    document.getElementById("xInput").value = sphere.position.x.toFixed(2);
+    document.getElementById("yInput").value = sphere.position.y.toFixed(2);
+    document.getElementById("zInput").value = sphere.position.z.toFixed(2);
+    document.getElementById("coordInput").value = sphere.metadata.galactic || "";
+	document.getElementById("nameInput").value = sphere.metadata.name || "";
+
+    // highlight corresponding item in list
+    document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
+    const li = solarListEl.querySelector(`[data-id="${pd.id}"]`);
+    if (li) li.classList.add("selected");
+  }));
+  return sphere;
+}
+
+// Ładuje region do sceny na podstawie klucza regionu (np. "3_5")
+// opcje: { selectId: 'pt_x' } => po załadowaniu zaznacz ten punkt
+function loadRegionByKey(regionKey, options = {}) {
+  // czyścimy bieżące mesh'e
+  clearRenderedPoints();
+  loadedRegionKey = regionKey;
+
+  const region = regions[regionKey];
+  if (!region || !region.pointsData) {
+    refreshSolarListForLoadedRegion();
+    return;
+  }
+
+  // tworzymy mesh dla każdego punktu w data
+  region.pointsData.forEach(pd => {
+    const mesh = createMeshForPointData(pd);
+    renderedPoints.push(mesh);
+    mesh.metadata.regionKey = regionKey; // dodajemy info, z którego regionu mesh pochodzi
+  });
+
+  // renderujemy istniejące węzły w regionie
+  if (region.edges && region.edges.length > 0) {
+  region.edges.forEach(edgeObj => {
+    const fromPd = region.pointsData.find(p => p.id === edgeObj.fromId);
+    const toPd = region.pointsData.find(p => p.id === edgeObj.toId);
+    if (fromPd && toPd) {
+      const line = createEdgeBetweenPoints(fromPd, toPd);
+      renderedEdges.push(line);
+    }
+  });
+}
+
+  // odśwież listę w sidebar
+  refreshSolarListForLoadedRegion();
+
+	// opcjonalnie zaznacz nowo dodany lub ostatni punkt
+	let selectId = options.selectId;
+	if (!selectId) {
+	  const region = regions[regionKey];
+	  if (region && region.pointsData.length > 0) {
+		// automatycznie wybierz ostatnio dodany punkt
+		selectId = region.pointsData[region.pointsData.length - 1].id;
+	  }
+	}
+
+	if (selectId) {
+	  const mesh = renderedPoints.find(m => m.metadata && m.metadata.id === selectId);
+	  if (mesh) {
+		if (selectedPoint) selectedPoint.material = pointMat.clone();
+		selectedPoint = mesh;
+		selectedPoint.material = selectedMat;
+		// uzupełnij inputy
+		xInput.value = mesh.position.x.toFixed(2);
+		yInput.value = mesh.position.y.toFixed(2);
+		zInput.value = mesh.position.z.toFixed(2);
+		coordInput.value = mesh.metadata.galactic || "";
+		nameInput.value = mesh.metadata.name || "";
+
+		// highlight item
+		const li = solarListEl.querySelector(`[data-id="${selectId}"]`);
+		if (li) {
+		  document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
+		  li.classList.add("selected");
+		}
+		focusCameraOn(mesh, 200);
+	  }
+	}
+}
+
+// === Obsługa przycisku Dodaj punkt ===
+document.getElementById("addPointSolarSystem").addEventListener("click", () => {
+  const gal = coordInput.value.trim();
+
+  // === PRZYPADEK 1: Koordynaty Galactic są wypełnione ===
+  if (gal) {
+    const galData = galacticToRegionCoords(gal);
+    if (!galData) {
+      alert("Niepoprawny adres Galactic! Wprowadź w formacie AAAA:BBBB:CCCC:DDDD");
+      return;
+    }
+
+    // użyjemy normalizacji X/Y/Z z galacticToRegionCoords
+    let { x, y, z, regionKey } = galData;
+
+    // jeśli user nie podał inputów XYZ ręcznie, ustawiamy środek regionu
+    if (isNaN(parseFloat(xInput.value))) x = REGION_WIDTH / 2;
+    if (isNaN(parseFloat(yInput.value))) y = REGION_HEIGHT / 2;
+    if (isNaN(parseFloat(zInput.value))) z = REGION_DEPTH / 2;
+
+    const newId = addSolarSystemPoint(x, y, z, gal, regionKey);
+
+    if (loadedRegionKey === regionKey) {
+      loadRegionByKey(regionKey, { selectId: newId });
+    } else {
+      markRegionTileHasPoints(regionKey);
+    }
+
+	// nowo dodane – aktualizacja kafelków grupy
+	if (level === 0) {
+	  updateGalaxyTilesHasPoints();
+	}
+
+    return; // wychodzimy, nie przechodzimy do trybu ręcznego
+  }
+
+  // === PRZYPADEK 2: ręczne dodawanie punktu ===
+  if (level !== 1 || !selectedTile || !selectedTile.dataset.ix) {
+    alert("Wybierz region z mapy, zanim dodasz punkt ręcznie.");
+    return;
+  }
+
+  const ix = parseInt(selectedTile.dataset.ix);
+  const iz = parseInt(selectedTile.dataset.iz);
+  const regionKey = regionIndexKey(ix, iz);
+
+  let x = isNaN(parseFloat(xInput.value)) ? REGION_WIDTH / 2 : parseFloat(xInput.value);
+  let y = isNaN(parseFloat(yInput.value)) ? REGION_HEIGHT / 2 : parseFloat(yInput.value);
+  let z = isNaN(parseFloat(zInput.value)) ? REGION_DEPTH / 2 : parseFloat(zInput.value);
+
+  const newId = addSolarSystemPoint(x, y, z, "", regionKey);
+  if (loadedRegionKey === regionKey) {
+    loadRegionByKey(regionKey, { selectId: newId });
+  } else {
+    markRegionTileHasPoints(regionKey);
+  }
+  
+  if (level === 0) {
+  updateGalaxyTilesHasPoints();
+}
+
+});
+
+document.getElementById("zoomToPointSolarSystem").addEventListener("click",()=>{ if(selectedPoint) focusCameraOn(selectedPoint); });
+
+document.getElementById("editPointSolarSystem").addEventListener("click",()=>{
+  if(!selectedPoint) return alert("Nie zaznaczono punktu!");
+  // znajdź entry w danych regionu i zaktualizuj
+  const id = selectedPoint.metadata && selectedPoint.metadata.id;
+  if (!id || !loadedRegionKey) return;
+  const region = regions[loadedRegionKey];
+  const entry = region.pointsData.find(p => p.id === id);
+  if (!entry) return;
+  entry.x = parseFloat(xInput.value);
+  entry.y = parseFloat(yInput.value);
+  entry.z = parseFloat(zInput.value);
+  entry.galactic = coordInput.value.trim();
+  entry.name = nameInput.value.trim();
+
+  // zaktualizuj mesh
+  selectedPoint.position.set(entry.x, entry.y, entry.z);
+  selectedPoint.metadata.galactic = entry.galactic;
+  selectedPoint.metadata.name = entry.name;
+
+  updateEdgesForPoint(selectedPoint);
+
+  // odśwież listę
+  refreshSolarListForLoadedRegion();
+});
+
+document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
+  if(!selectedPoint) return alert("Nie zaznaczono punktu!");
+  const id = selectedPoint.metadata && selectedPoint.metadata.id;
+  if (!id || !loadedRegionKey) return;
+
+  // usuń z danych regionu
+  const region = regions[loadedRegionKey];
+  region.pointsData = region.pointsData.filter(p => p.id !== id);
+
+  // usuń mesh i odśwież scenę/listę
+  loadRegionByKey(loadedRegionKey);
+
+  // odznacz kafelek jeśli region jest teraz pusty
+  markRegionTileHasPoints(loadedRegionKey);
+  if(level === 0) updateGalaxyTilesHasPoints();
+});
+
+////////////////////////////////////////////////////////////////////
+// ===== TRYB PRZEMIESZCZANIA UKŁADÓW =====
+////////////////////////////////////////////////////////////////////
+
+let moveModeActive = false;
+let originalPositions = new Map(); // zapamiętuje pozycje początkowe
+
+const moveBtn = document.getElementById("movePointsMode");
+const confirmBtn = document.getElementById("confirmMove");
+const cancelBtn = document.getElementById("cancelMove");
+
+// === Włączenie trybu edycji pozycji ===
+moveBtn.addEventListener("click", () => {
+  if (!loadedRegionKey || renderedPoints.length === 0) {
+    alert("Nie ma układów do przemieszczania!");
+    return;
+  }
+
+  moveModeActive = true;
+  moveBtn.style.display = "none";
+  confirmBtn.style.display = "inline-block";
+  cancelBtn.style.display = "inline-block";
+
+  // pokaż tooltip z instrukcjami Ctrl / Shift
+  if (moveTooltip) moveTooltip.classList.add("visible");
+
+  // zapamiętaj oryginalne pozycje wszystkich meshów
+  originalPositions.clear();
+  renderedPoints.forEach(m => {
+    originalPositions.set(m.metadata.id, m.position.clone());
+  });
+
+  console.log("Tryb przemieszczania aktywny");
+});
+
+// === Zatwierdzenie zmian ===
+confirmBtn.addEventListener("click", () => {
+  if (!moveModeActive) return;
+
+  // zapisujemy nowe pozycje do regionu
+  const region = regions[loadedRegionKey];
+  if (region && region.pointsData) {
+    region.pointsData.forEach(pd => {
+      const mesh = renderedPoints.find(m => m.metadata.id === pd.id);
+      if (mesh) {
+        pd.x = mesh.position.x;
+        pd.y = mesh.position.y;
+        pd.z = mesh.position.z;
+      }
+    });
+  }
+
+  exitMoveMode();
+  console.log("Zmiany pozycji zapisane");
+});
+
+// === Anulowanie zmian ===
+cancelBtn.addEventListener("click", () => {
+  if (!moveModeActive) return;
+
+  // przywróć oryginalne pozycje
+  renderedPoints.forEach(m => {
+    const orig = originalPositions.get(m.metadata.id);
+    if (orig) m.position.copyFrom(orig);
+  });
+
+//przywróć krawędzie do pierwotnych pozycji
+renderedEdges.forEach(edge => {
+  const fromMesh = renderedPoints.find(m => m.metadata.id === edge.metadata.fromId);
+  const toMesh = renderedPoints.find(m => m.metadata.id === edge.metadata.toId);
+  if (fromMesh && toMesh) {
+    BABYLON.MeshBuilder.CreateLines(null, {
+      points: [fromMesh.position, toMesh.position],
+      instance: edge
+    });
+  }
+});
+
+  exitMoveMode();
+  console.log("Zmiany pozycji anulowane");
+});
+
+function exitMoveMode() {
+  moveModeActive = false;
+  moveBtn.style.display = "inline-block";
+  confirmBtn.style.display = "none";
+  cancelBtn.style.display = "none";
+  
+  // ukryj tooltip
+  if (moveTooltip) moveTooltip.classList.remove("visible");
+  
+  originalPositions.clear();
+}
+
+// === Aktualizuje linie (edges) dla konkretnego punktu ===
+function updateEdgesForPoint(mesh) {
+  renderedEdges.forEach(edge => {
+    if (edge.metadata.fromId === mesh.metadata.id || edge.metadata.toId === mesh.metadata.id) {
+      const fromMesh = renderedPoints.find(m => m.metadata.id === edge.metadata.fromId);
+      const toMesh = renderedPoints.find(m => m.metadata.id === edge.metadata.toId);
+      if (fromMesh && toMesh) {
+        BABYLON.MeshBuilder.CreateLines(null, {
+          points: [fromMesh.position, toMesh.position],
+          instance: edge
+        });
+      }
+    }
+  });
+}
+
+
+////////////////////////////////////////////////////////////////////
+//------------------ Planety, lista, tworzenie -------------------//
+//////////////////////////////////////////////////////////////////// 
+  
+// Dodawanie nowych planet
+  function checkNewPlanetInput() {
+  const input = document.getElementById("newPlanetName");
+  const button = document.getElementById("addPlanetBtn");
+  button.disabled = input.value.trim() === "";
+}
+// Po załadowaniu DOM od razu sprawdzamy input i ustawiamy stan przycisku
+document.addEventListener("DOMContentLoaded", () => {
+  checkNewPlanetInput(); // ustawia disabled zgodnie z zawartością input
+});
+  
+  //Tworzy teksturę o rozmairze 1 piksel x 1 piksel o zadanym kolorze i zmienia na base64
+function hexToBase64Texture(hex) {
+  // Tworzymy canvas 1x1
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = hex;
+  ctx.fillRect(0, 0, 1, 1);
+
+  // Zamiana na base64 PNG
+  return canvas.toDataURL("image/png");
+}
+  
+function addNewPlanet() {
+  const input = document.getElementById("newPlanetName");
+  const name = input.value.trim();
+  if (!name) return;
+
+  const isMoonCheckbox = document.getElementById("isMoonCheckbox");
+  const isMoon = isMoonCheckbox.checked;
+
+ if (atlas[name]) {
+  alert(translations[currentLang].alert_planet_exists);
+  return;
+}
+
+  let parentPlanet = null;
+
+  if (isMoon) {
+    // przypadek 1: mamy wybraną planetę — OK
+    if (currentPlanet && !planetDetails[currentPlanet]?.parentPlanetId) {
+      parentPlanet = currentPlanet;
+    }
+    // przypadek 2: mamy wybranego księżyca — przypisz nowy do planety-rodzica
+    else if (currentPlanet && planetDetails[currentPlanet]?.parentPlanetId) {
+      parentPlanet = planetDetails[currentPlanet].parentPlanetId;
+      alert(
+      translations[currentLang].alert_moon_assigned.replace("{planet}", parentPlanet)
+    );
+    }
+    // przypadek 3: nie wybrano nic
+    else {
+      alert(translations[currentLang].alert_select_planet_for_moon);
+    return;
+    }
+  }
+
+  // wybór koloru
+  const colorHex = document.getElementById("PlanetColor").value || "#000000";
+  const textureBase64 = hexToBase64Texture(colorHex);
+
+  // Dodajemy do atlasu
+  atlas[name] = [];
+  addPoles(name);
+
+  // Dodaj pustą strukturę detali od razu:
+  planetDetails[name] = {
+    galaxy: currentGalaxy,
+    starSystem: isMoon ? planetDetails[parentPlanet]?.starSystem || "" : "",
+    planetSystem: isMoon ? planetDetails[parentPlanet]?.planetSystem || "" : "",
+    resources: [],
+    biome: "",
+    weather: "",
+    sentinels: "",
+    flora: "",
+    fauna: "",
+    discovered: "",
+    mode: "",
+    updated: "",
+    coords: "",
+    notes: "",
+    parentPlanetId: parentPlanet,
+    isMoon: !!parentPlanet
+  };
+
+  // Dodanie nowego wpisu do planetData
+  planetData.push({
+    name: name,
+    texture: textureBase64,  // Przypisanie koloru planety w formie tekstury
+    extraInfo: {}, // miejsce na dodatkowe, niestandardowe dane planety
+    createdAt: Date.now() //automatycznie zapisany czas dodania planety
+  });
+
+	if (!isMoon) currentPlanet = name; // jeśli księżyc – nie zmieniamy currentPlanet
+
+  updateCurrentPlanetHeader();
+  refreshPlanetList();
+  refreshPointsList();
+  refreshGlobePoints();
+  updateSelectedPlanetButtons();
+  refreshPlanetSidebar();
+  renderPlanetResourcesPanel();
+  updatePlanetMiniPanel();
+
+  // Ustaw od razu glob na wybraną teksturę
+  globe.globeImageUrl(textureBase64);
+
+  input.value = "";
+  checkNewPlanetInput();
+  alert(
+  translations[currentLang].alert_added_object.replace(
+    "{objectType}",
+    isMoon
+      ? (currentLang === "pl" ? "Księżyc" : "Moon")
+      : (currentLang === "pl" ? "Planetę" : "Planet")
+  ).replace("{name}", name)
+);
+  updateNoPlanetsMessage();
+}
+  
+// Lista planet
+// Zwraca dane do renderowania – tylko sortowanie i grupowanie
+function getGroupedPlanets() {
+  const createdAtMap = {};
+  (planetData || []).forEach(pd => {
+    if (pd && pd.name) createdAtMap[pd.name] = pd.createdAt || 0;
+  });
+
+  const structure = { "Nieznany": { "Nieznany": [] } };
+
+  Object.keys(atlas).forEach(p => {
+    const starSystem = (planetDetails[p]?.starSystem || "").trim() || "Nieznany";
+    const planetSystem = (planetDetails[p]?.planetSystem || "").trim() || "Nieznany";
+
+    if (!structure[starSystem]) structure[starSystem] = {};
+    if (!structure[starSystem][planetSystem]) structure[starSystem][planetSystem] = [];
+    structure[starSystem][planetSystem].push(p);
+  });
+
+  // Sortowanie wg daty utworzenia (zagnieżdżone)
+  const INF = Number.MAX_SAFE_INTEGER;
+
+  const sortedstarSystems = Object.keys(structure).sort((a, b) => {
+    if (a === "Nieznany") return -1;
+    if (b === "Nieznany") return 1;
+    return a.localeCompare(b);
+  });
+
+  return sortedstarSystems.map(starSystem => {
+    const planetSystemsObj = structure[starSystem];
+    const sortedplanetSystems = Object.keys(planetSystemsObj).sort((a, b) => {
+      if (a === "Nieznany") return -1;
+      if (b === "Nieznany") return 1;
+      return a.localeCompare(b);
+    });
+//Zwracamy gotową strukturę do wyrenderowania
+    return {
+      starSystem,
+      planetSystems: sortedplanetSystems.map(sys => ({
+        name: sys,
+        planets: planetSystemsObj[sys].sort((p1, p2) =>
+          (createdAtMap[p1] || INF) - (createdAtMap[p2] || INF)
+        )
+      }))
+    };
+  });
+}
+
+// Renderuje nagłówki i planety.
+  function refreshPlanetList() {
+  const list = document.getElementById("planetList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  const searchInput = document.getElementById("planetSearchInput");
+  const biomeFilter = document.getElementById("biomeFilter");
+  const aliasFilter = document.getElementById("biomeAliasFilter");
+  const resourceFilter = document.getElementById("resourceFilter");
+
+  const query = (searchInput?.value || "").trim().toLowerCase();
+  const selectedBiome = biomeFilter?.value || "";
+  const selectedAlias = aliasFilter?.value || "";
+  const selectedResource = resourceFilter?.value || "";
+
+  //Filtrujemy planety wg czterech kryteriów
+  const filtered = (planetData || []).filter(planet => {
+    const name = planet.name?.toLowerCase() || "";
+    const details = planetDetails[planet.name] || {};
+    const biome = (details.biome || "").toLowerCase();
+    const biomeAlias = (details.biomeAlias || "").toLowerCase();
+    const resources = (details.resources || []).map(r => r.toLowerCase());
+
+    const nameMatch = !query || name.includes(query);
+    const biomeMatch = !selectedBiome || biome === selectedBiome.toLowerCase();
+    const aliasMatch = !selectedAlias || biomeAlias === selectedAlias.toLowerCase();
+    const resourceMatch = !selectedResource || resources.includes(selectedResource.toLowerCase());
+
+    return nameMatch && biomeMatch && aliasMatch && resourceMatch;
+  });
+
+  //Wyświetlenie wyników
+  if (filtered.length === 0) {
+    const noResults = document.createElement("p");
+    noResults.textContent = "Nie znaleziono żadnych planet.";
+    list.appendChild(noResults);
+    return;
+  }
+
+  filtered.forEach(planet => {
+    const li = document.createElement("li");
+    li.textContent = planet.name || "Nieznana planeta";
+    li.style.cursor = "pointer";
+
+    if (planet.name === currentPlanet) {
+      li.style.fontWeight = "bold";
+      li.style.color = "#1976d2";
+    }
+
+    li.onclick = () => {
+      currentPlanet = planet.name;
+      currentGalaxy = planetDetails[currentPlanet]?.galaxy || null;
+
+      updateCurrentPlanetHeader();
+      loadPlanetDetails();
+      updateSelectedPlanetButtons();
+      refreshPlanetSidebar();
+      refreshGalaxySidebar();
+
+      // odśwież zaznaczenie
+      refreshPlanetList();
+    };
+
+    list.appendChild(li);
+  });
+}
+
+function clearFilters() {
+  document.getElementById("planetSearchInput").value = "";
+  document.getElementById("biomeFilter").value = "";
+  document.getElementById("biomeAliasFilter").value = "";
+  document.getElementById("resourceFilter").value = "";
+  refreshPlanetList();
+}
+
+function initPlanetFilters() {
+  const biomeSelect = document.getElementById("biomeFilter");
+  const aliasSelect = document.getElementById("biomeAliasFilter");
+  const nameInput = document.getElementById("planetSearchInput");
+  const resourceSelect = document.getElementById("resourceFilter");
+
+  if (!biomeSelect || !aliasSelect) return;
+
+
+  //Biomy – pobierane z biomeNames z tłumaczeniami
+
+  biomeSelect.innerHTML = `<option value="">${translations[currentLang]?.filters_all_biomes || "Wszystkie biomy"}</option>`;
+
+  Object.keys(biomeNames).forEach(biomeKey => {
+    const opt = document.createElement("option");
+    opt.value = biomeKey;
+    opt.textContent = biomeNames[biomeKey][currentLang] || biomeKey;
+    biomeSelect.appendChild(opt);
+  });
+
+
+  //Alias biomów – nowy format z tablicy biomeAliases
+
+  aliasSelect.innerHTML = `<option value="">${translations[currentLang]?.filters_all_aliases || "Wszystkie aliasy biomów"}</option>`;
+
+  biomeAliases.forEach(obj => {
+    const opt = document.createElement("option");
+    opt.value = obj.alias[currentLang].toLowerCase();
+    opt.textContent = `${obj.alias[currentLang]} (${biomeNames[obj.biome][currentLang] || obj.biome})`;
+    aliasSelect.appendChild(opt);
+  });
+
+  //Surowce – z globalnej listy icons (tylko type === "resource")
+
+  resourceSelect.innerHTML = `<option value="">${translations[currentLang]?.filters_all_resources || "Wszystkie pierwiastki"}</option>`;
+  icons
+    icons
+  .filter(icon => icon.type === "resource")
+  .forEach(icon => {
+    const opt = document.createElement("option");
+    opt.value = icon.name.toLowerCase();
+    const translatedName = resourceNames[icon.name]?.[currentLang] || icon.name;
+    opt.textContent = translatedName;
+    resourceSelect.appendChild(opt);
+  });
+
+
+  //Reakcja na zmianę filtrów / wyszukiwarki
+
+  [biomeSelect, aliasSelect, nameInput].forEach(el => {
+    if (el) el.addEventListener("input", refreshPlanetList);
+  });
+}
+
+//Dynamiczne odświeżanie po zmianie języka
+
+document.addEventListener("languageChanged", () => {
+  initPlanetFilters();
+});
+
+// Uruchamiamy po załadowaniu DOM
+document.addEventListener("DOMContentLoaded", () => {
+  initPlanetFilters();
+  refreshPlanetList(); // od razu wyświetlamy listę planet
+
+  // Obsługa zmiany języka
+  const langSelect = document.getElementById("languageSelector");
+  if (langSelect) {
+    langSelect.addEventListener("change", (e) => {
+      setLanguage(e.target.value);
+    });
+  }
+});
+
+// Tworzy pojedynczy wiersz
+function renderPlanetRow(p) {
+  const container = document.createElement("div");
+  container.style.display = "flex";
+  container.style.alignItems = "center";
+  container.style.margin = "0.2rem 0";
+
+  const btn = document.createElement("button");
+  btn.textContent = p;
+  btn.style.flex = "1";
+  btn.style.marginRight = "0.5rem";
+  btn.style.background = "#e5e5e5";
+  btn.style.color = "black";
+  btn.style.border = "none";
+  btn.style.padding = "0.3rem";
+  btn.style.borderRadius = "4px";
+  btn.style.cursor = "pointer";
+
+// Podświetlanie wybranej planety
+  if (p === currentPlanet) {
+    btn.style.background = "#1976d2";  // niebieski
+    btn.style.color = "white";
+    btn.style.fontWeight = "bold";
+  }
+  
+  btn.onclick = () => {
+    if (isEditing) return; // blokada w trybie edycji
+    currentPlanet = p;
+    updateCurrentPlanetHeader();
+    addPoles(p);
+    refreshGlobePoints();
+    globe.htmlElementsData(atlas[p].filter(pt => pt.type === "Pole"));
+    refreshPointsList();
+    loadPlanetDetails();
+    selectPlanet(p);
+    updateSelectedPlanetButtons();
+    refreshPlanetList(); // <-- odśwież listę, żeby przełączyć podświetlenie
+  };
+
+  container.appendChild(btn);
+  return container;
+}
+  
+ // Funkcja pomocnicza do aktualizacji planetData
+function updatePlanetData(name, extra = {}) {
+  const idx = planetData.findIndex(pd => pd.name === name);
+  if (idx !== -1) {
+    // aktualizacja istniejącego wpisu
+    planetData[idx].extraInfo = {...planetData[idx].extraInfo, ...extra};
+  } else {
+    // jeśli planeta nie istnieje, dodaj nową
+    planetData.push({
+      name: name,
+      extraInfo: extra,
+      createdAt: Date.now()
+    });
+  }
+}
+//Jest to uniwersalna funkcja updatePlanetData, która utrzymuje spójność tablicy planetData;
+//Można łatwo dodawać dodatkowe informacje do planet, bez zmieniania istniejących struktur atlas i planetDetails;
+//Nie zmienia się istniejący mechanizm dodawania, edycji ani usuwania planet – wszystko jest kompatybilne.
+
+// Funkcja aktualizująca stan przycisków w zależności od tego, czy planeta jest zaznaczona
+function updateSelectedPlanetButtons() {
+  const editBtn = document.getElementById("editSelectedPlanetBtn");
+  const delBtn  = document.getElementById("deleteSelectedPlanetBtn");
+  const enabled = !!currentPlanet;
+  editBtn.disabled = !enabled;
+  delBtn.disabled = !enabled;
+}
+
+// Wywołujemy po każdej zmianie zaznaczenia planety
+function selectPlanet(name) {
+  const planet = planetData.find(p => p.name === name);
+  if (!planet) return;
+  currentPlanet = planet.name;
+  updateCurrentPlanetHeader();
+  globe.globeImageUrl(planet.texture || blackTextureURL);
+  updateSelectedPlanetButtons();
+	renderPlanetResourcesPanel();
+	updatePlanetMiniPanel();
+}
+
+// Edycja zaznaczonej planety
+function editSelectedPlanet() {
+  if (!currentPlanet) {
+    alert(translations[currentLang].alert_select_planet_first);
+    return;
+  }
+  isEditing = true;
+  setButtonsDisabled(true);
+  
+const box = document.getElementById("editPlanetBox");
+  const input = document.getElementById("editPlanetName");
+
+  // wstawiamy aktualną nazwę planety
+  input.value = currentPlanet;
+
+  // pokazujemy placeholder z edycją
+  box.style.display = "flex";
+  box.style.gap = "0.5rem"; // żeby input i przyciski były ładnie obok siebie
+  input.focus();
+
+  // wyłącz inne przyciski
+  setButtonsDisabled(true);
+  }
+  
+// Zatwierdzenie edycji
+function acceptEditPlanet() {
+  const newName = document.getElementById("editPlanetName").value.trim();
+
+ if (!newName) {
+    alert(translations[currentLang].alert_enter_new_name);
+    return;
+  }
+
+  // Jeśli nazwa się zmieniła i już istnieje, blokujemy
+  if (newName !== currentPlanet && atlas[newName]) {
+    alert(translations[currentLang].alert_planet_exists);
+    return;
+  }
+
+  // Tylko jeśli zmieniamy nazwę faktycznie
+  if (newName !== currentPlanet) {
+    atlas[newName] = atlas[currentPlanet];
+    delete atlas[currentPlanet];
+
+    planetDetails[newName] = planetDetails[currentPlanet] || {};
+    delete planetDetails[currentPlanet];
+
+    const idx = planetData.findIndex(p => p.name === currentPlanet);
+    if (idx !== -1) planetData[idx].name = newName;
+
+    currentPlanet = newName; // ustawiamy nową nazwę jako aktywną
+  }
+
+  refreshPlanetList();
+  updateCurrentPlanetHeader();
+  updateSelectedPlanetButtons();
+  refreshPlanetSidebar();
+  document.getElementById("editPlanetBox").style.display = "none";
+  setButtonsDisabled(false);
+  isEditing = false;
+  setButtonsDisabled(false);
+  checkNewPlanetInput();
+	renderPlanetResourcesPanel();
+	updatePlanetMiniPanel();
+}
+
+  function cancelEditPlanet() {
+  // Ukryj box edycji
+  document.getElementById("editPlanetBox").style.display = "none";
+
+  // Odblokuj przyciski
+  setButtonsDisabled(false);
+
+  // Zakończ tryb edycji
+  isEditing = false;
+
+  // Sprawdź input nowej planety, żeby przycisk "Dodaj nową planetę" miał poprawny stan
+  checkNewPlanetInput();
+}
+  
+// Usunięcie zaznaczonej planety z potwierdzeniem
+function deleteSelectedPlanet() {
+  if (!currentPlanet) return;
+  if (!confirm(`Czy na pewno usunąć planetę "${currentPlanet}" wraz ze wszystkimi punktami?`)) return;
+
+  delete atlas[currentPlanet];
+  delete planetDetails[currentPlanet];
+  const idx = planetData.findIndex(p => p.name === currentPlanet);
+  if (idx !== -1) planetData.splice(idx, 1);
+
+  const planets = Object.keys(atlas);
+  currentPlanet = planets.length ? planets[0] : null;
+
+   if (currentPlanet) {
+    selectPlanet(currentPlanet); // ustawia od razu poprawną teksturę globu
+  } else {
+    globe.globeImageUrl(blackTextureURL); // brak planet → czarny glob
+  }
+  
+  updateCurrentPlanetHeader();
+  refreshPlanetList();
+  refreshPointsList();
+  refreshGlobePoints();
+  updateSelectedPlanetButtons();
+  refreshPlanetSidebar();
+	renderPlanetResourcesPanel();
+	updatePlanetMiniPanel();
+}
+
+// Wywołanie przy starcie, żeby przyciski były poprawnie wyszarzone jeśli brak planet
+updateSelectedPlanetButtons();
+
+// Funkcja pomocnicza (włącz/wyłącz przycisk
+function setButtonsDisabled(disabled) {
+  document.querySelectorAll(".lock-while-edit").forEach(btn => {
+    btn.disabled = disabled;
+  });
+}
+
+// Galaktyki
+function updateDefaultGalaxy(galaxy) {
+  defaultGalaxy = galaxy || "Euclid";
+  if (currentPlanet && planetDetails[currentPlanet]) {
+    planetDetails[currentPlanet].galaxy = defaultGalaxy;
+  }
+}
+
+
+// ustaw domyślną galaktykę w input na starcie.	
+document.addEventListener("DOMContentLoaded", () => {
+  const g = document.getElementById("galaxyInput");
+  if (g) g.value = currentGalaxy;
+  refreshGalaxySidebar();
+	renderPlanetResourcesPanel();
+});
+
+// Renderowanie listy checkboxów pierwiastków dla wybranej planety
+function renderPlanetResourcesPanel() {
+  const container = document.getElementById("planet-resources");
+  if (!container) return;
+
+  container.innerHTML = "";
+ 
+  // Grid 6 kolumn (ikona, checkbox, nazwa ×2)
+  const grid = document.createElement("div");
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = "40px 20px auto 40px 20px auto";
+  grid.style.gridGap = "4px";
+  grid.style.alignItems = "center";
+  container.appendChild(grid);
+  
+	// filtrujemy tylko ikony typu "resource"
+  icons.filter(res => res.type === "resource")
+    .forEach(res => {
+    // Ikona pierwiastka
+    const img = document.createElement("img");
+    img.src = res.icon;
+    img.alt = res.name;
+    img.style.width = "40px";
+    img.style.height = "40px";
+    grid.appendChild(img);
+
+    // Checkbox pierwiastka
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.disabled = !currentPlanet; // aktywny tylko jeśli planeta jest wybrana
+
+    // przechowujemy w dataset nazwę pierwiastka
+    checkbox.dataset.resource = res.name;
+
+    // ustawiamy stan checkboxa jeśli planeta istnieje
+    if (currentPlanet && planetDetails[currentPlanet]?.resources?.includes(res.name)) {
+      checkbox.checked = true;
+    }
+
+    // obsługa zmiany stanu
+    checkbox.addEventListener("change", () => {
+      if (!currentPlanet) return;
+
+      if (!planetDetails[currentPlanet]) planetDetails[currentPlanet] = { resources: [] };
+      const arr = planetDetails[currentPlanet].resources;
+
+      if (checkbox.checked) {
+        if (!arr.includes(res.name)) arr.push(res.name);
+      } else {
+        planetDetails[currentPlanet].resources = arr.filter(r => r !== res.name);
+      }
+	updatePlanetMiniPanel();
+		// egzekwuj limit po każdej zmianie
+        enforceResourceLimit(grid);
+    });
+
+    grid.appendChild(checkbox);
+
+    // Nazwa pierwiastka
+    const nameLabel = document.createElement("span");
+    const translatedName = resourceNames[res.name]?.[currentLang] || res.name;
+    nameLabel.textContent = translatedName;
+
+    nameLabel.style.textAlign = "left";
+    grid.appendChild(nameLabel);
+  });
+	// sprawdź limit przy pierwszym renderze
+  enforceResourceLimit(grid);
+}
+
+// Funkcja do pilnowania limitu pierwiastków
+function enforceResourceLimit(scopeEl) {
+  const checkboxes = scopeEl.querySelectorAll('input[type="checkbox"][data-resource]');
+  const checked = Array.from(checkboxes).filter(cb => cb.checked);
+
+  if (checked.length >= 12) {
+    checkboxes.forEach(cb => {
+      if (!cb.checked) cb.disabled = true;
+    });
+  } else {
+    checkboxes.forEach(cb => {
+      // tylko jeśli planeta jest wybrana (żeby zachować logikę)
+      cb.disabled = !currentPlanet ? true : false;
+    });
+  }
+}
+
+// Mini panel z inofo o planecie
+function updatePlanetMiniPanel() {
+  const panel = document.getElementById("planetMiniPanel");
+  if (!panel || !currentPlanet) return;
+
+	// blokada: jeśli panel jest ukryty, to nic nie rób
+  if (panel.classList.contains("hidden")) return;
+	
+ // reset zawartości panelu
+const contentEls = panel.querySelectorAll("div:not(:first-child)");
+  contentEls.forEach(el => el.remove());
+
+  const details = planetDetails[currentPlanet] || {};
+ 
+  // USTAWIENIA GLOBALNE dla minipanelu
+  const ICON_SIZE = 40;   // x2 (wcześniej było 20px)
+  const FONT_SIZE = "18px"; // x2 (wcześniej ~9px)
+ 
+	// === BIOM (ikona + tekst) ===
+   const biomeRow = document.createElement("div");
+  biomeRow.style.display = "flex";
+  biomeRow.style.alignItems = "center";
+  biomeRow.style.gap = "5px";
+
+  const biomeIcon = icons.find(i => i.type === "UI" && i.name === "Planet");
+  if (biomeIcon) {
+    const img = document.createElement("img");
+    img.src = biomeIcon.icon;
+    img.style.width = ICON_SIZE + "px";
+    img.style.height = ICON_SIZE + "px";
+    biomeRow.appendChild(img);
+  }
+
+  const biomeText = document.createElement("span");
+  let aliasDisplay = translations[currentLang]?.unknown_biome || "Nieznany biom";
+
+if (details.biome && details.biomeAlias) {
+  // znajdź w biomeAliases obiekt odpowiadający wybranemu aliasowi
+  const aliasObj = biomeAliases.find(a =>
+    a.biome === details.biome &&
+    (a.alias.pl === details.biomeAlias || a.alias.en === details.biomeAlias)
+  );
+
+  if (aliasObj) {
+    aliasDisplay = aliasObj.alias[currentLang]; // zawsze tłumaczenie w currentLang
+  }
+}
+
+biomeText.textContent = aliasDisplay;
+  biomeRow.appendChild(biomeText);
+
+if (details.biome) {
+  const aliasText = document.createElement("span");
+  const translatedBiome = biomeNames[details.biome][currentLang];
+  aliasText.textContent = `(${translatedBiome})`;
+  aliasText.style.fontStyle = "italic";
+  aliasText.style.color = "#555";
+  biomeRow.appendChild(aliasText);
+}
+
+  panel.appendChild(biomeRow);
+
+  // strażnicy -> ikona + opis
+  const sentinelsRow = document.createElement("div");
+  sentinelsRow.style.display = "flex";
+  sentinelsRow.style.alignItems = "center";
+  sentinelsRow.style.gap = "2px";
+	 
+  const sentinelIcon = icons.find(i => i.type === "UI" && i.name === "Sentinel");
+  if (sentinelIcon) {
+    const img = document.createElement("img");
+    img.src = sentinelIcon.icon;
+    img.alt = "Sentinel";
+    img.style.width = ICON_SIZE + "px";
+    img.style.height = ICON_SIZE + "px";
+    sentinelsRow.appendChild(img);
+  }
+
+  const sentinelsText = document.createElement("span");
+  sentinelsText.textContent = details.sentinels || translations[currentLang]?.unknown_sentinels || "Nieznani strażnicy";
+
+  sentinelsRow.appendChild(sentinelsText);
+
+  panel.appendChild(sentinelsRow);
+
+  // kontener na pierwiastki
+  const resourcesContainer = document.createElement("div");
+  resourcesContainer.style.display = "flex";
+  resourcesContainer.style.flexDirection = "column";
+  resourcesContainer.style.gap = "1px";
+	
+
+  const resources = details.resources || [];
+  const resourceIcons = icons.filter(i => i.type === "resource");
+  resources.forEach(resName => {
+    const resObj = icons.find(r => r.name === resName);
+    if (!resObj) return;
+
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.gap = "2px";
+
+    const img = document.createElement("img");
+    img.src = resObj.icon;
+    img.alt = resObj.name;
+    img.style.width = ICON_SIZE + "px";
+    img.style.height = ICON_SIZE + "px";
+
+    const label = document.createElement("span");
+    const translatedName = resourceNames[resObj.name]?.[currentLang] || resObj.name;
+    label.textContent = translatedName;
+
+
+    row.appendChild(img);
+    row.appendChild(label);
+    resourcesContainer.appendChild(row);
+  });
+
+  panel.appendChild(resourcesContainer);
+}
+
+	// Funkcja do toggle mini panelu
+function toggleMiniPanel() {
+  const miniPanel = document.getElementById("planetMiniPanel");
+  const btn = document.getElementById("toggleMiniPanelBtn");
+
+  miniPanel.classList.toggle("hidden");
+
+  if (miniPanel.classList.contains("hidden")) {
+    btn.textContent = "▲"; // panel ukryty → strzałka w górę
+  } else {
+    btn.textContent = "▼"; // panel widoczny → strzałka w dół
+    updatePlanetMiniPanel();
+  }
+}
+
+// Podłącz przycisk
+document.getElementById("toggleMiniPanelBtn").addEventListener("click", toggleMiniPanel);
+
+
+////////////////////////////////////////////////////////////////////
+//--------------- Punkty, lista, tworzenie, edycja ---------------//
+//////////////////////////////////////////////////////////////////// 
+
+// Ograniczenie zakresów imputów X I Y
+const latInput = document.getElementById("lat");
+const lngInput = document.getElementById("lng");
+
+function clampLatLng() {
+  let lat = parseFloat(latInput.value);
+  let lng = parseFloat(lngInput.value);
+
+  if (!isNaN(lat)) {
+    if (lat < -90) lat = -90;
+    if (lat > 90) lat = 90;
+    latInput.value = lat;
+  }
+
+  if (!isNaN(lng)) {
+    if (lng < -180) lng = -180;
+    if (lng > 180) lng = 180;
+    lngInput.value = lng;
+  }
+}
+
+// Nasłuchiwanie zmiany wartości
+latInput.addEventListener("input", clampLatLng);
+lngInput.addEventListener("input", clampLatLng);
+  
+// Lista punktow
+function refreshPointsList() {
+    const list = document.getElementById("pointsList");
+    list.innerHTML = "";
+    if (!currentPlanet || !atlas[currentPlanet]) return;
+
+    // Wszystkie zwykłe punkty (bez biegunów i mojej lokalizacji)
+    let points = atlas[currentPlanet].filter(p => p.type !== "Pole" && p.type !== "Moja");
+
+    // Filtrujemy przez wspólną funkcję
+    points = getFilteredPoints(points);
+
+    // Sortowanie
+    const sort = document.getElementById("sortPoints").value;
+    if (sort === "nameAsc") points.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    if (sort === "nameDesc") points.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
+    if (sort === "type") points.sort((a, b) => (a.type || "").localeCompare(b.type || ""));
+    if (sort === "newest") points.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    if (sort === "oldest") points.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    // Tworzenie elementów <li>
+    points.forEach(point => {
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.flexDirection = "column";
+        li.style.alignItems = "flex-start";
+
+        const info = document.createElement("span");
+        info.innerHTML = `${point.name || "Bez nazwy"} (${point.type})<br>X:${point.lat}, Y:${point.lng}`;
+        li.appendChild(info);
+
+        const btnDiv = document.createElement("div");
+        btnDiv.style.display = "flex";
+        btnDiv.style.gap = "0.5rem";
+
+        // Pokaż punkt
+        const showBtn = document.createElement("button");
+        showBtn.textContent = "Pokaż";
+        showBtn.className = "show";
+        showBtn.style.background = "#388e3c";
+        showBtn.style.color = "white";
+      
+        showBtn.onclick = () => {
+          globe.pointOfView({ lat: point.lat, lng: point.lng, altitude: 1.5 }, 1000);
+
+          // usuń highlight ze wszystkich punktów
+          atlas[currentPlanet].forEach(p => delete p.__highlight);
+          if (myLocationPoint) delete myLocationPoint.__highlight;
+
+          // zatrzymaj ewentualny stary timeout
+          if (highlightTimeout) {
+            clearTimeout(highlightTimeout);
+            highlightTimeout = null;
+          }
+
+          // ustaw highlight na klikniętym punkcie
+          point.__highlight = true;
+          refreshGlobePoints();
+
+          // zdejmij highlight po 2s
+          highlightTimeout = setTimeout(() => {
+            delete point.__highlight;
+            refreshGlobePoints();
+            highlightTimeout = null;
+          }, 2000);
+        };
+
+        btnDiv.appendChild(showBtn);
+
+        // Checkbox dla extracted/visited
+        if (point.type === "Zasób" || ["Inne", "Ruiny", "Struktura"].includes(point.type)) {
+	    const checkbox = document.createElement("input");
+	    checkbox.type = "checkbox";
+	    // ustawienie początkowego stanu
+	    checkbox.checked = point.type === "Zasób" ? !!point.extracted : !!point.visited;
+	
+	    // ustawienie początkowego tooltipa
+	    checkbox.title = checkbox.checked ? "Wydobyty / Odwiedzony" : "Niewydobyty / Nieodwiedzony";
+	
+	    checkbox.onchange = () => {
+	        if (point.type === "Zasób") point.extracted = checkbox.checked;
+	        else point.visited = checkbox.checked;
+	
+	        // aktualizacja tooltipa po zmianie stanu
+	        checkbox.title = checkbox.checked ? "Wydobyty / Odwiedzony" : "Niewydobyty / Nieodwiedzony";
+	
+	        refreshGlobePoints();
+	        refreshPointsList();
+	    };
+	    btnDiv.appendChild(checkbox);
+	}
+
+        // Edycja punktu
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edytuj";
+        editBtn.className = "edit";
+        editBtn.onclick = () => editPoint(point.timestamp); // Musimy jednoznacznie wskazać który punkt w atlasie edytujemy. Najprościej przekazywać nie indeks, tylko unikalny identyfikator (timestamp, który już dodajemy do każdego punktu).
+        btnDiv.appendChild(editBtn);
+
+        // Usuwanie punktu
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Usuń";
+        delBtn.className = "del";
+        delBtn.onclick = () => {
+            if (confirm(`Czy na pewno usunąć punkt "${point.name || "Bez nazwy"}" typu "${point.type}" o współrzędnych X:${point.lat}, Y:${point.lng}?`)) {
+                const idx = atlas[currentPlanet].findIndex(p => p.timestamp === point.timestamp);
+                if (idx !== -1) {
+                    atlas[currentPlanet].splice(idx, 1);
+                    refreshPointsList();
+                    refreshGlobePoints();
+                }
+            }
+        };
+        btnDiv.appendChild(delBtn);
+
+        li.appendChild(btnDiv);
+        list.appendChild(li);
+    });
+}
+
+function getFilteredPoints(points) {
+    const activeTypes = getActivePointTypes(); // checkboxy typów
+    const activeExtras = Array.from(document.querySelectorAll(".extraFilter:checked"))
+        .map(cb => cb.value); // checkboxy dodatkowe
+
+    return points.filter(p => {
+        // filtr po typach
+        if (!activeTypes.includes(p.type)) return false;
+        // filtr Wydobyty / Niewydobyty dla Zasób
+        if (p.type === "Zasób") {
+            const extracted = !!p.extracted;
+            if (extracted && !activeExtras.includes("Wydobyty")) return false; // wydobyty, ale filtr Wydobyty nie zaznaczony → ukryj
+            if (!extracted && !activeExtras.includes("Niewydobyty")) return false; // niewydobyty, ale filtr Niewydobyty nie zaznaczony → ukryj
+        }
+        // filtr Odwiedzony / Nieodwiedzony dla Ruiny/Struktura/Inne
+        if (["Ruiny", "Struktura", "Inne"].includes(p.type)) {
+            const visited = !!p.visited;
+            if (visited && !activeExtras.includes("Odwiedzony")) return false; // odwiedzony, filtr Odwiedzony nie zaznaczony → ukryj
+            if (!visited && !activeExtras.includes("Nieodwiedzony")) return false; // nieodwiedzony, filtr Nieodwiedzony nie zaznaczony → ukryj
+        }
+
+        return true;
+    });
+}
+
+ // Kliknięcie Edytuj nie usuwa punktu od razu.
+//Punkt jest tymczasowo przygotowany do edycji (ładuje się do formularza).
+//Dopiero kliknięcie Nadpisz punkt faktycznie zmienia dane.
+//Jak klikniesz „Punkty” bez zapisania → lista zostaje nietknięta.
+//Przycisk zmienia podpis w zależności od trybu.
+  
+function addPoint(){
+  if (!currentPlanet) {
+    alert(translations[currentLang].alert_select_planet_first_points);
+    return;
+  }
+
+  const lat = parseFloat(document.getElementById("lat").value);
+  const lng = parseFloat(document.getElementById("lng").value);
+  const name = document.getElementById("name").value.trim();
+  const type = document.getElementById("type").value;
+  const notes = document.getElementById("notes").value.trim();
+
+  // Sprawdzenie duplikatu
+  const exists = atlas[currentPlanet].some(p =>
+    p.lat === lat &&
+    p.lng === lng &&
+    p.name === name &&
+    p.type === type &&
+    p.notes === notes
+  );
+  if (exists) {
+    alert(
+      translations[currentLang].alert_point_exists
+        .replace("{type}", type)
+        .replace("{lat}", lat)
+        .replace("{lng}", lng)
+    );
+    return;
+  }
+  
+  if (isNaN(lat) || isNaN(lng)) {
+    alert(translations[currentLang].alert_invalid_coords);
+    return;
+  }
+
+  const point = {planet: currentPlanet, lat, lng, name, type, notes, timestamp: Date.now()};
+  // Domyślnie wszystkie punkty są odwiedzone i wydobyte
+    if(type === "Zasób") point.extracted = true; 
+    if(["Inne", "Ruiny", "Struktura"].includes(type)) point.visited = true; 
+    if (editIndex !== null && atlas[currentPlanet][editIndex]) {
+  atlas[currentPlanet][editIndex] = point;
+  // po nadpisaniu resetujemy stan edycji i chowamy Anuluj
+  cancelEditPoint();
+  openTab("punkty");
+} else {
+  atlas[currentPlanet].push(point);
+}
+   alert(
+  translations[currentLang].alert_add_point.replace("{name}", name)
+);
+  refreshPlanetList();
+  refreshGlobePoints();
+  refreshPointsList();
+}
+
+function editPoint(timestamp){   
+  if(!currentPlanet || !atlas[currentPlanet]) return;
+   
+  isEditing = true;
+  setButtonsDisabled(true);
+  
+  const index = atlas[currentPlanet].findIndex(p => p.timestamp === timestamp);
+  if(index === -1) return;
+
+  const p = atlas[currentPlanet][index];
+  document.getElementById("lat").value = p.lat;
+  document.getElementById("lng").value = p.lng;
+  document.getElementById("name").value = p.name;
+  document.getElementById("type").value = p.type;
+  document.getElementById("notes").value = p.notes;
+
+  editIndex = index; // zapamiętaj indeks prawidłowego punktu w atlasie
+  const addBtn = document.querySelector("button[onclick='addPoint()']");
+  addBtn.textContent = "Nadpisz punkt";
+
+  showCancelEditButton();
+
+  // przełączenie na zakładkę START
+  openTab('start');
+}
+
+function showCancelEditButton() {
+  let cancelBtn = document.getElementById("cancelEditBtn");
+  if (!cancelBtn) {
+    const addBtn = document.querySelector("button[onclick='addPoint()']");
+    
+    // kontener na przyciski, jeśli jeszcze nie istnieje
+    let btnWrapper = document.getElementById("editBtnWrapper");
+    if (!btnWrapper) {
+      btnWrapper = document.createElement("div");
+      btnWrapper.id = "editBtnWrapper";
+      btnWrapper.style.display = "flex";
+      btnWrapper.style.flexDirection = "column";
+      btnWrapper.style.gap = "0.5rem";
+      addBtn.parentNode.insertBefore(btnWrapper, addBtn);
+      btnWrapper.appendChild(addBtn);
+    }
+
+    cancelBtn = document.createElement("button");
+    cancelBtn.id = "cancelEditBtn";
+    cancelBtn.textContent = "Anuluj";
+    cancelBtn.style.backgroundColor = "#d32f2f"; // czerwony
+    cancelBtn.style.color = "white";
+    cancelBtn.style.border = "none";
+    cancelBtn.style.padding = "0.5rem";
+    cancelBtn.style.borderRadius = "6px";
+    cancelBtn.style.cursor = "pointer";
+    cancelBtn.onmouseover = () => cancelBtn.style.backgroundColor = "#b71c1c";
+    cancelBtn.onmouseout = () => cancelBtn.style.backgroundColor = "#d32f2f";
+
+    cancelBtn.onclick = cancelEditPoint;
+
+    btnWrapper.appendChild(cancelBtn);
+  }
+}
+
+function cancelEditPoint() {
+  editIndex = null;
+  const addBtn = document.querySelector("button[onclick='addPoint()']");
+  addBtn.textContent = "Dodaj punkt";
+
+  const cancelBtn = document.getElementById("cancelEditBtn");
+  if(cancelBtn) cancelBtn.remove();
+
+  document.getElementById("lat").value = "";
+  document.getElementById("lng").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("type").value = "Zasób";
+  document.getElementById("notes").value = "";
+
+  isEditing = false;
+  setButtonsDisabled(false);
+  openTab("punkty");
+}
+
+// Utomatyczne tworzenie biegunów
+function addPoles(planet){
+  if(!atlas[planet]) atlas[planet] = [];
+  if(!atlas[planet].some(p => p.type==="Pole")){
+    atlas[planet].push({lat:90,lng:0,name:"Biegun Północny",type:"Pole"});
+    atlas[planet].push({lat:-90,lng:0,name:"Biegun Południowy",type:"Pole"});
+  }
+}
+
+// Funkcja tworząca teksturę z gwiazdką
+function createStarTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = '48px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'yellow'; // kolor gwiazdki
+    ctx.fillText('⭐', canvas.width/2, canvas.height/2);
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
+ function updateMyLocation() {
+  const lat = parseFloat(document.getElementById("myLat").value);
+  const lng = parseFloat(document.getElementById("myLng").value);
+
+  if (isNaN(lat) || isNaN(lng)) {
+    myLocationPoint = null;
+  } else {
+    myLocationPoint = { 
+      lat, 
+      lng, 
+      altitude: 0.02, 
+      type: "Moja", 
+     };
+  }
+
+  refreshGlobePoints(); // rysujemy razem z resztą
+}
+
+document.getElementById("myLat").addEventListener("input", updateMyLocation);
+document.getElementById("myLng").addEventListener("input", updateMyLocation);
+
+// Ograniczenie zakresu dla mojej lokalizacji
+const myLatInput = document.getElementById("myLat");
+const myLngInput = document.getElementById("myLng");
+
+function clampMyLatLng() {
+  let lat = parseFloat(myLatInput.value);
+  let lng = parseFloat(myLngInput.value);
+
+  if (!isNaN(lat)) {
+    if (lat < -90) lat = -90;
+    if (lat > 90) lat = 90;
+    myLatInput.value = lat;
+  }
+
+  if (!isNaN(lng)) {
+    if (lng < -180) lng = -180;
+    if (lng > 180) lng = 180;
+    myLngInput.value = lng;
+  }
+}
+
+myLatInput.addEventListener("input", clampMyLatLng);
+myLngInput.addEventListener("input", clampMyLatLng);
+ 
+// odświeżamy glob z uwzględnieniem mnożnika wysokości
+ function refreshGlobePoints() {
+    if (!currentPlanet) return;
+
+    let allPoints = atlas[currentPlanet] ? [...atlas[currentPlanet]] : [];
+    if (myLocationPoint) allPoints.push(myLocationPoint);
+
+    const filteredPoints = getFilteredPoints(allPoints);
+
+    globe.pointsData(filteredPoints)
+        .pointAltitude(d => (d.altitude || 0.02) * pointsDistanceMultiplier);
+
+    globe.htmlElementsData(filteredPoints.filter(d => d.type === "Pole" || d.type === "Moja"));
+}
+
+// System filtrowania punktów
+function getActivePointTypes() {
+  return Array.from(document.querySelectorAll(".pointFilter:checked"))
+              .map(cb => cb.value);
+}
+ 
+////////////////////////////////////////////////////////////////////
+//------------------- Tekstury i kolory planet -------------------//
+////////////////////////////////////////////////////////////////////  
+
+function addTextureUrl() {
+  const texture = document.getElementById('planetTextureUrl').value.trim();
+  if (!texture) {
+    alert(translations[currentLang].alert_texture_url_required);
+    return;
+  }
+
+  // sprawdzenie podstawowe, URL musi zaczynać się od http(s):// lub textures/
+  if (!/^https?:\/\/|^textures\//.test(texture)) {
+    alert(translations[currentLang].alert_texture_invalid);
+    return;
+  }
+
+  // sprawdzamy, czy plik istnieje
+  const img = new Image();
+  img.src = texture;
+  img.onload = () => {
+    // obraz istnieje → zapisujemy w planetData
+    const planet = planetData.find(p => p.name === currentPlanet);
+    if (!planet) {
+      alert(translations[currentLang].alert_select_planet_first);
+      return;
+    }
+
+    // zapisz nową teksturę w danych planety
+    planet.texture = texture;
+
+    // ustaw teksturę na globie
+    globe.globeImageUrl(texture);
+
+    // dopisanie do listy textures, jeśli nowa
+    if (!textures.includes(texture)) {
+      textures.push(texture);
+      // ustaw stronę galerii tak, by nowa miniatura była widoczna
+      currentTexturePage = Math.floor((textures.length - 1) / TEXTURES_PER_PAGE);
+      renderTexturePage();
+    }
+
+    alert(
+      translations[currentLang].alert_texture_added.replace("{planet}", currentPlanet)
+    );
+  };
+  img.onerror = () => {
+    alert(translations[currentLang].alert_texture_load_error);
+  };
+}
+
+  // Przełącznik aktywnej planety
+  function selectPlanet(name) {
+  // Szuka w tablicy planet obiektu, który ma taki sam 'name'
+    const planet = planetData.find(p => p.name === name);
+  // Jeśli nic nie znalazła → kończy działanie
+    if (!planet) return; 
+
+  // Ustawia globalną zmienną currentPlanet na tę planetę
+    currentPlanet = planet.name;
+       
+  // Używamy tekstury planety jeśli istnieje, w przeciwnym razie czarna
+  const textureToUse = planet.texture ? planet.texture : blackTextureURL;
+globe.globeImageUrl(textureToUse);
+}
+
+  // Funkcja do zmiany koloru planety
+function changePlanetColor() {
+  if (!currentPlanet) {
+    alert(translations[currentLang].alert_select_planet_first);
+    return;
+  }
+
+  const colorHex = document.getElementById("PlanetColor").value || "#000000";
+  const textureBase64 = hexToBase64Texture(colorHex);
+
+  // znajdź wpis w planetData
+  const idx = planetData.findIndex(p => p.name === currentPlanet);
+  if (idx !== -1) {
+    planetData[idx].texture = textureBase64;
+    globe.globeImageUrl(textureBase64);
+    }
+}
+
+   // Funkcja sprawdzająca, czy w polu tekstury coś wpisano 
+function checkTextureInput() {
+  const input = document.getElementById("planetTextureUrl");
+  const button = input.nextElementSibling; // przycisk obok pola
+  button.disabled = input.value.trim() === "";
+}
+
+//Galeria miniatur 
+const textures = []; // lista wszystkich tekstur
+let currentTexturePage = 0;
+const TEXTURES_PER_PAGE = 12; // 2 wiersze x 6 kolumn
+
+// renderuje aktualną stronę galerii
+function renderTexturePage() {
+  const gallery = document.getElementById('textureGallery');
+  gallery.innerHTML = '';
+
+  const start = currentTexturePage * TEXTURES_PER_PAGE;
+  const end = start + TEXTURES_PER_PAGE;
+  const pageTextures = textures.slice(start, end);
+
+  pageTextures.forEach(tex => {
+    const img = document.createElement('img');
+    img.src = tex;
+    img.className = 'texture-thumb';
+    img.title = tex;
+    img.onclick = () => {
+      document.getElementById('planetTextureUrl').value = tex;
+      addTextureUrl();
+    };
+    gallery.appendChild(img);
+  });
+
+  // włącz/wyłącz przyciski
+  document.getElementById('prevTexturePage').disabled = currentTexturePage === 0;
+  document.getElementById('nextTexturePage').disabled = end >= textures.length;
+}
+
+// zmiana strony galerii
+function changeTexturePage(delta) {
+  currentTexturePage += delta;
+  renderTexturePage();
+}
+
+
+////////////////////////////////////////////////////////////////////
+//---------------- Eksport / Import Atlasu ---------------//
+////////////////////////////////////////////////////////////////////  
+
+function exportAtlas(){
+  const blob = new Blob([JSON.stringify({
+    atlas,
+    planetDetails,
+    planetData,
+    textures // dodajemy listę galerii do JSON
+  }, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "atlas.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importAtlas(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const data = JSON.parse(e.target.result);
+      if(data.atlas) atlas = data.atlas;
+      if(data.planetDetails) planetDetails = data.planetDetails;
+      if(data.planetData) planetData = data.planetData;
+      if(data.textures) {
+        textures.length = 0;        // wyczyść obecną listę
+        textures.push(...data.textures); // wczytaj importowane
+        currentTexturePage = 0;     // ustaw początkową stronę
+        renderTexturePage();        // odtwórz galerię
+      }
+      const planets = Object.keys(atlas);
+      currentPlanet = planets[0] || null;
+      if (currentPlanet) selectPlanet(currentPlanet);
+      else globe.globeImageUrl(blackTextureURL);
+
+      updateCurrentPlanetHeader();
+      refreshPlanetList();
+      refreshPointsList();
+      refreshGlobePoints();
+      updateNoPlanetsMessage();
+      refreshPlanetSidebar();
+	  refreshGalaxySidebar();
+
+      alert(translations[currentLang].alert_import_done);
+    } catch(err){ 
+      console.error(err);
+      alert(translations[currentLang].alert_import_error); 
+    }
+  };
+  reader.readAsText(file);
+}
+
+////////////////////////////////////////////////////////////////////
+//---------------- Skalowanie Globu i Punktów ----------------//
+////////////////////////////////////////////////////////////////////  
+  
+// Skalowanie punktów
+function updatePointScale(){
+  pointScale = parseFloat(document.getElementById("pointScale").value);
+  document.getElementById("pointScaleValue").textContent = pointScale;
+  refreshGlobePoints();
+}
+function resetPointScale(){
+  document.getElementById("pointScale").value = 0.4;
+  updatePointScale();
+}
+
+// Sklaowanie wysokości słupka
+function updatePointsDistanceMultiplier() {
+  pointsDistanceMultiplier = parseFloat(document.getElementById("pointsDistanceMultiplier").value);
+  document.getElementById("pointsDistanceMultiplierValue").textContent = pointsDistanceMultiplier;
+  refreshGlobePoints();
+}
+function resetPointsDistanceMultiplier(){
+  document.getElementById("pointsDistanceMultiplier").value = 1;
+  updatePointsDistanceMultiplier();
+}
+
+//Skalowanie wielkości planety
+function updateGlobeZoomMultiplier() {
+  globeZoomMultiplier = parseFloat(document.getElementById("globeZoomMultiplier").value);
+  document.getElementById("globeZoomMultiplierValue").textContent = globeZoomMultiplier;
+  globe.scene().scale.set(globeZoomMultiplier, globeZoomMultiplier, globeZoomMultiplier);
+}
+function resetGlobeZoomMultiplier(){
+  document.getElementById("globeZoomMultiplier").value = 1;
+  updateGlobeZoomMultiplier();
+}
+
+function toggleAutoRotate() {
+  const controls = globe.controls();
+  if (document.getElementById("autoRotateCheckbox").checked) {
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.7; // prędkość obrotu, możesz zmieniać
+  } else {
+    controls.autoRotate = false;
+  }
+}
+  
+////////////////////////////////////////////////////////////////////
+//---------------------- Inicjalizacja globu ---------------------//
+//////////////////////////////////////////////////////////////////// 
+  
+  // Tworzymy czarną teksturę globalnie, która zastąpi globeImageUrl(null). 
+  // Podczas tworzenia planet, jeśli od razu nie przypisywaliśmy tekstury i pozstawialiśmy pusty glob
+  // to generowało to błędy podczas przełączania się między planetami na liście planet - nie wyświetlało poprawnie globu. 
+  
+  const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+  
+  // Inicjalizacja globu — używamy https aby tło zawsze się załadowało
+const globe = Globe()(document.getElementById("globeViz"))
+  .globeImageUrl(null) // brak domyślnej mapy (pusta/ciemna kula)
+  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png') // 🌌 gwiazdy w tle
+
+  .pointLat("lat")
+  .pointLng("lng")
+  .pointLabel(d => {
+    // zabezpieczenie: gdy nie ma currentPlanet, zwracamy opis punktu pojedynczo
+    if (!currentPlanet || !atlas[currentPlanet]) {
+    let label = `${d.name || ""} (${d.type})<br>X:${d.lat}, Y:${d.lng}`;
+    if (d.type === "Zasób") label += d.extracted ? " [Wydobyty]" : " [Niewydobyty]";
+    if (["Ruiny","Struktura","Inne"].includes(d.type)) label += d.visited ? " [Odwiedzony]" : " [Nieodwiedzony]";
+    return label;
+
+  }
+
+    // grupowanie punktów w tym samym miejscu dla aktualnej planety
+     const sameLocation = atlas[currentPlanet].filter(p => p.lat === d.lat && p.lng === d.lng);
+      if (sameLocation.length > 1) {
+        return sameLocation.map(p => {
+          let label = `${p.name || "Bez nazwy"} (${p.type})`;
+          if (p.type === "Zasób") label += p.extracted ? " [Wydobyty]" : " [Niewydobyty]";
+          if (["Ruiny","Struktura","Inne"].includes(p.type)) label += p.visited ? " [Odwiedzony]" : " [Nieodwiedzony]";
+          return label;
+        }).join("<br>");
+      }
+
+      let label = `${d.name || ""} (${d.type})<br>X:${d.lat}, Y:${d.lng}`;
+      if (d.type === "Zasób") label += d.extracted ? " [Wydobyty]" : " [Niewydobyty]";
+      if (["Ruiny","Struktura","Inne"].includes(d.type)) label += d.visited ? " [Odwiedzony]" : " [Nieodwiedzony]";
+      return label;
+    })
+  .pointColor(d => {
+  if (d && d.__highlight) return "orange";   // zawsze najpierw sprawdź highlight
+                                             // wtedy nie trzeba nadpisywać pointColor w show i highlight będzie działać zawsze, przy każdym odświeżeniu.
+  switch (d.type) {
+    case "Zasób":     return d.extracted ? "gray" : "gold";
+    case "Baza":      return "blue";
+    case "Ruiny":     return d.visited ? "lime" : "orange";
+    case "Struktura": return d.visited ? "cyan" : "magenta";
+    case "Inne":      return d.visited ? "purple" : "brown";
+    case "Pole":      return "red";
+    default:          return "red";
+  }
+})
+  .pointRadius(() => pointScale)
+  .htmlElementsData([])
+  .htmlElement(d=>{
+    if(d.type==="Pole"){
+      const el=document.createElement("div");
+      el.style.color="white";
+      el.style.fontSize="20px";
+      el.style.fontWeight="bold";
+      el.style.textShadow="0 0 4px black";
+      el.textContent=d.name==="Biegun Północny"?"N":"S";
+      return el;
+    }
+    if (d.type === "Moja") {
+      const el = document.createElement("div");
+      el.style.color = "yellow";
+      el.style.fontSize = "22px";
+      el.style.fontWeight = "bold";
+      el.style.textShadow = "0 0 6px black";
+      el.textContent = "⭐";
+      return el;
+    }
+  });
+
+// Zaznaczenie punktów na globie 
+let pickMode = false;
+
+// znajdź przycisk
+const pickBtn = document.getElementById('pickOnGlobeBtn');
+
+// po kliknięciu włącz tryb wyboru
+pickBtn.addEventListener('click', (e) => {
+  e.stopPropagation(); // Zatrzymuje propagację, żeby event "poza globem" się nie odpalił
+  pickMode = !pickMode;
+  pickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
+  pickBtn.style.background = pickMode ? '#4CAF50' : '';
+});
+
+// nasłuchiwanie kliknięcia na globie
+globe.onGlobeClick((coords, event) => {
+  event.stopPropagation(); // ważne — kliknięcie w glob nie wyłączy trybu
+  if (!pickMode) return;
+
+  const { lat, lng } = coords;
+  document.getElementById('lat').value = lat.toFixed(3);
+  document.getElementById('lng').value = lng.toFixed(3);
+
+  pickBtn.textContent = 'Zaznacz na globie';
+  pickBtn.style.background = '';
+  pickMode = false;
+
+  alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
+});
+
+// Kliknięcie poza globem anuluje tryb wybierania
+document.addEventListener("click", (e) => {
+  if (!pickMode) return;
+
+  const globeEl = document.getElementById("globeWrapper");
+  if (!globeEl.contains(e.target) && e.target !== pickBtn) {
+    pickMode = false;
+    pickBtn.textContent = "Zaznacz na globie";
+    pickBtn.style.background = "";
+  }
+});
+
+
+let geoGridGroup = null;
+let geoLabelContainer = null;
+let labelDivs = [];
+
+// === FUNKCJA TWORZENIA SIATKI ===
+function addGeoGrid(scene, step = 10, color = '#888888', opacity = 0.3) {
+  if (geoGridGroup) scene.remove(geoGridGroup);
+
+  const radius = globe.getGlobeRadius();
+  const material = new THREE.LineBasicMaterial({ color: new THREE.Color(color), opacity, transparent: true });
+
+  geoGridGroup = new THREE.Group();
+
+  // równoleżniki
+  for (let lat = -90; lat <= 90; lat += step) {
+    const curve = new THREE.EllipseCurve(0, 0, radius * Math.cos(THREE.MathUtils.degToRad(lat)), radius * Math.cos(THREE.MathUtils.degToRad(lat)));
+    const points = curve.getPoints(100).map(p => new THREE.Vector3(p.x, radius * Math.sin(THREE.MathUtils.degToRad(lat)), p.y));
+    geoGridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
+  }
+
+  // południki
+  for (let lng = -180; lng < 180; lng += step) {
+    const points = [];
+    for (let lat = -90; lat <= 90; lat += 2) {
+      const phi = (90 - lat) * Math.PI / 180;
+      const theta = (lng + 180) * Math.PI / 180;
+      const x = -radius * Math.sin(phi) * Math.cos(theta);
+      const z = radius * Math.sin(phi) * Math.sin(theta);
+      const y = radius * Math.cos(phi);
+      points.push(new THREE.Vector3(x, y, z));
+    }
+    geoGridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
+  }
+
+  scene.add(geoGridGroup);
+}
+
+// === FUNKCJA TWORZENIA ETYKIET ===
+function addGeoLabels(step = 30, showSides = false, color = '#888888') {
+  if (geoLabelContainer) geoLabelContainer.remove();
+  labelDivs = [];
+
+  geoLabelContainer = document.createElement('div');
+  geoLabelContainer.style.position = 'absolute';
+  geoLabelContainer.style.pointerEvents = 'none';
+  geoLabelContainer.style.top = '0';
+  geoLabelContainer.style.left = '0';
+  document.body.appendChild(geoLabelContainer);
+
+  const camera = globe.camera();
+  const renderer = globe.renderer();
+  const radius = globe.getGlobeRadius();
+
+  function addLabel(lat, lng, text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    div.style.position = 'absolute';
+    div.style.fontSize = '10px';
+    div.style.color = color;
+    div.style.textShadow = '0 0 2px #000';
+    geoLabelContainer.appendChild(div);
+    labelDivs.push({ div, lat, lng });
+  }
+
+  // równoleżniki po 2 stronach globu
+  for (let lat = -90; lat <= 90; lat += step) {
+    addLabel(lat, 0, `${lat}°`);
+    addLabel(lat, 180, `${lat}°`);
+  }
+
+  // południki co step
+  for (let lng = -180; lng < 180; lng += step) {
+    addLabel(0, lng, `${lng}°`);
+  }
+
+	// dodatkowe etykiety ±90° na południkach ±90°
+	if (showSides) {
+	  for (let lat = -90; lat <= 90; lat += step) {
+		if (lat === -90 || lat === 90) continue; // pomiń bieguny
+		addLabel(lat, 90, `${lat}°`);
+		addLabel(lat, -90, `${lat}°`);
+	  }
+	}
+
+
+  function updateLabels() {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const cameraPosition = camera.position.clone();
+
+    labelDivs.forEach(({ div, lat, lng }) => {
+      const phi = (90 - lat) * Math.PI / 180;
+      const theta = (lng + 180) * Math.PI / 180;
+      const x = -radius * Math.sin(phi) * Math.cos(theta);
+      const z = radius * Math.sin(phi) * Math.sin(theta);
+      const y = radius * Math.cos(phi);
+
+      const worldVec = new THREE.Vector3(x, y, z);
+      const toCamera = cameraPosition.clone().sub(worldVec).normalize();
+      const normal = worldVec.clone().normalize();
+      const visible = normal.dot(toCamera) > 0;
+
+      if (visible) {
+        const vector = worldVec.clone().project(camera);
+        const x2d = rect.left + (vector.x * 0.5 + 0.5) * width;
+        const y2d = rect.top + (-vector.y * 0.5 + 0.5) * height;
+        div.style.transform = `translate(-50%, -50%) translate(${x2d}px, ${y2d}px)`;
+        div.style.display = 'block';
+      } else {
+        div.style.display = 'none';
+      }
+    });
+  }
+
+  globe.controls().addEventListener('change', updateLabels);
+  updateLabels();
+}
+
+// === OBSŁUGA UI ===
+const grid30Cb = document.getElementById('grid30');
+const grid10Cb = document.getElementById('grid10');
+const labels30Cb = document.getElementById('labels30');
+const labels10Cb = document.getElementById('labels10');
+const labelsSidesCb = document.getElementById('labelsSides');
+const colorInput = document.getElementById('gridColor');
+const opacityInput = document.getElementById('gridOpacity');
+
+function refreshGridAndLabels() {
+  // siatka
+  if (grid10Cb.checked) {
+    addGeoGrid(globe.scene(), 10, colorInput.value, parseFloat(opacityInput.value));
+  } else if (grid30Cb.checked) {
+    addGeoGrid(globe.scene(), 30, colorInput.value, parseFloat(opacityInput.value));
+  } else if (geoGridGroup) {
+    globe.scene().remove(geoGridGroup);
+    geoGridGroup = null;
+  }
+
+  // etykiety
+  let labelStep = 0;
+  if (labels10Cb.checked) labelStep = 10;
+  else if (labels30Cb.checked) labelStep = 30;
+
+  if (labelStep > 0) {
+    addGeoLabels(labelStep, labelsSidesCb.checked, colorInput.value);
+  } else if (geoLabelContainer) {
+    geoLabelContainer.remove();
+    geoLabelContainer = null;
+  }
+}
+
+[grid30Cb, grid10Cb, labels30Cb, labels10Cb, labelsSidesCb, colorInput, opacityInput].forEach(el =>
+  el.addEventListener('input', refreshGridAndLabels)
+);
+
+// domyślnie siatka co 10 i etykiety co 30
+grid10Cb.checked = true;
+labels30Cb.checked = true;
+refreshGridAndLabels();
+
+
+ 
+//Panel z ntotakami punktu	
+const pointNotesPanel = document.getElementById("pointNotesPanel");
+let autoScrollInterval = null;
+let autoScrollTimeout = null;
+
+globe.onPointHover(point => {
+  clearInterval(autoScrollInterval);
+  clearTimeout(autoScrollTimeout);
+  pointNotesPanel.scrollTop = 0; // zawsze start od góry
+
+  if (point && point.notes) {
+    pointNotesPanel.textContent = point.notes;
+    pointNotesPanel.style.display = "block";
+
+    // po 15 sekundach zaczynamy przewijanie w dół
+    autoScrollTimeout = setTimeout(() => {
+      autoScrollInterval = setInterval(() => {
+        if (
+          pointNotesPanel.scrollTop + pointNotesPanel.clientHeight <
+          pointNotesPanel.scrollHeight
+        ) {
+          pointNotesPanel.scrollTop += 1; // przewijamy 1px
+        } else {
+          clearInterval(autoScrollInterval); // zatrzymaj na końcu
+        }
+      }, 100); // prędkość scrolla (ms)
+    }, 12000); // start po 12 sekundach
+
+  } else {
+    pointNotesPanel.style.display = "none";
+  }
+});
+	
+// ustawienie punktów dla aktualnej planety
+if (currentPlanet && atlas[currentPlanet]) {
+  globe.pointsData(atlas[currentPlanet]);
+  globe.htmlElementsData(atlas[currentPlanet].filter(p => p.type === "Pole"));
+}
+//Nasłuchiwacze dla filtrów typów i dodatkowych
+  // Checkboxy typów punktów
+document.querySelectorAll(".pointFilter").forEach(cb => {
+    cb.addEventListener("change", () => {
+        refreshPointsList();
+        refreshGlobePoints();
+    });
+});
+
+// Checkboxy dodatkowe (Wydobyty/Niewydobyty/Odwiedzony/Nieodwiedzony)
+document.querySelectorAll(".extraFilter").forEach(cb => {
+    cb.addEventListener("change", () => {
+        refreshPointsList();
+        refreshGlobePoints();
+    });
+});
+
+	//Nasłuchuje stan Checkboxa księżyca i zmienia nazwę przycisku "Stwórz"
+	document.addEventListener("DOMContentLoaded", () => {
+	  const isMoonCheckbox = document.getElementById("isMoonCheckbox");
+	  const addPlanetBtn = document.getElementById("addPlanetBtn"); // Twój przycisk "Stwórz nową planetę"
+
+	  if (isMoonCheckbox && addPlanetBtn) {
+		// Na start ustaw właściwy tekst
+		addPlanetBtn.textContent = isMoonCheckbox.checked ? "Stwórz nowy księżyc" : "Stwórz nową planetę";
+
+		// Nasłuchiwanie na zmianę checkboxa
+		isMoonCheckbox.addEventListener("change", () => {
+		  addPlanetBtn.textContent = isMoonCheckbox.checked ? "Stwórz nowy księżyc" : "Stwórz nową planetę";
+		});
+	  }
+	});
+
+  //Nasłuchiwacz dla sortowania
+  const sortSelect = document.getElementById("sortPoints");
+if(sortSelect) {
+    sortSelect.addEventListener("change", () => {
+        refreshPointsList();
+    });
+}
+  
+ // inicjalizacja przycisków przewijania minigalerii na starcie
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById('prevTexturePage').disabled = true;
+  document.getElementById('nextTexturePage').disabled = true;
+  }); 
+
+//Włączenie tłumaczeń przy starcie strony
+document.addEventListener("DOMContentLoaded", () => {
+  setLanguage(currentLang); // ustaw domyślny język
+});
+
+// start
+window.onload = () => {
+  openTab("start"); // aktywuj pierwszą zakładkę
+  refreshPlanetList();
+  refreshPointsList();
+  updateNoPlanetsMessage();
+  checkNewPlanetInput();
+  updateCurrentPlanetHeader();
+  initPlanetFilters();
+  
+}
+  
+</script>
+</body>
+</html>
