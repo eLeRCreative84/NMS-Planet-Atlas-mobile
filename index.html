@@ -157,6 +157,9 @@
   </div>
 </div>
 
+
+
+
   <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
     <h2 data-i18n="start_importExport">Import/Eksport</h2>
     <button class="lock-while-edit" onclick="exportAtlas()" data-i18n="start_btn_export">Eksport JSON</button>
@@ -477,72 +480,84 @@
 <button id="confirmMove" style="display:none;">Zatwierdź zmiany</button>
 <button id="cancelMove" style="display:none;">Anuluj</button>
 <select id="skyboxSelect" onchange="setSkybox(this.value)">
-	<option value="sky1">Skybox 1</option>
-	<option value="sky2">Skybox 2</option>
-	<option value="sky3">Skybox 3</option>
-</select>
+  <option value="sky1">Skybox 1</option>
+  <option value="sky2">Skybox 2</option>
+  <option value="sky3">Skybox 3</option>
+  </select>
   </div>
+ 
+
+</div>  
 </div>
+	
+  <!-- Obszar wizualizacji globu -->
+  <div id="globeWrapper" style="position: relative;">
+    <!-- nagłówek overlay -->
+    <div id="planetOverlayHeader"></div>
+    <!-- nagłówek moja lokalizacja -->
+    <div id="myLocationBox" style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); color:white; padding:0.5rem; border-radius:8px; z-index:10;">
+      <div style="font-weight:bold; margin-bottom:0.5rem;" data-i18n="header_My_loc">Moja lokalizacja</div>
+      <label>X: <input type="number" id="myLat" step="1" style="width:70px;"></label>
+      <label>Y: <input type="number" id="myLng" step="1" style="width:70px;"></label>
+    </div>
+    <!-- glob -->
+    <div id="globeViz"></div>
+    <!-- Panel z listą planet po prawej stronie -->
+    
+    <div id="planetSidebar">
+  <h3 data-i18n="header_planet_list">Lista planet</h3>
+  <div id="planetListSidebar"></div>
 </div>
 
-<!-- 🔹 Jeden wspólny wrapper -->
-<div id="globeWrapper" style="position: relative; width:100%; height:100%; overflow:hidden;">
-	<!-- 🔸 GlobeGL (Three.js / Globe) -->
-	<div id="globeViz" class="activeScene"></div>
-	<!-- 🔸 Babylon (współdzielony kontekst) -->
-	<canvas id="babylonCanvas" class="hiddenScene" style="position: relative; width:100%; height:100%"></canvas>
-	<!-- 🔸 HUD / UI / Panele -->
-	<div id="planetOverlayHeader"></div>
-	<!-- nagłówek moja lokalizacja -->
-	<div id="myLocationBox" style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); color:white; padding:0.5rem; border-radius:8px; z-index:10;">
-		<div style="font-weight:bold; margin-bottom:0.5rem;" data-i18n="header_My_loc">Moja lokalizacja</div>
-		<label>X: <input type="number" id="myLat" step="1" style="width:70px;"></label>
-		<label>Y: <input type="number" id="myLng" step="1" style="width:70px;"></label>
-	</div>
-	<div id="planetSidebar">
-		<h3 data-i18n="header_planet_list">Lista planet</h3>
-		<div id="planetListSidebar"></div>
-	</div>
-	<div id="galaxySidebar">
-		<h3 data-i18n="header_galaxy_list">Galaktyki</h3>
-		<ul id="galaxyList"></ul>
-	</div>
-	<!-- Przycisk do pokazywania/ukrywania panelu -->
-	<button id="togglePlanetSidebarBtn">▶</button>
-	<!-- Info o planecie -->
-	<div id="planetMiniPanel">
-		<!-- Przycisk do pokazywania/ukrywania minipanelu -->
-		<button id="toggleMiniPanelBtn">▼</button>
-		<div id="miniPanelBiome"></div>
-		<div id="miniPanelResources"></div>
-		<div id="miniPanelSentinels"></div>
-	</div>
-	<!-- Panel z notatkami punktu -->
-	<div id="pointNotesPanel"></div>
+<div id="galaxySidebar">
+  <h3 data-i18n="header_galaxy_list">Galaktyki</h3>
+  <ul id="galaxyList"></ul>
+</div>
+    <!-- Przycisk do pokazywania/ukrywania panelu -->
+   <button id="togglePlanetSidebarBtn">▶</button>
+   
+     <!-- Info o planecie -->
+<div id="planetMiniPanel">
+		  <!-- Przycisk do pokazywania/ukrywania minipanelu -->
+	  <button id="toggleMiniPanelBtn">▼</button>
+  <div id="miniPanelBiome"></div>
+  <div id="miniPanelResources"></div>
+  <div id="miniPanelSentinels"></div>
+</div>
+   
+   <!-- Panel z notatkami punktu -->
+<div id="pointNotesPanel"></div>
+</div>
 
-	<!-- 🔸 HUD Babylon -->
+	<!--  Wrapper Babylon -->	
+ <div id="babylonWrapper" style="position: relative; width:100%; height:100%; display:none;">
+
+	 <!-- Babylon.js (ukryty na start) -->
+<canvas id="babylonCanvas" style="width:100%; height:100%; display:none;"></canvas> 
+	
 	<!-- Tooltip z podpowiedziami -->
-	<div id="moveTooltip" class="floating-tooltip">
+	  <div id="moveTooltip" class="floating-tooltip">
 		💡 <b>Ctrl</b> – przesuwanie tylko w osi <b>Y</b><br>
 		💡 <b>Shift</b> – przesuwanie tylko po płaszczyźnie <b>X/Z</b>
-	</div>
-	<!-- Sidebar Mapa galaktyki - nagłowek -->
-	<div id="regionMapHeader">Mapa galaktyki</div>
-	<div id="galaxyCenter">☀</div>
-	<div id="regionMap"></div>
-	<div id="regionControls">
-		<button id="enterGroup">+</button>
-		<button id="exitGroup">-</button>
-	</div>
-	<div id="groupNameLabel"></div>
-	<!-- Sidebar lista układów - nagłowek -->
-	<div id="solarListHeader">
-		Lista układów gwiezdnych
-	</div>
-	<!-- Sidebar lista układów -->
-	<div id="solarList"></div>
+	  </div>
+ 
+<!-- Sidebar Mapa galaktyki - nagłowek -->
+<div id="regionMapHeader">Mapa galaktyki</div>
+<div id="galaxyCenter">☀</div>
+<div id="regionMap"></div>
+<div id="regionControls">
+  <button id="enterGroup">+</button>
+  <button id="exitGroup">-</button>
 </div>
-
+<div id="groupNameLabel"></div>
+ <!-- Sidebar lista układów - nagłowek -->
+<div id="solarListHeader">
+  Lista układów gwiezdnych
+</div>
+  <!-- Sidebar lista układów -->
+<div id="solarList"></div>
+</div>
+	
 <script>
 let atlas = {};
 let planetDetails = {}; // szczegóły każdej planety
@@ -766,98 +781,19 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
 }
 
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
-let babylonEngine = null;
-let babylonScene = null;
-let babylonCamera = null;
-let babylonRenderLoopActive = false;
-let babylonInitialized = false;
-
-// wykryj czy to telefon (prosty heurystyczny warunek)
-const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-// ===============================
-// === FUNKCJE PRZEŁĄCZANIA ===
-// ===============================
-
 function showBabylonScene() {
-  console.log("[Babylon] Show Scene");
+  document.getElementById("globeWrapper").style.display = "none";
+  document.getElementById("babylonWrapper").style.display = "block";
 
-  // 1️⃣ Pauzuj i schowaj GlobeGL
-  if (window.globe) {
-    try {
-      if (globe.pause) globe.pause();
-      if (globe.renderer && globe.renderer.dispose) globe.renderer.dispose();
-    } catch (e) {
-      console.warn("Globe pause/dispose failed:", e);
-    }
-  }
-
-  const globeWrapper = document.getElementById("globeWrapper");
-  const babylonWrapper = document.getElementById("babylonWrapper");
-
-  globeWrapper.style.display = "none";
-  babylonWrapper.style.display = "block";
-
-  // 2️⃣ Lazy init Babylon
-  if (!babylonInitialized) {
-    initBabylon();
-    babylonInitialized = true;
-  }
-
-  // 3️⃣ Restart render loop
+  if (!babylonEngine) initBabylon();
   babylonRenderLoopActive = true;
-
-  // 4️⃣ Dodatkowe zabezpieczenie na telefonach
-  if (isMobile) {
-    // Na słabszych GPU wymuszamy 1 render na frame, bez multisamplingu
-    babylonEngine.setHardwareScalingLevel(1.5);
-    babylonScene.autoClear = true;
-    babylonScene.blockMaterialDirtyMechanism = true;
-  }
-
-  // 5️⃣ Dopasowanie rozmiaru
-  setTimeout(() => {
-    try {
-      babylonEngine.resize();
-    } catch (e) {}
-  }, 100);
+  setTimeout(() => babylonEngine.resize(), 100);
 }
 
 function hideBabylonScene() {
-  console.log("[Babylon] Hide Scene");
-
-  const globeWrapper = document.getElementById("globeWrapper");
-  const babylonWrapper = document.getElementById("babylonWrapper");
-
-  // 1️⃣ Zatrzymaj render loop
+  document.getElementById("babylonWrapper").style.display = "none";
+  document.getElementById("globeWrapper").style.display = "block";
   babylonRenderLoopActive = false;
-
-  // 2️⃣ Zwolnij GPU zasoby — tylko na mobile (ważne!)
-  if (isMobile && babylonScene && babylonEngine) {
-    try {
-      babylonScene.dispose();
-      babylonEngine.dispose();
-      babylonScene = null;
-      babylonEngine = null;
-      babylonInitialized = false;
-      console.log("[Babylon] Scene disposed (mobile safety mode)");
-    } catch (e) {
-      console.warn("Babylon dispose failed:", e);
-    }
-  }
-
-  // 3️⃣ Schowaj Babylon, pokaż GlobeGL
-  babylonWrapper.style.display = "none";
-  globeWrapper.style.display = "block";
-
-  // 4️⃣ Wznów GlobeGL
-  if (window.globe) {
-    try {
-      if (globe.resume) globe.resume();
-    } catch (e) {
-      console.warn("Globe resume failed:", e);
-    }
-  }
 }
 	
 ///////////////////////////////////////////////////////// Tłumaczenie //////////////////////////////////////////
