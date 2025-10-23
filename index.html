@@ -655,8 +655,6 @@ function initBabylonLite() {
     babylonScene
   );
   babylonCamera.attachControl(canvas, true);
-// Wyłącz ręczne sterowanie kamerą
-babylonCamera.inputs.clear(); // całkowicie usuwa inputy (mysz, dotyk, klawiatura)
   babylonCamera.minZ = 0.1;
   babylonCamera.maxZ = 20000;
   babylonCamera.lowerRadiusLimit = 50;
@@ -863,82 +861,61 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
 
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
 
+// === WŁĄCZ BABYLON ===
 function showBabylonScene() {
-  console.log("▶ Przełączanie na scenę Babylon");
+  console.log("→ Włączam Babylon, wyłączam GlobeGL");
 
-  // 🔹 Pauzuj GlobeGL, jeśli istnieje
+  // 🔹 Zatrzymaj i zniszcz GlobeGL (Three.js)
   if (window.globe) {
     try {
-      if (typeof globe.pause === "function") {
-        globe.pause();
-        console.log("🌍 GlobeGL: pauzowany");
-      } else if (globe.controls) {
-        globe.controls.autoRotate = false; // awaryjnie wyłącz rotację
-        console.log("🌍 GlobeGL: auto-rotate wyłączony (brak metody pause)");
+      if (typeof globe.pause === "function") globe.pause();
+      if (globe.renderer) {
+        globe.renderer.dispose();
+        globe.renderer.forceContextLoss?.();
+        globe.renderer.domElement = null;
       }
+      globe = null;
     } catch (e) {
-      console.warn("Nie udało się zatrzymać GlobeGL:", e);
+      console.warn("Błąd przy dispose GlobeGL:", e);
     }
   }
 
-  // 🔹 Ukryj GlobeGL wrapper
+  // 🔹 Uruchom Babylon
   document.getElementById("globeWrapper").style.display = "none";
-
-  // 🔹 Pokaż Babylon wrapper
   document.getElementById("babylonWrapper").style.display = "block";
 
-  // 🔹 Jeśli silnik nie istnieje — inicjuj
-  if (!babylonEngine) {
-    if (isMobile) {
-      console.log("📱 Tryb mobilny: initBabylonLite()");
-      initBabylonLite();
-    } else {
-      console.log("💻 Tryb desktop: initBabylon()");
-      initBabylon();
-    }
-  }
-
-  // 🔹 Aktywuj renderowanie
+  if (!babylonEngine) initBabylon();
   babylonRenderLoopActive = true;
   setTimeout(() => babylonEngine.resize(), 100);
 }
 
-// === WYŁĄCZ BABYLON I WRÓĆ DO GLOBE ===
+// === WYŁĄCZ BABYLON ===
 function hideBabylonScene() {
-  console.log("⏹ Wyłączanie sceny Babylon");
+  console.log("→ Włączam GlobeGL, wyłączam Babylon");
 
-  // 🔹 Dezaktywuj render loop
-  babylonRenderLoopActive = false;
-
-  // 🔹 Zniszcz scenę i silnik (zwolnienie GPU)
+  // 🔹 Zniszcz Babylon
   if (babylonScene) {
-    babylonScene.dispose();
+    try { babylonScene.dispose(); } catch {}
     babylonScene = null;
   }
   if (babylonEngine) {
-    babylonEngine.dispose();
+    try { babylonEngine.dispose(); } catch {}
     babylonEngine = null;
   }
 
-  // 🔹 Ukryj Babylon wrapper
-  document.getElementById("babylonWrapper").style.display = "none";
+  babylonRenderLoopActive = false;
 
-  // 🔹 Pokaż GlobeGL wrapper i wznow rotację
+  // 🔹 Ponownie uruchom GlobeGL
+  document.getElementById("babylonWrapper").style.display = "none";
   document.getElementById("globeWrapper").style.display = "block";
-  if (window.globe) {
-    try {
-      if (typeof globe.resume === "function") {
-        globe.resume();
-        console.log("🌍 GlobeGL: wznowiony");
-      } else if (globe.controls) {
-        globe.controls.autoRotate = true; // fallback
-        console.log("🌍 GlobeGL: auto-rotate ponownie włączony");
-      }
-    } catch (e) {
-      console.warn("Nie udało się wznowić GlobeGL:", e);
-    }
+
+  if (!window.globe && typeof initGlobe === "function") {
+    initGlobe(); // ponowna inicjalizacja GlobeGL
+  } else if (window.globe && typeof globe.resume === "function") {
+    globe.resume();
   }
 }
+
 	
 ///////////////////////////////////////////////////////// Tłumaczenie //////////////////////////////////////////
 let currentLang = "pl"; // domyślny język
