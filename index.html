@@ -766,40 +766,97 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
 }
 
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
+let babylonEngine = null;
+let babylonScene = null;
+let babylonCamera = null;
+let babylonRenderLoopActive = false;
+let babylonInitialized = false;
+
+// wykryj czy to telefon (prosty heurystyczny warunek)
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+// ===============================
+// === FUNKCJE PRZEŁĄCZANIA ===
+// ===============================
+
 function showBabylonScene() {
-  const globe = document.getElementById("globeViz");
-  const babylon = document.getElementById("babylonCanvas");
+  console.log("[Babylon] Show Scene");
 
-  globe.classList.remove("activeScene");
-  globe.classList.add("hiddenScene");
-  babylon.classList.remove("hiddenScene");
-  babylon.classList.add("activeScene");
-
-  // Pauzujemy GlobeGL
-  if (window.globe && typeof globe.pause === "function") {
-    globe.pause();
+  // 1️⃣ Pauzuj i schowaj GlobeGL
+  if (window.globe) {
+    try {
+      if (globe.pause) globe.pause();
+      if (globe.renderer && globe.renderer.dispose) globe.renderer.dispose();
+    } catch (e) {
+      console.warn("Globe pause/dispose failed:", e);
+    }
   }
 
-  // Inicjalizacja Babylon tylko raz
-  if (!babylonEngine) initBabylon();
+  const globeWrapper = document.getElementById("globeWrapper");
+  const babylonWrapper = document.getElementById("babylonWrapper");
+
+  globeWrapper.style.display = "none";
+  babylonWrapper.style.display = "block";
+
+  // 2️⃣ Lazy init Babylon
+  if (!babylonInitialized) {
+    initBabylon();
+    babylonInitialized = true;
+  }
+
+  // 3️⃣ Restart render loop
   babylonRenderLoopActive = true;
-  setTimeout(() => babylonEngine.resize(), 100);
+
+  // 4️⃣ Dodatkowe zabezpieczenie na telefonach
+  if (isMobile) {
+    // Na słabszych GPU wymuszamy 1 render na frame, bez multisamplingu
+    babylonEngine.setHardwareScalingLevel(1.5);
+    babylonScene.autoClear = true;
+    babylonScene.blockMaterialDirtyMechanism = true;
+  }
+
+  // 5️⃣ Dopasowanie rozmiaru
+  setTimeout(() => {
+    try {
+      babylonEngine.resize();
+    } catch (e) {}
+  }, 100);
 }
 
 function hideBabylonScene() {
-  const globe = document.getElementById("globeViz");
-  const babylon = document.getElementById("babylonCanvas");
+  console.log("[Babylon] Hide Scene");
 
-  babylon.classList.remove("activeScene");
-  babylon.classList.add("hiddenScene");
-  globe.classList.remove("hiddenScene");
-  globe.classList.add("activeScene");
+  const globeWrapper = document.getElementById("globeWrapper");
+  const babylonWrapper = document.getElementById("babylonWrapper");
 
+  // 1️⃣ Zatrzymaj render loop
   babylonRenderLoopActive = false;
 
-  // Wznawiamy GlobeGL
-  if (window.globe && typeof globe.resume === "function") {
-    globe.resume();
+  // 2️⃣ Zwolnij GPU zasoby — tylko na mobile (ważne!)
+  if (isMobile && babylonScene && babylonEngine) {
+    try {
+      babylonScene.dispose();
+      babylonEngine.dispose();
+      babylonScene = null;
+      babylonEngine = null;
+      babylonInitialized = false;
+      console.log("[Babylon] Scene disposed (mobile safety mode)");
+    } catch (e) {
+      console.warn("Babylon dispose failed:", e);
+    }
+  }
+
+  // 3️⃣ Schowaj Babylon, pokaż GlobeGL
+  babylonWrapper.style.display = "none";
+  globeWrapper.style.display = "block";
+
+  // 4️⃣ Wznów GlobeGL
+  if (window.globe) {
+    try {
+      if (globe.resume) globe.resume();
+    } catch (e) {
+      console.warn("Globe resume failed:", e);
+    }
   }
 }
 	
