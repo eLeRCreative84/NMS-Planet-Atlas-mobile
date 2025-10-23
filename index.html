@@ -559,6 +559,8 @@
 </div>
 	
 <script>
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); // wykrywanie trybu mobilnego
+	
 let atlas = {};
 let planetDetails = {}; // szczegóły każdej planety
 let planetData = []; // lista planet z dodatkowymi info
@@ -609,7 +611,58 @@ function regionIndexKey(ix, iz) {
 }
 
 // === INICJALIZACJA SCENY BABYLON ===
+function initBabylonLite() {
+  const canvas = document.getElementById("babylonCanvas");
+  canvas.style.display = "block";
 
+  babylonEngine = new BABYLON.Engine(canvas, true, {
+    preserveDrawingBuffer: false,
+    stencil: false,
+    disableWebGL2Support: false
+  });
+
+  babylonScene = new BABYLON.Scene(babylonEngine);
+  babylonScene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+  babylonScene.autoClearDepthAndStencil = false;
+  babylonScene.skipFrustumClipping = true;
+
+  // 🔹 Kamera z ograniczeniami
+  babylonCamera = new BABYLON.ArcRotateCamera(
+    "cam",
+    Math.PI / 4,
+    Math.PI / 3,
+    1000,
+    new BABYLON.Vector3(0, 0, 0),
+    babylonScene
+  );
+  babylonCamera.attachControl(canvas, true);
+  babylonCamera.lowerRadiusLimit = 50;
+  babylonCamera.upperRadiusLimit = 3000;
+
+  // 🔹 Proste światło
+  new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
+
+  // 🔹 Materiały bez PBR i tekstur
+  pointMat = new BABYLON.StandardMaterial("pointMat", babylonScene);
+  pointMat.emissiveColor = new BABYLON.Color3(0, 1, 0);
+
+  selectedMat = new BABYLON.StandardMaterial("selectedMat", babylonScene);
+  selectedMat.emissiveColor = new BABYLON.Color3(1, 0, 0);
+
+  // 🔹 Wyłączamy niepotrzebne efekty
+  babylonScene.blockMaterialDirtyMechanism = true;
+  babylonScene.autoClear = true;
+  babylonScene.skipPointerMovePicking = true;
+  babylonScene.constantlyUpdateMeshUnderPointer = false;
+
+  babylonEngine.runRenderLoop(() => {
+    babylonScene.render();
+  });
+
+  window.addEventListener("resize", () => babylonEngine.resize());
+}
+
+	
 // === Skybox ===
 let skybox = null;
 let skyboxMaterial = null;
@@ -637,6 +690,13 @@ function setSkybox(name) {
 }
 
 function initBabylon() {
+	
+	if (isMobile) {
+    console.log("Uruchamiam uproszczony tryb Babylon (mobile safe)");
+    initBabylonLite();
+    return;
+  }
+	
   const canvas = document.getElementById("babylonCanvas");
    canvas.style.display = "block";
   babylonEngine = new BABYLON.Engine(canvas, true);
