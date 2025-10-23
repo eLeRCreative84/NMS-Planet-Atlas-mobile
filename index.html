@@ -640,31 +640,25 @@ function setSkybox(name) {
 }
 
 function initBabylonLite(canvas) {
-  // Prosty silnik z redukcją pamięci
-  babylonEngine = new BABYLON.Engine(canvas, true, {
-    preserveDrawingBuffer: false,
-    stencil: false,
-    disableWebGL2Support: false
-  });
-
+ const canvas = document.getElementById("babylonCanvas");
+   canvas.style.display = "block";
+  babylonEngine = new BABYLON.Engine(canvas, true);
   babylonScene = new BABYLON.Scene(babylonEngine);
-  babylonScene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 
-  // Minimalna kamera
+  // === Kamera i światło ===
   babylonCamera = new BABYLON.ArcRotateCamera(
-    "liteCam",
-    Math.PI / 3,
+    " babylonCamera",
     Math.PI / 4,
-    1000,
-    new BABYLON.Vector3(0, 0, 0),
+    Math.PI / 4,
+    600,
+    new BABYLON.Vector3(REGION_WIDTH / 2, 128, REGION_DEPTH / 2),
     babylonScene
   );
   babylonCamera.attachControl(canvas, true);
-  babylonCamera.panningSensibility = 30;
-  babylonCamera.upperRadiusLimit = 2000;
+  babylonCamera.minZ = 0.1;
+  babylonCamera.maxZ = 20000;
   babylonCamera.lowerRadiusLimit = 50;
-
-  new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
+  babylonCamera.upperRadiusLimit = 8000;
   
 	  //zwiększamy szybkość przesuwania sceny (prawy przycisk myszy)
 	babylonCamera.panningSensibility = 10;  // mniejsza liczba = szybsze przesuwanie
@@ -673,7 +667,7 @@ function initBabylonLite(canvas) {
 
 
   new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
-  
+ 
     // 🔹 Kluczowe optymalizacje
   babylonEngine.setHardwareScalingLevel(1.5); // render w mniejszej rozdzielczości
   babylonScene.autoClear = true;
