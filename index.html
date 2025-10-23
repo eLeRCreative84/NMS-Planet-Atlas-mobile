@@ -861,60 +861,51 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
 
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
 
-// === WŁĄCZ BABYLON ===
-function showBabylonScene() {
-  console.log("→ Włączam Babylon, wyłączam GlobeGL");
-
-  // 🔹 Zatrzymaj i zniszcz GlobeGL (Three.js)
-  if (window.globe) {
-    try {
-      if (typeof globe.pause === "function") globe.pause();
-      if (globe.renderer) {
-        globe.renderer.dispose();
-        globe.renderer.forceContextLoss?.();
-        globe.renderer.domElement = null;
-      }
-      globe = null;
-    } catch (e) {
-      console.warn("Błąd przy dispose GlobeGL:", e);
-    }
+function hideGlobeScene() {
+  if (window.globe && globe.renderer) {
+    try { globe.renderer.dispose(); } catch (e) {}
+    globe = null;
+    console.log("🌍 GlobeGL disposed");
   }
-
-  // 🔹 Uruchom Babylon
+}
+// === WŁĄCZ / WYŁĄCZ BABYLON ===
+function showBabylonScene() {
+  // Ukryj GlobeGL wizualnie
   document.getElementById("globeWrapper").style.display = "none";
   document.getElementById("babylonWrapper").style.display = "block";
 
-  if (!babylonEngine) initBabylon();
-  babylonRenderLoopActive = true;
-  setTimeout(() => babylonEngine.resize(), 100);
+  // 🟢 Jeśli telefon – najpierw zniszcz GlobeGL (by zwolnić WebGL context)
+  if (isMobile) {
+    console.log("📱 Tryb mobilny – wyłączam GlobeGL przed uruchomieniem Babylon...");
+    hideGlobeScene(); // dispose GlobeGL + zatrzymaj render
+    setTimeout(() => {
+      if (!babylonEngine) initBabylon();
+      babylonRenderLoopActive = true;
+      setTimeout(() => babylonEngine.resize(), 100);
+    }, 200);
+  } else {
+    // 🖥️ Desktop – normalne przełączenie
+    if (!babylonEngine) initBabylon();
+    babylonRenderLoopActive = true;
+    setTimeout(() => babylonEngine.resize(), 100);
+  }
 }
 
-// === WYŁĄCZ BABYLON ===
 function hideBabylonScene() {
-  console.log("→ Włączam GlobeGL, wyłączam Babylon");
-
-  // 🔹 Zniszcz Babylon
-  if (babylonScene) {
-    try { babylonScene.dispose(); } catch {}
-    babylonScene = null;
-  }
-  if (babylonEngine) {
-    try { babylonEngine.dispose(); } catch {}
-    babylonEngine = null;
-  }
-
-  babylonRenderLoopActive = false;
-
-  // 🔹 Ponownie uruchom GlobeGL
+  // Ukryj Babylon, przywróć Globe
   document.getElementById("babylonWrapper").style.display = "none";
   document.getElementById("globeWrapper").style.display = "block";
+  babylonRenderLoopActive = false;
 
-  if (!window.globe && typeof initGlobe === "function") {
-    initGlobe(); // ponowna inicjalizacja GlobeGL
-  } else if (window.globe && typeof globe.resume === "function") {
-    globe.resume();
+  // 🔄 Po wyjściu z Babylona na telefonie – odtwórz GlobeGL
+  if (isMobile) {
+    console.log("📱 Tryb mobilny – ponownie uruchamiam GlobeGL...");
+    setTimeout(() => {
+      initGlobeScene(); // Twoja funkcja inicjalizująca GlobeGL
+    }, 200);
   }
 }
+
 
 	
 ///////////////////////////////////////////////////////// Tłumaczenie //////////////////////////////////////////
