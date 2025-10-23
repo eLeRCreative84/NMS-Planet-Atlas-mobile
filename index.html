@@ -640,41 +640,42 @@ function setSkybox(name) {
 }
 
 function initBabylonLite(canvas) {
-  // Prosty silnik z redukcją pamięci
-  babylonEngine = new BABYLON.Engine(canvas, true, {
-    preserveDrawingBuffer: false,
-    stencil: false,
-    disableWebGL2Support: false
-  });
-
+  const canvas = document.getElementById("babylonCanvas");
+   canvas.style.display = "block";
+  babylonEngine = new BABYLON.Engine(canvas, true);
   babylonScene = new BABYLON.Scene(babylonEngine);
-  babylonScene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 
-  // Minimalna kamera
+  // === Kamera i światło ===
   babylonCamera = new BABYLON.ArcRotateCamera(
-    "liteCam",
-    Math.PI / 3,
+    " babylonCamera",
     Math.PI / 4,
-    1000,
-    new BABYLON.Vector3(0, 0, 0),
+    Math.PI / 4,
+    600,
+    new BABYLON.Vector3(REGION_WIDTH / 2, 128, REGION_DEPTH / 2),
     babylonScene
   );
   babylonCamera.attachControl(canvas, true);
-  babylonCamera.panningSensibility = 30;
-  babylonCamera.upperRadiusLimit = 2000;
+  babylonCamera.minZ = 0.1;
+  babylonCamera.maxZ = 20000;
   babylonCamera.lowerRadiusLimit = 50;
+  babylonCamera.upperRadiusLimit = 8000;
+  
+	  //zwiększamy szybkość przesuwania sceny (prawy przycisk myszy)
+	babylonCamera.panningSensibility = 10;  // mniejsza liczba = szybsze przesuwanie
+	babylonCamera.panningInertia = 0.8;      // mniejsza = mniej bezwładności (bardziej responsywne)
+	babylonCamera.panningAxis = new BABYLON.Vector3(1, 1, 0); // standardowe przesuwanie w poziomie i pionie
+
 
   new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
-
-  // 🔹 Kluczowe optymalizacje
+  
+    // 🔹 Kluczowe optymalizacje
   babylonEngine.setHardwareScalingLevel(1.5); // render w mniejszej rozdzielczości
   babylonScene.autoClear = true;
   babylonScene.blockMaterialDirtyMechanism = true;
   babylonScene.skipPointerMovePicking = true; // mniej testów kursora
   babylonScene.useRightHandedSystem = false;
-
-  // Nie tworzymy skyboxów ani wielu meshów – tylko podstawowe punkty
-setSkybox("sky1");
+ 
+ setSkybox("sky1");
 
 //Materiały
     pointMat = new BABYLON.StandardMaterial("pointMat", babylonScene);
@@ -690,18 +691,21 @@ setSkybox("sky1");
       regions[key] = { pointsData: [], edges: [] };
     }
   }
-	
-  
-  // Start renderowania
+
+
+  // === Render loop (raz na zawsze) ===
   babylonEngine.runRenderLoop(() => {
-    if (babylonScene && babylonScene.activeCamera) {
+    if (babylonRenderLoopActive && babylonScene.activeCamera) {
       babylonScene.render();
     }
   });
 
+  // === Reakcja na resize okna ===
   window.addEventListener("resize", () => {
     if (babylonEngine) babylonEngine.resize();
   });
+
+  console.log("Babylon.js scene initialized");
 }
 	
 function initBabylon() {
