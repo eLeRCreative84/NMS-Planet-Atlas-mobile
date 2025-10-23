@@ -639,7 +639,7 @@ function setSkybox(name) {
   babylonScene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 }
 
-function initBabylonLite(canvas) {
+function initBabylonLite() {
  const canvas = document.getElementById("babylonCanvas");
    canvas.style.display = "block";
   babylonEngine = new BABYLON.Engine(canvas, true);
@@ -705,7 +705,7 @@ function initBabylonLite(canvas) {
     if (babylonEngine) babylonEngine.resize();
   });
 
-  console.log("Babylon.js scene initialized");
+  console.log("Babylon.js Lite scene initialized (mobile-safe)");
 }
 	
 function initBabylon() {
