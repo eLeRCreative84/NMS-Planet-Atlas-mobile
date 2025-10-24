@@ -797,7 +797,7 @@ function showBabylonScene() {
 	hideGlobeScene(); // dispose GlobeGL + zatrzymaj render
     setTimeout(() => {
       if (!babylonEngine) initBabylon();
-      babylonRenderLoopActive = true;/
+      babylonRenderLoopActive = true;
 		// krótki timeout, aby browser miał czas zwolnić zasoby
       setTimeout(() => babylonEngine.resize(), 100);
     }, 200);
