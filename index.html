@@ -799,9 +799,44 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
 
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
 function hideGlobeScene() {
-  if (window.globe && globe.renderer) {
-    try { globe.renderer.dispose(); } catch (e) {}
-    globe = null;
+  const wrapper = document.getElementById("globeWrapper");
+  wrapper.style.display = "none";
+
+  if (globe) {
+    try {
+      const renderer = globe.renderer();
+      const scene = globe.scene();
+      const controls = globe.controls();
+
+      // usuń nasłuchy i requestAnimationFrame z controls
+      controls.dispose();
+
+      // usuń wszystkie obiekty ze sceny
+      while (scene.children.length > 0) {
+        const obj = scene.children.pop();
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(m => m.dispose());
+          } else obj.material.dispose();
+        }
+      }
+
+      // zwolnij tekstury i GPU buffer
+      renderer.dispose();
+
+      // usuń div z etykietami (jeśli był)
+      if (geoLabelContainer) {
+        geoLabelContainer.remove();
+        geoLabelContainer = null;
+      }
+
+      // usuń referencje do obiektu globe
+      globe = null;
+      console.log("GlobeGL disposed");
+    } catch (err) {
+      console.warn("Błąd podczas dispose GlobeGL:", err);
+    }
   }
 }
 	
