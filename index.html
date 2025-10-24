@@ -575,7 +575,7 @@ let myLocationPoint = null;
 let isEditing = false; // globalna flaga
 let highlightTimeout = null;
 let headerLock = true; // blokada na starcie celem zablokowania możliwości nadpisania nagłówka
-		
+let globe = null;		
 ////////////////////////////////////////////////////////////////////
 //----------------- Zakładki i inne elementy UI -----------------//
 //////////////////////////////////////////////////////////////////// 
@@ -605,6 +605,10 @@ let loadedRegionKey = null;
 let pointMat = null;
 let selectedMat = null;
 
+let geoGridGroup = null;
+let geoLabelContainer = null;
+let labelDivs = [];
+	
 // ======= FUNKCJA TWORZĄCA KLUCZ REGIONU =======
 function regionIndexKey(ix, iz) {
   return `${ix}_${iz}`;
@@ -4059,8 +4063,6 @@ function toggleAutoRotate() {
   // Podczas tworzenia planet, jeśli od razu nie przypisywaliśmy tekstury i pozstawialiśmy pusty glob
   // to generowało to błędy podczas przełączania się między planetami na liście planet - nie wyświetlało poprawnie globu. 
   
-let globe = null;
-
 //czarny piksel używany jako placeholder
 const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
@@ -4192,11 +4194,6 @@ document.addEventListener("click", (e) => {
     pickBtn.style.background = "";
   }
 });
-
-
-let geoGridGroup = null;
-let geoLabelContainer = null;
-let labelDivs = [];
 
 // === FUNKCJA TWORZENIA SIATKI ===
 function addGeoGrid(scene, step = 10, color = '#888888', opacity = 0.3) {
