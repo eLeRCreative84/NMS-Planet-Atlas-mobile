@@ -559,8 +559,6 @@
 </div>
 	
 <script>
-const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); // wykrywanie trybu mobilnego
-	
 let atlas = {};
 let planetDetails = {}; // szczegóły każdej planety
 let planetData = []; // lista planet z dodatkowymi info
@@ -638,88 +636,12 @@ function setSkybox(name) {
 
   babylonScene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 }
-
-function initBabylonLite() {
- const canvas = document.getElementById("babylonCanvas");
-   canvas.style.display = "block";
-  babylonEngine = new BABYLON.Engine(canvas, true);
-  babylonScene = new BABYLON.Scene(babylonEngine);
-
-  // === Kamera i światło ===
-  babylonCamera = new BABYLON.ArcRotateCamera(
-    " babylonCamera",
-    Math.PI / 4,
-    Math.PI / 4,
-    600,
-    new BABYLON.Vector3(REGION_WIDTH / 2, 128, REGION_DEPTH / 2),
-    babylonScene
-  );
-  babylonCamera.attachControl(canvas, true);
-  babylonCamera.minZ = 0.1;
-  babylonCamera.maxZ = 20000;
-  babylonCamera.lowerRadiusLimit = 50;
-  babylonCamera.upperRadiusLimit = 8000;
-  
-	  //zwiększamy szybkość przesuwania sceny (prawy przycisk myszy)
-	babylonCamera.panningSensibility = 10;  // mniejsza liczba = szybsze przesuwanie
-	babylonCamera.panningInertia = 0.8;      // mniejsza = mniej bezwładności (bardziej responsywne)
-	babylonCamera.panningAxis = new BABYLON.Vector3(1, 1, 0); // standardowe przesuwanie w poziomie i pionie
-
-
-  new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
- 
-    // 🔹 Kluczowe optymalizacje
-  babylonEngine.setHardwareScalingLevel(1.5); // render w mniejszej rozdzielczości
-  babylonScene.autoClear = true;
-  babylonScene.blockMaterialDirtyMechanism = true;
-  babylonScene.skipPointerMovePicking = true; // mniej testów kursora
-  babylonScene.useRightHandedSystem = false;
- 
- setSkybox("sky1");
-
-//Materiały
-    pointMat = new BABYLON.StandardMaterial("pointMat", babylonScene);
-    pointMat.emissiveColor = new BABYLON.Color3(0,1,0); // zielony
-
-    selectedMat = new BABYLON.StandardMaterial("selectedMat", babylonScene);
-    selectedMat.emissiveColor = new BABYLON.Color3(1,0,0); // czerwony
-
-  // === Inicjalizacja struktur regionów ===
-  for (let iz = 0; iz < REGIONS_AXIS; iz++) {
-    for (let ix = 0; ix < REGIONS_AXIS; ix++) {
-      const key = regionIndexKey(ix, iz);
-      regions[key] = { pointsData: [], edges: [] };
-    }
-  }
-
-
-  // === Render loop (raz na zawsze) ===
-  babylonEngine.runRenderLoop(() => {
-    if (babylonRenderLoopActive && babylonScene.activeCamera) {
-      babylonScene.render();
-    }
-  });
-
-  // === Reakcja na resize okna ===
-  window.addEventListener("resize", () => {
-    if (babylonEngine) babylonEngine.resize();
-  });
-
-  console.log("Babylon.js Lite scene initialized (mobile-safe)");
-}
 	
 function initBabylon() {
-	
-	if (isMobile) {
-    console.log("Uruchamiam uproszczony tryb Babylon (mobile safe)");
-    initBabylonLite();
-    return;
-  }
-	
   const canvas = document.getElementById("babylonCanvas");
-   canvas.style.display = "block";
-  babylonEngine = new BABYLON.Engine(canvas, true);
-  babylonScene = new BABYLON.Scene(babylonEngine);
+	canvas.style.display = "block";
+	babylonEngine = new BABYLON.Engine(canvas, true);
+	babylonScene = new BABYLON.Scene(babylonEngine);
 
   // === Kamera i światło ===
   babylonCamera = new BABYLON.ArcRotateCamera(
@@ -844,69 +766,58 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   }
 });
 
-  // === Render loop (raz na zawsze) ===
-  babylonEngine.runRenderLoop(() => {
-    if (babylonRenderLoopActive && babylonScene.activeCamera) {
-      babylonScene.render();
-    }
-  });
+  // === Render loop ===
+  if (!babylonEngine._renderLoopRegistered) {
+    babylonEngine.runRenderLoop(() => {
+      if (babylonRenderLoopActive && babylonScene && babylonScene.activeCamera) {
+        babylonScene.render();
+      }
+    });
+    babylonEngine._renderLoopRegistered = true;
+  }
 
   // === Reakcja na resize okna ===
   window.addEventListener("resize", () => {
     if (babylonEngine) babylonEngine.resize();
   });
-
-  console.log("Babylon.js scene initialized");
 }
 
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
-
 function hideGlobeScene() {
   if (window.globe && globe.renderer) {
     try { globe.renderer.dispose(); } catch (e) {}
     globe = null;
-    console.log("🌍 GlobeGL disposed");
   }
 }
-// === WŁĄCZ / WYŁĄCZ BABYLON ===
+	
 function showBabylonScene() {
   // Ukryj GlobeGL wizualnie
   document.getElementById("globeWrapper").style.display = "none";
   document.getElementById("babylonWrapper").style.display = "block";
-
-  // 🟢 Jeśli telefon – najpierw zniszcz GlobeGL (by zwolnić WebGL context)
-  if (isMobile) {
-    console.log("📱 Tryb mobilny – wyłączam GlobeGL przed uruchomieniem Babylon...");
-    hideGlobeScene(); // dispose GlobeGL + zatrzymaj render
+	hideGlobeScene(); // dispose GlobeGL + zatrzymaj render
     setTimeout(() => {
       if (!babylonEngine) initBabylon();
-      babylonRenderLoopActive = true;
+      babylonRenderLoopActive = true;/
+		// krótki timeout, aby browser miał czas zwolnić zasoby
       setTimeout(() => babylonEngine.resize(), 100);
     }, 200);
-  } else {
-    // 🖥️ Desktop – normalne przełączenie
-    if (!babylonEngine) initBabylon();
-    babylonRenderLoopActive = true;
-    setTimeout(() => babylonEngine.resize(), 100);
-  }
-}
+  } 
 
 function hideBabylonScene() {
   // Ukryj Babylon, przywróć Globe
   document.getElementById("babylonWrapper").style.display = "none";
   document.getElementById("globeWrapper").style.display = "block";
+  // dispose Babylon bezpośrednio, zwalniamy WebGL zasoby
   babylonRenderLoopActive = false;
-
-  // 🔄 Po wyjściu z Babylona na telefonie – odtwórz GlobeGL
-  if (isMobile) {
-    console.log("📱 Tryb mobilny – ponownie uruchamiam GlobeGL...");
-    setTimeout(() => {
-      initGlobeScene(); // Twoja funkcja inicjalizująca GlobeGL
-    }, 200);
-  }
+  if (babylonScene) try { babylonScene.dispose(); } catch(e){}
+  if (babylonEngine) try { babylonEngine.dispose(); } catch(e){}
+  babylonScene = null;
+  babylonEngine = null;
+	// krótki timeout, aby browser miał czas zwolnić zasoby
+	setTimeout(() => {
+		initGlobeScene(); // funkcja inicjalizująca GlobeGL
+	}, 200);
 }
-
-
 	
 ///////////////////////////////////////////////////////// Tłumaczenie //////////////////////////////////////////
 let currentLang = "pl"; // domyślny język
@@ -4098,28 +4009,42 @@ function toggleAutoRotate() {
   // Podczas tworzenia planet, jeśli od razu nie przypisywaliśmy tekstury i pozstawialiśmy pusty glob
   // to generowało to błędy podczas przełączania się między planetami na liście planet - nie wyświetlało poprawnie globu. 
   
-  const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+ // --- Globalne zmienne dla Globe 
+let globe = null;
+let geoGridGroup = null;
+let geoLabelContainer = null;
+let labelDivs = [];
 
-  
-  // Inicjalizacja globu — używamy https aby tło zawsze się załadowało
-const globe = Globe()(document.getElementById("globeViz"))
-  .globeImageUrl(null) // brak domyślnej mapy (pusta/ciemna kula)
-  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png') // 🌌 gwiazdy w tle
+//czarny piksel używany jako placeholder
+const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
-  .pointLat("lat")
-  .pointLng("lng")
-  .pointLabel(d => {
-    // zabezpieczenie: gdy nie ma currentPlanet, zwracamy opis punktu pojedynczo
-    if (!currentPlanet || !atlas[currentPlanet]) {
-    let label = `${d.name || ""} (${d.type})<br>X:${d.lat}, Y:${d.lng}`;
-    if (d.type === "Zasób") label += d.extracted ? " [Wydobyty]" : " [Niewydobyty]";
-    if (["Ruiny","Struktura","Inne"].includes(d.type)) label += d.visited ? " [Odwiedzony]" : " [Nieodwiedzony]";
-    return label;
-
+//Inicjalizacja globu
+function initGlobeScene() {
+  const globeEl = document.getElementById("globeViz");
+  if (!globeEl) {
+    console.warn("initGlobeScene: brak elementu #globeViz");
+    return;
   }
 
-    // grupowanie punktów w tym samym miejscu dla aktualnej planety
-     const sameLocation = atlas[currentPlanet].filter(p => p.lat === d.lat && p.lng === d.lng);
+ 
+  // utwórz glob i przypisz do globalnej zmiennej
+  globe = Globe()(globeEl)
+    .globeImageUrl(null) // // brak domyślnej mapy (pusta/ciemna kula)
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png') // gwiazdy w tle
+    .pointLat("lat")
+    .pointLng("lng")
+    .pointLabel(d => {
+	
+	// zabezpieczenie: gdy nie ma currentPlanet, zwracamy opis punktu pojedynczo
+      if (!currentPlanet || !atlas[currentPlanet]) {
+        let label = `${d.name || ""} (${d.type})<br>X:${d.lat}, Y:${d.lng}`;
+        if (d.type === "Zasób") label += d.extracted ? " [Wydobyty]" : " [Niewydobyty]";
+        if (["Ruiny","Struktura","Inne"].includes(d.type)) label += d.visited ? " [Odwiedzony]" : " [Nieodwiedzony]";
+        return label;
+      }
+	
+	// grupowanie punktów w tym samym miejscu dla aktualnej planety
+      const sameLocation = atlas[currentPlanet].filter(p => p.lat === d.lat && p.lng === d.lng);
       if (sameLocation.length > 1) {
         return sameLocation.map(p => {
           let label = `${p.name || "Bez nazwy"} (${p.type})`;
@@ -4134,42 +4059,47 @@ const globe = Globe()(document.getElementById("globeViz"))
       if (["Ruiny","Struktura","Inne"].includes(d.type)) label += d.visited ? " [Odwiedzony]" : " [Nieodwiedzony]";
       return label;
     })
-  .pointColor(d => {
-  if (d && d.__highlight) return "orange";   // zawsze najpierw sprawdź highlight
-                                             // wtedy nie trzeba nadpisywać pointColor w show i highlight będzie działać zawsze, przy każdym odświeżeniu.
-  switch (d.type) {
-    case "Zasób":     return d.extracted ? "gray" : "gold";
-    case "Baza":      return "blue";
-    case "Ruiny":     return d.visited ? "lime" : "orange";
-    case "Struktura": return d.visited ? "cyan" : "magenta";
-    case "Inne":      return d.visited ? "purple" : "brown";
-    case "Pole":      return "red";
-    default:          return "red";
-  }
-})
-  .pointRadius(() => pointScale)
-  .htmlElementsData([])
-  .htmlElement(d=>{
-    if(d.type==="Pole"){
-      const el=document.createElement("div");
-      el.style.color="white";
-      el.style.fontSize="20px";
-      el.style.fontWeight="bold";
-      el.style.textShadow="0 0 4px black";
-      el.textContent=d.name==="Biegun Północny"?"N":"S";
-      return el;
-    }
-    if (d.type === "Moja") {
-      const el = document.createElement("div");
-      el.style.color = "yellow";
-      el.style.fontSize = "22px";
-      el.style.fontWeight = "bold";
-      el.style.textShadow = "0 0 6px black";
-      el.textContent = "⭐";
-      return el;
-    }
-  });
+    .pointColor(d => {
+      if (d && d.__highlight) return "orange"; // zawsze najpierw sprawdź highlight
+	  
+	  // wtedy nie trzeba nadpisywać pointColor w show i highlight będzie działać zawsze, przy każdym odświeżeniu.
+      switch (d.type) {
+        case "Zasób":     return d.extracted ? "gray" : "gold";
+        case "Baza":      return "blue";
+        case "Ruiny":     return d.visited ? "lime" : "orange";
+        case "Struktura": return d.visited ? "cyan" : "magenta";
+        case "Inne":      return d.visited ? "purple" : "brown";
+        case "Pole":      return "red";
+        default:          return "red";
+      }
+    })
+    .pointRadius(() => pointScale)
+    .htmlElementsData([])
+    .htmlElement(d => {
+      if (d.type === "Pole") {
+        const el = document.createElement("div");
+        el.style.color = "white";
+        el.style.fontSize = "20px";
+        el.style.fontWeight = "bold";
+        el.style.textShadow = "0 0 4px black";
+        el.textContent = d.name === "Biegun Północny" ? "N" : "S";
+        return el;
+      }
+      if (d.type === "Moja") {
+        const el = document.createElement("div");
+        el.style.color = "yellow";
+        el.style.fontSize = "22px";
+        el.style.fontWeight = "bold";
+        el.style.textShadow = "0 0 6px black";
+        el.textContent = "⭐";
+        return el;
+      }
+      return null;
+    });
 
+  refreshGridAndLabels(); // odśwież siatkę/etykiety zgodnie z checkboxami
+}
+	
 // Zaznaczenie punktów na globie 
 let pickMode = false;
 
@@ -4373,8 +4303,6 @@ function refreshGridAndLabels() {
 grid10Cb.checked = true;
 labels30Cb.checked = true;
 refreshGridAndLabels();
-
-
  
 //Panel z ntotakami punktu	
 const pointNotesPanel = document.getElementById("pointNotesPanel");
@@ -4466,6 +4394,11 @@ document.addEventListener("DOMContentLoaded", () => {
   setLanguage(currentLang); // ustaw domyślny język
 });
 
+//automatyczne uruchomienie globu przy starcie strony
+window.addEventListener("DOMContentLoaded", () => {
+  initGlobeScene();
+});
+	
 // start
 window.onload = () => {
   openTab("start"); // aktywuj pierwszą zakładkę
@@ -4475,7 +4408,6 @@ window.onload = () => {
   checkNewPlanetInput();
   updateCurrentPlanetHeader();
   initPlanetFilters();
-  
 }
   
 </script>
