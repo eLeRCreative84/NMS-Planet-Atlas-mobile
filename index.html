@@ -645,15 +645,7 @@ function initBabylon() {
 	babylonEngine = new BABYLON.Engine(canvas, true);
 	babylonScene = new BABYLON.Scene(babylonEngine);
 
-	if (isMobile) {
-  babylonEngine.setHardwareScalingLevel(1.5);
-  babylonScene.autoClear = true;
-  babylonScene.blockMaterialDirtyMechanism = true;
-  babylonScene.skipPointerMovePicking = true;
-  babylonCamera.inputs.clear(); // brak dotyku i obrotu
-  babylonRenderLoopActive = true;
-}
-	
+
   // === Kamera i światło ===
   babylonCamera = new BABYLON.ArcRotateCamera(
     " babylonCamera",
@@ -668,7 +660,19 @@ function initBabylon() {
   babylonCamera.maxZ = 20000;
   babylonCamera.lowerRadiusLimit = 50;
   babylonCamera.upperRadiusLimit = 8000;
+
+if (isMobile) {
+  // Usuń WSZYSTKIE inputy – blokuje obracanie, pinch, pan
+  babylonCamera.inputs.clear();
+  babylonCamera.detachControl();
   
+  // Dodatkowe optymalizacje mobilne
+  babylonEngine.setHardwareScalingLevel(1.5);
+  babylonScene.autoClear = true;
+  babylonScene.blockMaterialDirtyMechanism = true;
+  babylonScene.skipPointerMovePicking = true;
+}
+	
 	  //zwiększamy szybkość przesuwania sceny (prawy przycisk myszy)
 	babylonCamera.panningSensibility = 10;  // mniejsza liczba = szybsze przesuwanie
 	babylonCamera.panningInertia = 0.8;      // mniejsza = mniej bezwładności (bardziej responsywne)
