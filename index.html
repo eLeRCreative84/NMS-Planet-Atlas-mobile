@@ -574,7 +574,10 @@ let myLocationPoint = null;
 let isEditing = false; // globalna flaga
 let highlightTimeout = null;
 let headerLock = true; // blokada na starcie celem zablokowania możliwości nadpisania nagłówka
-let globe = null;		
+
+let globe = null;	
+let globeInitialized = false;
+let globeDisposed = false;
 ////////////////////////////////////////////////////////////////////
 //----------------- Zakładki i inne elementy UI -----------------//
 //////////////////////////////////////////////////////////////////// 
@@ -801,16 +804,14 @@ function hideGlobeScene() {
   const wrapper = document.getElementById("globeWrapper");
   wrapper.style.display = "none";
 
-  if (globe) {
+  if (globe && !globeDisposed) {
     try {
+      console.log("🧹 Dispose GlobeGL...");
       const renderer = globe.renderer();
       const scene = globe.scene();
       const controls = globe.controls();
 
-      // usuń nasłuchy i requestAnimationFrame z controls
       controls.dispose();
-
-      // usuń wszystkie obiekty ze sceny
       while (scene.children.length > 0) {
         const obj = scene.children.pop();
         if (obj.geometry) obj.geometry.dispose();
@@ -820,21 +821,19 @@ function hideGlobeScene() {
           } else obj.material.dispose();
         }
       }
-
-      // zwolnij tekstury i GPU buffer
       renderer.dispose();
 
-      // usuń div z etykietami (jeśli był)
       if (geoLabelContainer) {
         geoLabelContainer.remove();
         geoLabelContainer = null;
       }
 
-      // usuń referencje do obiektu globe
       globe = null;
-      console.log("GlobeGL disposed");
+      globeDisposed = true;
+      globeInitialized = false;
+      console.log("✅ GlobeGL disposed successfully");
     } catch (err) {
-      console.warn("Błąd podczas dispose GlobeGL:", err);
+      console.warn("❌ Błąd podczas dispose GlobeGL:", err);
     }
   }
 }
@@ -4063,13 +4062,13 @@ const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABC
 
 //Inicjalizacja globu
 function initGlobeScene() {
+  if (globeInitialized) return; // już istnieje
+  console.log("Inicjalizuję GlobeGL");
   const globeEl = document.getElementById("globeViz");
   if (!globeEl) {
     console.warn("initGlobeScene: brak elementu #globeViz");
     return;
   }
-
- 
   // utwórz glob i przypisz do globalnej zmiennej
   globe = Globe()(globeEl)
     .globeImageUrl(null) // // brak domyślnej mapy (pusta/ciemna kula)
@@ -4141,6 +4140,8 @@ function initGlobeScene() {
     });
 
   refreshGridAndLabels(); // odśwież siatkę/etykiety zgodnie z checkboxami
+	globeInitialized = true;
+	globeDisposed = false;
 }
 
 //automatyczne uruchomienie globu przy starcie strony
