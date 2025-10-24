@@ -4095,6 +4095,11 @@ function initGlobeScene() {
 
   refreshGridAndLabels(); // odśwież siatkę/etykiety zgodnie z checkboxami
 }
+
+//automatyczne uruchomienie globu przy starcie strony
+window.addEventListener("DOMContentLoaded", () => {
+  initGlobeScene();
+});
 	
 // Zaznaczenie punktów na globie 
 let pickMode = false;
@@ -4390,10 +4395,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setLanguage(currentLang); // ustaw domyślny język
 });
 
-//automatyczne uruchomienie globu przy starcie strony
-window.addEventListener("DOMContentLoaded", () => {
-  initGlobeScene();
-});
 	
 // start
 window.onload = () => {
