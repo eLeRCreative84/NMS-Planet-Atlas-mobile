@@ -4141,6 +4141,23 @@ function initGlobeScene() {
     });
 	globeInitialized = true;
 	globeDisposed = false;
+
+// nasłuchiwanie kliknięcia na globie
+ if (globe && typeof globe.onGlobeClick === "function") {
+  event.stopPropagation(); // ważne — kliknięcie w glob nie wyłączy trybu
+  if (!pickMode) return;
+
+  const { lat, lng } = coords;
+  document.getElementById('lat').value = lat.toFixed(3);
+  document.getElementById('lng').value = lng.toFixed(3);
+
+  pickBtn.textContent = 'Zaznacz na globie';
+  pickBtn.style.background = '';
+  pickMode = false;
+
+  alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
+});
+	
 }
 
 //automatyczne uruchomienie globu przy starcie strony
@@ -4162,21 +4179,6 @@ pickBtn.addEventListener('click', (e) => {
   pickBtn.style.background = pickMode ? '#4CAF50' : '';
 });
 
-// nasłuchiwanie kliknięcia na globie
-globe.onGlobeClick((coords, event) => {
-  event.stopPropagation(); // ważne — kliknięcie w glob nie wyłączy trybu
-  if (!pickMode) return;
-
-  const { lat, lng } = coords;
-  document.getElementById('lat').value = lat.toFixed(3);
-  document.getElementById('lng').value = lng.toFixed(3);
-
-  pickBtn.textContent = 'Zaznacz na globie';
-  pickBtn.style.background = '';
-  pickMode = false;
-
-  alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
-});
 
 // Kliknięcie poza globem anuluje tryb wybierania
 document.addEventListener("click", (e) => {
