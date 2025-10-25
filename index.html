@@ -802,18 +802,7 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
     if (babylonEngine) babylonEngine.resize();
   });
 
-if (typeof onBabylonReady === "function") onBabylonReady();	
 }
-
-	//To zagwarantuje, że kamera zostanie ustawiona dopiero gdy Babylon się w pełni zainicjuje.
-window.onBabylonReady = () => {
-  if (!babylonCamera) return;
- 
-  babylonCamera.setTarget(new BABYLON.Vector3(REGION_WIDTH / 2, REGION_HEIGHT / 2, REGION_DEPTH / 2));
-  babylonCamera.alpha = Math.PI / 4;
-  babylonCamera.beta = Math.PI / 4;
-  babylonCamera.radius = 600;
-};
 
 function hideGlobeScene() {
   const wrapper = document.getElementById("globeWrapper");
