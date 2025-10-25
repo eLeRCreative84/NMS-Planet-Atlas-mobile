@@ -610,6 +610,9 @@ let selectedMat = null;
 let geoGridGroup = null;
 let geoLabelContainer = null;
 let labelDivs = [];
+
+let skybox = null;
+let skyboxMaterial = null;
 	
 // ======= FUNKCJA TWORZĄCA KLUCZ REGIONU =======
 function regionIndexKey(ix, iz) {
@@ -620,8 +623,7 @@ function regionIndexKey(ix, iz) {
 
 	
 // === Skybox ===
-let skybox = null;
-let skyboxMaterial = null;
+
 
 function setSkybox(name) {
   // usuń stary skybox jeśli istnieje
@@ -781,6 +783,8 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
       break;
     }
   }
+
+
 });
 
   // === Render loop ===
@@ -797,8 +801,20 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   window.addEventListener("resize", () => {
     if (babylonEngine) babylonEngine.resize();
   });
+
+if (typeof onBabylonReady === "function") onBabylonReady();	
 }
 
+	//To zagwarantuje, że kamera zostanie ustawiona dopiero gdy Babylon się w pełni zainicjuje.
+window.onBabylonReady = () => {
+  if (!babylonCamera) return;
+ 
+  babylonCamera.setTarget(new BABYLON.Vector3(REGION_WIDTH / 2, REGION_HEIGHT / 2, REGION_DEPTH / 2));
+  babylonCamera.alpha = Math.PI / 4;
+  babylonCamera.beta = Math.PI / 4;
+  babylonCamera.radius = 600;
+};
+	
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
 function showBabylonScene() {
   document.getElementById("globeWrapper").style.display = "none";
@@ -808,9 +824,13 @@ function showBabylonScene() {
   if (!globeDisposed) hideGlobeScene();
 
   setTimeout(() => {
-    if (!babylonEngine) initBabylon();
-    babylonRenderLoopActive = true;
-    setTimeout(() => babylonEngine.resize(), 100);
+    if (!babylonEngine) {
+      initBabylon();
+    } else {
+      babylonRenderLoopActive = true;
+      if (babylonCamera) babylonScene.activeCamera = babylonCamera;
+      babylonEngine.resize();
+    }
   }, 200);
 }
 
@@ -4098,8 +4118,6 @@ function initGlobeScene() {
       }
       return null;
     });
-
-  refreshGridAndLabels(); // odśwież siatkę/etykiety zgodnie z checkboxami
 	globeInitialized = true;
 	globeDisposed = false;
 }
