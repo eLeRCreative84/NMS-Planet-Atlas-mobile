@@ -620,11 +620,8 @@ function regionIndexKey(ix, iz) {
 }
 
 // === INICJALIZACJA SCENY BABYLON ===
-
 	
 // === Skybox ===
-
-
 function setSkybox(name) {
   // usuń stary skybox jeśli istnieje
   if (skybox) skybox.dispose();
@@ -653,7 +650,6 @@ function initBabylon() {
 	babylonEngine = new BABYLON.Engine(canvas, true);
 	babylonScene = new BABYLON.Scene(babylonEngine);
 
-
   // === Kamera i światło ===
   babylonCamera = new BABYLON.ArcRotateCamera(
     " babylonCamera",
@@ -681,7 +677,6 @@ if (isMobile) {
 	babylonCamera.panningSensibility = 10;  // mniejsza liczba = szybsze przesuwanie
 	babylonCamera.panningInertia = 0.8;      // mniejsza = mniej bezwładności (bardziej responsywne)
 	babylonCamera.panningAxis = new BABYLON.Vector3(1, 1, 0); // standardowe przesuwanie w poziomie i pionie
-
 
   new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
  
@@ -783,8 +778,6 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
       break;
     }
   }
-
-
 });
 
   // === Render loop ===
@@ -801,7 +794,7 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   window.addEventListener("resize", () => {
     if (babylonEngine) babylonEngine.resize();
   });
-
+console.log("Inicjalizacja Babylon");
 }
 
 function hideGlobeScene() {
