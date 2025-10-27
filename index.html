@@ -573,7 +573,14 @@ let myLocationPoint = null;
 let isEditing = false; // globalna flaga
 let highlightTimeout = null;
 let headerLock = true; // blokada na starcie celem zablokowania możliwości nadpisania nagłówka
-		
+
+// === GLOBALNE ZMIENNE STANU GLOBU ===
+let globe = null; 
+let geoGridGroup = null;
+let geoLabelContainer = null;
+let labelDivs = [];
+let pickMode = false;
+	
 ////////////////////////////////////////////////////////////////////
 //----------------- Zakładki i inne elementy UI -----------------//
 //////////////////////////////////////////////////////////////////// 
