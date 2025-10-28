@@ -3993,28 +3993,50 @@ function toggleAutoRotate() {
   // Podczas tworzenia planet, jeśli od razu nie przypisywaliśmy tekstury i pozstawialiśmy pusty glob
   // to generowało to błędy podczas przełączania się między planetami na liście planet - nie wyświetlało poprawnie globu. 
   
-  const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+// GLOBALNY OBIEKT USTAWIEŃ GLOBU (z pamięcią stanu)
+let globeSettings = {
+  gridStep: 10,
+  labelsStep: 30,
+  showSides: false,
+  color: '#888888',
+  opacity: 0.3,
+  pointScale: parseFloat(document.getElementById("pointScale")?.value) || 1,
+  pointsDistanceMultiplier: 1,
+  globeZoomMultiplier: 1,
+  autoRotate: false,
+  rotateSpeed: 0.001,
+  myLocationPoint: null,
+  textureUrl: null
+};
 
-  
-  // Inicjalizacja globu — używamy https aby tło zawsze się załadowało
-const globe = Globe()(document.getElementById("globeViz"))
-  .globeImageUrl(null) // brak domyślnej mapy (pusta/ciemna kula)
-  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png') // 🌌 gwiazdy w tle
+// === FUNKCJA INICJALIZUJĄCA GLOBE ===
+function initGlobe() {
 
-  .pointLat("lat")
-  .pointLng("lng")
-  .pointLabel(d => {
-    // zabezpieczenie: gdy nie ma currentPlanet, zwracamy opis punktu pojedynczo
-    if (!currentPlanet || !atlas[currentPlanet]) {
-    let label = `${d.name || ""} (${d.type})<br>X:${d.lat}, Y:${d.lng}`;
-    if (d.type === "Zasób") label += d.extracted ? " [Wydobyty]" : " [Niewydobyty]";
-    if (["Ruiny","Struktura","Inne"].includes(d.type)) label += d.visited ? " [Odwiedzony]" : " [Nieodwiedzony]";
-    return label;
-
+  if (globe) {
+    console.warn("Globe już zainicjalizowany — pomiń lub najpierw wywołaj destroyGlobe().");
+    return;
   }
 
-    // grupowanie punktów w tym samym miejscu dla aktualnej planety
-     const sameLocation = atlas[currentPlanet].filter(p => p.lat === d.lat && p.lng === d.lng);
+  // Tworzymy czarną teksturę globalnie, która zastąpi globeImageUrl(null). 
+  const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+  // Inicjalizacja globu — używamy https aby tło zawsze się załadowało
+  globe = Globe()(document.getElementById("globeViz"))
+    .globeImageUrl(null) // brak domyślnej mapy (pusta/ciemna kula)
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png') // gwiazdy w tle
+
+    .pointLat("lat")
+    .pointLng("lng")
+    .pointLabel(d => {
+	// zabezpieczenie: gdy nie ma currentPlanet, zwracamy opis punktu pojedynczo
+      if (!currentPlanet || !atlas[currentPlanet]) {
+        let label = `${d.name || ""} (${d.type})<br>X:${d.lat}, Y:${d.lng}`;
+        if (d.type === "Zasób") label += d.extracted ? " [Wydobyty]" : " [Niewydobyty]";
+        if (["Ruiny","Struktura","Inne"].includes(d.type)) label += d.visited ? " [Odwiedzony]" : " [Nieodwiedzony]";
+        return label;
+      }
+	// grupowanie punktów w tym samym miejscu dla aktualnej planety
+      const sameLocation = atlas[currentPlanet].filter(p => p.lat === d.lat && p.lng === d.lng);
       if (sameLocation.length > 1) {
         return sameLocation.map(p => {
           let label = `${p.name || "Bez nazwy"} (${p.type})`;
@@ -4029,41 +4051,147 @@ const globe = Globe()(document.getElementById("globeViz"))
       if (["Ruiny","Struktura","Inne"].includes(d.type)) label += d.visited ? " [Odwiedzony]" : " [Nieodwiedzony]";
       return label;
     })
-  .pointColor(d => {
-  if (d && d.__highlight) return "orange";   // zawsze najpierw sprawdź highlight
-                                             // wtedy nie trzeba nadpisywać pointColor w show i highlight będzie działać zawsze, przy każdym odświeżeniu.
-  switch (d.type) {
-    case "Zasób":     return d.extracted ? "gray" : "gold";
-    case "Baza":      return "blue";
-    case "Ruiny":     return d.visited ? "lime" : "orange";
-    case "Struktura": return d.visited ? "cyan" : "magenta";
-    case "Inne":      return d.visited ? "purple" : "brown";
-    case "Pole":      return "red";
-    default:          return "red";
+    .pointColor(d => {						    	// zawsze najpierw sprawdź highlight
+      if (d && d.__highlight) return "orange";      // wtedy nie trzeba nadpisywać pointColor w show i highlight będzie działać zawsze, przy każdym odświeżeniu.
+      switch (d.type) {
+        case "Zasób":     return d.extracted ? "gray" : "gold";
+        case "Baza":      return "blue";
+        case "Ruiny":     return d.visited ? "lime" : "orange";
+        case "Struktura": return d.visited ? "cyan" : "magenta";
+        case "Inne":      return d.visited ? "purple" : "brown";
+        case "Pole":      return "red";
+        default:          return "red";
+      }
+    })
+    .pointRadius(() => globeSettings.pointScale) // używamy zapamiętanej wartości
+    .htmlElementsData([])
+    .htmlElement(d=>{
+      if(d.type==="Pole"){
+        const el=document.createElement("div");
+        el.style.color="white";
+        el.style.fontSize="20px";
+        el.style.fontWeight="bold";
+        el.style.textShadow="0 0 4px black";
+        el.textContent=d.name==="Biegun Północny"?"N":"S";
+        return el;
+      }
+      if (d.type === "Moja") {
+        const el = document.createElement("div");
+        el.style.color = "yellow";
+        el.style.fontSize = "22px";
+        el.style.fontWeight = "bold";
+        el.style.textShadow = "0 0 6px black";
+        el.textContent = "⭐";
+        return el;
+      }
+    });
+
+  // ustawienie punktów dla aktualnej planety
+  if (currentPlanet && atlas[currentPlanet]) {
+    globe.pointsData(atlas[currentPlanet]);
+    globe.htmlElementsData(atlas[currentPlanet].filter(p => p.type === "Pole"));
   }
-})
-  .pointRadius(() => pointScale)
-  .htmlElementsData([])
-  .htmlElement(d=>{
-    if(d.type==="Pole"){
-      const el=document.createElement("div");
-      el.style.color="white";
-      el.style.fontSize="20px";
-      el.style.fontWeight="bold";
-      el.style.textShadow="0 0 4px black";
-      el.textContent=d.name==="Biegun Północny"?"N":"S";
-      return el;
-    }
-    if (d.type === "Moja") {
-      const el = document.createElement("div");
-      el.style.color = "yellow";
-      el.style.fontSize = "22px";
-      el.style.fontWeight = "bold";
-      el.style.textShadow = "0 0 6px black";
-      el.textContent = "⭐";
-      return el;
+
+  // Przywrócenie tekstury globu po restarcie
+  if (!globeSettings.textureUrl && currentPlanet) {
+    const planet = planetData.find(p => p.name === currentPlanet);
+    globeSettings.textureUrl = planet?.texture || blackTextureURL;
+  }
+  globe.globeImageUrl(globeSettings.textureUrl || blackTextureURL);
+
+  // === TRYB WYBORU PUNKTU ===
+  const pickBtn = document.getElementById('pickOnGlobeBtn');
+  if (pickBtn) {
+    pickBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pickMode = !pickMode;
+      pickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
+      pickBtn.style.background = pickMode ? '#4CAF50' : '';
+    });
+  }
+
+  globe.onGlobeClick((coords, event) => {
+    event.stopPropagation();
+    if (!pickMode) return;
+    const { lat, lng } = coords;
+    document.getElementById('lat').value = lat.toFixed(3);
+    document.getElementById('lng').value = lng.toFixed(3);
+    pickBtn.textContent = 'Zaznacz na globie';
+    pickBtn.style.background = '';
+    pickMode = false;
+    alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!pickMode) return;
+    const globeEl = document.getElementById("globeWrapper");
+    if (!globeEl.contains(e.target) && e.target !== pickBtn) {
+      pickMode = false;
+      pickBtn.textContent = "Zaznacz na globie";
+      pickBtn.style.background = "";
     }
   });
+
+  // === DOMYŚLNA SIATKA I ETYKIETY ===
+  // Przywracanie stanu z globeSettings
+  if (grid10Cb && grid30Cb) {
+    grid10Cb.checked = globeSettings.gridStep === 10;
+    grid30Cb.checked = globeSettings.gridStep === 30;
+  }
+  if (labels10Cb && labels30Cb) {
+    labels10Cb.checked = globeSettings.labelsStep === 10;
+    labels30Cb.checked = globeSettings.labelsStep === 30;
+  }
+  if (labelsSidesCb) labelsSidesCb.checked = globeSettings.showSides;
+  if (colorInput) colorInput.value = globeSettings.color;
+  if (opacityInput) opacityInput.value = globeSettings.opacity.toString();
+
+  refreshGridAndLabels();
+
+  console.log("Globe zainicjalizowany (ustawienia przywrócone).");
+}
+
+// === FUNKCJA DO USUWANIA / WYŁĄCZANIA GLOBE ===
+function destroyGlobe() {
+  if (!globe) return;
+
+  // Zapisz aktualne ustawienia przed zniszczeniem
+  globeSettings = {
+    gridStep: grid10Cb?.checked ? 10 : (grid30Cb?.checked ? 30 : 0),
+    labelsStep: labels10Cb?.checked ? 10 : (labels30Cb?.checked ? 30 : 0),
+    showSides: !!labelsSidesCb?.checked,
+    color: colorInput?.value || '#888888',
+    opacity: parseFloat(opacityInput?.value) || 0.3,
+    pointScale: pointScale,
+    pointsDistanceMultiplier: pointsDistanceMultiplier,
+    globeZoomMultiplier: globeZoomMultiplier,
+    autoRotate: autoRotate,
+    rotateSpeed: rotateSpeed,
+    myLocationPoint: myLocationPoint,
+    textureUrl: (() => {
+      if (currentPlanet) {
+        const planet = planetData.find(p => p.name === currentPlanet);
+        return planet?.texture || null;
+      }
+      return null;
+    })()
+  };
+
+  // usuń siatkę i etykiety
+  if (geoGridGroup && globe.scene()) globe.scene().remove(geoGridGroup);
+  if (geoLabelContainer) geoLabelContainer.remove();
+
+  // usuń renderer z DOM
+  const canvas = document.querySelector('#globeViz canvas');
+  if (canvas) canvas.remove();
+
+  globe = null;
+  geoGridGroup = null;
+  geoLabelContainer = null;
+  labelDivs = [];
+  console.log("Globe wyłączony. Ustawienia zapisane:", globeSettings);
+}
+
 
 // Zaznaczenie punktów na globie 
 let pickMode = false;
@@ -4363,6 +4491,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // start
 window.onload = () => {
+  initGlobe()
   openTab("start"); // aktywuj pierwszą zakładkę
   refreshPlanetList();
   refreshPointsList();
