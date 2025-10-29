@@ -4310,6 +4310,16 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
   updateLabels();
 }
 
+// === OBSŁUGA UI ===
+const grid30Cb = document.getElementById('grid30');
+const grid10Cb = document.getElementById('grid10');
+const labels30Cb = document.getElementById('labels30');
+const labels10Cb = document.getElementById('labels10');
+const labelsSidesCb = document.getElementById('labelsSides');
+const colorInput = document.getElementById('gridColor');
+const opacityInput = document.getElementById('gridOpacity');
+	
+	
 function refreshGridAndLabels() {
   // siatka
   if (grid10Cb.checked) {
