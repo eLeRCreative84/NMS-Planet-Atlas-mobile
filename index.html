@@ -4153,6 +4153,43 @@ grid10Cb.checked = true;
 labels30Cb.checked = true;
 refreshGridAndLabels();
 
+ // === PUNKTY PLANETY ===
+  if (currentPlanet && atlas[currentPlanet]) {
+    globe.pointsData(atlas[currentPlanet]);
+    globe.htmlElementsData(atlas[currentPlanet].filter(p => p.type === "Pole"));
+  }
+
+  // === NASŁUCHIWANIE HOVERA Z NOTATKAMI ===
+  const pointNotesPanel = document.getElementById("pointNotesPanel");
+  let autoScrollInterval = null;
+  let autoScrollTimeout = null;
+
+  globe.onPointHover(point => {
+    clearInterval(autoScrollInterval);
+    clearTimeout(autoScrollTimeout);
+    pointNotesPanel.scrollTop = 0;
+
+    if (point && point.notes) {
+      pointNotesPanel.textContent = point.notes;
+      pointNotesPanel.style.display = "block";
+
+      autoScrollTimeout = setTimeout(() => {
+        autoScrollInterval = setInterval(() => {
+          if (
+            pointNotesPanel.scrollTop + pointNotesPanel.clientHeight <
+            pointNotesPanel.scrollHeight
+          ) {
+            pointNotesPanel.scrollTop += 1;
+          } else {
+            clearInterval(autoScrollInterval);
+          }
+        }, 100);
+      }, 12000);
+    } else {
+      pointNotesPanel.style.display = "none";
+    }
+  });
+	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
 
@@ -4351,44 +4388,7 @@ function refreshGridAndLabels() {
   el.addEventListener('input', refreshGridAndLabels)
 );
  
-//Panel z ntotakami punktu	
-const pointNotesPanel = document.getElementById("pointNotesPanel");
-let autoScrollInterval = null;
-let autoScrollTimeout = null;
 
-globe.onPointHover(point => {
-  clearInterval(autoScrollInterval);
-  clearTimeout(autoScrollTimeout);
-  pointNotesPanel.scrollTop = 0; // zawsze start od góry
-
-  if (point && point.notes) {
-    pointNotesPanel.textContent = point.notes;
-    pointNotesPanel.style.display = "block";
-
-    // po 15 sekundach zaczynamy przewijanie w dół
-    autoScrollTimeout = setTimeout(() => {
-      autoScrollInterval = setInterval(() => {
-        if (
-          pointNotesPanel.scrollTop + pointNotesPanel.clientHeight <
-          pointNotesPanel.scrollHeight
-        ) {
-          pointNotesPanel.scrollTop += 1; // przewijamy 1px
-        } else {
-          clearInterval(autoScrollInterval); // zatrzymaj na końcu
-        }
-      }, 100); // prędkość scrolla (ms)
-    }, 12000); // start po 12 sekundach
-
-  } else {
-    pointNotesPanel.style.display = "none";
-  }
-});
-	
-// ustawienie punktów dla aktualnej planety
-if (currentPlanet && atlas[currentPlanet]) {
-  globe.pointsData(atlas[currentPlanet]);
-  globe.htmlElementsData(atlas[currentPlanet].filter(p => p.type === "Pole"));
-}
 //Nasłuchiwacze dla filtrów typów i dodatkowych
   // Checkboxy typów punktów
 document.querySelectorAll(".pointFilter").forEach(cb => {
