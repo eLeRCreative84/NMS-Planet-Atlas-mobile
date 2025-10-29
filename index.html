@@ -4086,12 +4086,6 @@ function initGlobe() {
       }
     });
  
-	setTimeout(() => {
-    if (!globe || !globe.scene) {
-      setTimeout(() => initGlobe(), 100);
-      return;
-    }
-		
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
     globe.pointsData(atlas[currentPlanet]);
@@ -4116,8 +4110,22 @@ function initGlobe() {
     });
   }
 
+// znajdź przycisk
+const pickBtn = document.getElementById('pickOnGlobeBtn');
+
+// po kliknięciu włącz tryb wyboru
+if (pickBtn) {
+  pickBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Zatrzymuje propagację, żeby event "poza globem" się nie odpalił
+    pickMode = !pickMode;
+    pickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
+    pickBtn.style.background = pickMode ? '#4CAF50' : '';
+  });
+}
+	
+// nasłuchiwanie kliknięcia na globie
   globe.onGlobeClick((coords, event) => {
-    event.stopPropagation();
+    event.stopPropagation(); // ważne — kliknięcie w glob nie wyłączy trybu
     if (!pickMode) return;
     const { lat, lng } = coords;
     document.getElementById('lat').value = lat.toFixed(3);
@@ -4128,6 +4136,7 @@ function initGlobe() {
     alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
   });
 
+// Kliknięcie poza globem anuluje tryb wybierania
   document.addEventListener("click", (e) => {
     if (!pickMode) return;
     const globeEl = document.getElementById("globeWrapper");
@@ -4155,7 +4164,6 @@ function initGlobe() {
   refreshGridAndLabels();
 
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
-}, 100); // małe opóźnienie — wystarcza, by Globe() się w pełni zbudował
 }
 
 // === FUNKCJA DO USUWANIA / WYŁĄCZANIA GLOBE ===
@@ -4199,44 +4207,6 @@ function destroyGlobe() {
   console.log("Globe wyłączony. Ustawienia zapisane:", globeSettings);
 }
 
-
-// Zaznaczenie punktów na globie 
-
-// znajdź przycisk
-const pickBtn = document.getElementById('pickOnGlobeBtn');
-
-// po kliknięciu włącz tryb wyboru
-pickBtn.addEventListener('click', (e) => {
-  e.stopPropagation(); // Zatrzymuje propagację, żeby event "poza globem" się nie odpalił
-  pickMode = !pickMode;
-  pickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
-  pickBtn.style.background = pickMode ? '#4CAF50' : '';
-});
-
-// nasłuchiwanie kliknięcia na globie
-globe.onGlobeClick((coords, event) => {
-  event.stopPropagation(); // ważne — kliknięcie w glob nie wyłączy trybu
-  if (!pickMode) return;
-  const { lat, lng } = coords;
-  document.getElementById('lat').value = lat.toFixed(3);
-  document.getElementById('lng').value = lng.toFixed(3);
-  pickBtn.textContent = 'Zaznacz na globie';
-  pickBtn.style.background = '';
-  pickMode = false;
-  alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
-});
-
-// Kliknięcie poza globem anuluje tryb wybierania
-document.addEventListener("click", (e) => {
-  if (!pickMode) return;
-
-  const globeEl = document.getElementById("globeWrapper");
-  if (!globeEl.contains(e.target) && e.target !== pickBtn) {
-    pickMode = false;
-    pickBtn.textContent = "Zaznacz na globie";
-    pickBtn.style.background = "";
-  }
-});
 
 // === FUNKCJA TWORZENIA SIATKI ===
 function addGeoGrid(scene, step = 10, color = '#888888', opacity = 0.3) {
