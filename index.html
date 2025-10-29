@@ -4085,7 +4085,13 @@ function initGlobe() {
         return el;
       }
     });
-
+ 
+	setTimeout(() => {
+    if (!globe || !globe.scene) {
+      setTimeout(() => initGlobe(), 100);
+      return;
+    }
+		
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
     globe.pointsData(atlas[currentPlanet]);
@@ -4149,6 +4155,7 @@ function initGlobe() {
   refreshGridAndLabels();
 
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
+}, 100); // małe opóźnienie — wystarcza, by Globe() się w pełni zbudował
 }
 
 // === FUNKCJA DO USUWANIA / WYŁĄCZANIA GLOBE ===
@@ -4207,28 +4214,17 @@ pickBtn.addEventListener('click', (e) => {
 });
 
 // nasłuchiwanie kliknięcia na globie
-// opóźnienie o 100 ms — aż Globe w pełni się zbuduje
-setTimeout(() => {
-  if (!globe || typeof globe.onGlobeClick !== "function") {
-    console.warn("⚠️ Globe nie gotowy do obsługi kliknięć.");
-    return;
-  }
-
-  globe.onGlobeClick((coords, event) => {
-    event.stopPropagation(); // ważne — kliknięcie w glob nie wyłączy trybu
-    if (!pickMode) return;
-
-    const { lat, lng } = coords;
-    document.getElementById('lat').value = lat.toFixed(3);
-    document.getElementById('lng').value = lng.toFixed(3);
-
-    pickBtn.textContent = 'Zaznacz na globie';
-    pickBtn.style.background = '';
-    pickMode = false;
-
-    alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
-  });
-}, 100);
+globe.onGlobeClick((coords, event) => {
+  event.stopPropagation(); // ważne — kliknięcie w glob nie wyłączy trybu
+  if (!pickMode) return;
+  const { lat, lng } = coords;
+  document.getElementById('lat').value = lat.toFixed(3);
+  document.getElementById('lng').value = lng.toFixed(3);
+  pickBtn.textContent = 'Zaznacz na globie';
+  pickBtn.style.background = '';
+  pickMode = false;
+  alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
+});
 
 // Kliknięcie poza globem anuluje tryb wybierania
 document.addEventListener("click", (e) => {
