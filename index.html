@@ -4086,13 +4086,6 @@ function initGlobe() {
       }
     });
 
- // Zabezpieczenie: wykonaj resztę dopiero po chwili (gdy scena się zbuduje)
-  setTimeout(() => {
-    if (!globe || !globe.scene) {
-      setTimeout(() => initGlobe(), 100);
-      return;
-    }
-	
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
     globe.pointsData(atlas[currentPlanet]);
@@ -4158,7 +4151,6 @@ function initGlobe() {
   refreshGridAndLabels();
 
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
- }, 100); // małe opóźnienie — wystarcza, by Globe() się w pełni zbudował
 }
 
 // === FUNKCJA DO USUWANIA / WYŁĄCZANIA GLOBE ===
@@ -4317,15 +4309,6 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
   globe.controls().addEventListener('change', updateLabels);
   updateLabels();
 }
-
-// === OBSŁUGA UI ===
-const grid30Cb = document.getElementById('grid30');
-const grid10Cb = document.getElementById('grid10');
-const labels30Cb = document.getElementById('labels30');
-const labels10Cb = document.getElementById('labels10');
-const labelsSidesCb = document.getElementById('labelsSides');
-const colorInput = document.getElementById('gridColor');
-const opacityInput = document.getElementById('gridOpacity');
 
 function refreshGridAndLabels() {
   // siatka
