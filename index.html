@@ -4085,7 +4085,14 @@ function initGlobe() {
         return el;
       }
     });
- 
+
+ // Zabezpieczenie: wykonaj resztę dopiero po chwili (gdy scena się zbuduje)
+  setTimeout(() => {
+    if (!globe || !globe.scene) {
+      setTimeout(() => initGlobe(), 100);
+      return;
+    }
+	
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
     globe.pointsData(atlas[currentPlanet]);
@@ -4151,6 +4158,7 @@ function initGlobe() {
   refreshGridAndLabels();
 
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
+ }, 100); // małe opóźnienie — wystarcza, by Globe() się w pełni zbudował
 }
 
 // === FUNKCJA DO USUWANIA / WYŁĄCZANIA GLOBE ===
