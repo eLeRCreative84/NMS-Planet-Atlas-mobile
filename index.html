@@ -4148,7 +4148,10 @@ function initGlobe() {
   if (colorInput) colorInput.value = globeSettings.color;
   if (opacityInput) opacityInput.value = globeSettings.opacity.toString();
 
-  refreshGridAndLabels();
+ // domyślnie siatka co 10 i etykiety co 30
+grid10Cb.checked = true;
+labels30Cb.checked = true;
+refreshGridAndLabels();
 
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
@@ -4347,13 +4350,6 @@ function refreshGridAndLabels() {
 [grid30Cb, grid10Cb, labels30Cb, labels10Cb, labelsSidesCb, colorInput, opacityInput].forEach(el =>
   el.addEventListener('input', refreshGridAndLabels)
 );
-
-// domyślnie siatka co 10 i etykiety co 30
-grid10Cb.checked = true;
-labels30Cb.checked = true;
-refreshGridAndLabels();
-
-
  
 //Panel z ntotakami punktu	
 const pointNotesPanel = document.getElementById("pointNotesPanel");
