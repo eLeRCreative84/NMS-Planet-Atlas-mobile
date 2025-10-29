@@ -4103,25 +4103,12 @@ function initGlobe() {
   const pickBtn = document.getElementById('pickOnGlobeBtn');
   if (pickBtn) {
     pickBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
+      e.stopPropagation();// Zatrzymuje propagację, żeby event "poza globem" się nie odpalił
       pickMode = !pickMode;
       pickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
       pickBtn.style.background = pickMode ? '#4CAF50' : '';
     });
   }
-
-// znajdź przycisk
-const pickBtn = document.getElementById('pickOnGlobeBtn');
-
-// po kliknięciu włącz tryb wyboru
-if (pickBtn) {
-  pickBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); // Zatrzymuje propagację, żeby event "poza globem" się nie odpalił
-    pickMode = !pickMode;
-    pickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
-    pickBtn.style.background = pickMode ? '#4CAF50' : '';
-  });
-}
 	
 // nasłuchiwanie kliknięcia na globie
   globe.onGlobeClick((coords, event) => {
