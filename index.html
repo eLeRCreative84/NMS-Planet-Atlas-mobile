@@ -3815,7 +3815,17 @@ function addTextureUrl() {
        
   // Używamy tekstury planety jeśli istnieje, w przeciwnym razie czarna
   const textureToUse = planet.texture ? planet.texture : blackTextureURL;
-globe.globeImageUrl(textureToUse);
+
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.src = textureToUse;
+  img.onload = () => {
+    globe.globeImageUrl(textureToUse);
+  };
+  img.onerror = () => {
+    console.warn("Nie udało się wczytać tekstury planety:", textureToUse);
+    globe.globeImageUrl(blackTextureURL);
+  };
 }
 
   // Funkcja do zmiany koloru planety
@@ -3829,13 +3839,18 @@ function changePlanetColor() {
   const textureBase64 = hexToBase64Texture(colorHex);
 
   // znajdź wpis w planetData
-  const idx = planetData.findIndex(p => p.name === currentPlanet);
-  if (idx !== -1) {
-    planetData[idx].texture = textureBase64;
-    globe.globeImageUrl(textureBase64);
-    }
-}
+  const planet = planetData.find(p => p.name === currentPlanet);
+  if (planet) planet.texture = textureBase64;
 
+  const img = new Image();
+  img.src = textureBase64;
+  img.onload = () => {
+    globe.globeImageUrl(textureBase64);
+  };
+  img.onerror = () => {
+    console.warn("Nie udało się ustawić koloru planety:", colorHex);
+  };
+}
    // Funkcja sprawdzająca, czy w polu tekstury coś wpisano 
 function checkTextureInput() {
   const input = document.getElementById("planetTextureUrl");
