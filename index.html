@@ -4022,7 +4022,6 @@ function initGlobe() {
 
   // Inicjalizacja globu — używamy https aby tło zawsze się załadowało
   globe = Globe()(document.getElementById("globeViz"))
-    .globeImageUrl(blackTextureURL) // brak domyślnej mapy (pusta/ciemna kula)
     .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png') // gwiazdy w tle
 
     .pointLat("lat")
@@ -4097,7 +4096,11 @@ function initGlobe() {
     const planet = planetData.find(p => p.name === currentPlanet);
     globeSettings.textureUrl = planet?.texture || blackTextureURL;
   }
-  globe.globeImageUrl(globeSettings.textureUrl || blackTextureURL);
+  const img = new Image();
+img.src = globeSettings.textureUrl || blackTextureURL;
+img.onload = () => {
+  globe.globeImageUrl(img.src);
+};
 
   // === TRYB WYBORU PUNKTU ===
   const pickBtn = document.getElementById('pickOnGlobeBtn');
