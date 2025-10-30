@@ -4118,18 +4118,26 @@ function initGlobe() {
 const img = new Image();
 img.crossOrigin = "anonymous";
 img.src = globeSettings.textureUrl || blackTextureURL;
+
 img.onload = () => {
+  console.log("✅ Załadowano obraz tekstury:", img.src);
+  console.log("📏 Wymiary obrazu:", img.width, "x", img.height);
+
   const texture = new THREE.Texture(img);
   texture.needsUpdate = true;
 
-  // ustawiamy teksturę bezpośrednio na materiale globu
   const material = globe.globeMaterial();
   material.map = texture;
   material.needsUpdate = true;
 
   console.log("Tekstura globu poprawnie załadowana i przypisana.");
-	globe.resumeAnimation(); // Wznów renderowanie dopiero po załadowaniu
+  globe.resumeAnimation();
 };
+
+img.onerror = (err) => {
+  console.error("❌ Błąd ładowania tekstury globu:", globeSettings.textureUrl, err);
+};
+
 
   // === TRYB WYBORU PUNKTU ===
   const pickBtn = document.getElementById('pickOnGlobeBtn');
