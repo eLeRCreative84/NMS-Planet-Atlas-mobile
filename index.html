@@ -884,13 +884,15 @@ function openTab(tabId) {
   });
   
     // fragment odpowiedzialny za Babylon.js
-  if (tabId === "journey") {
-    destroyGlobe();
-	showBabylonScene();
-  } else {
-    hideBabylonScene();
-	initGlobe();
-  }
+if (tabId === "journey") {
+  // przejście do zakładki Journey → wyłącz glob i pokaż Babylon
+  if (globe) destroyGlobe();
+  showBabylonScene();
+} else {
+  // wszystkie inne zakładki → schowaj Babylon i upewnij się, że glob działa
+  hideBabylonScene();
+  if (!globe) initGlobe(); // inicjalizuj tylko jeśli nie istnieje
+}
 
   // odśwież nagłówek planety 
   updateCurrentPlanetHeader();
