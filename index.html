@@ -4108,37 +4108,40 @@ function initGlobe() {
     globe.htmlElementsData(atlas[currentPlanet].filter(p => p.type === "Pole"));
   }
 
-  // Przywrócenie tekstury globu po restarcie
-  if (!globeSettings.textureUrl && currentPlanet) {
-    const planet = planetData.find(p => p.name === currentPlanet);
-    globeSettings.textureUrl = planet?.texture || blackTextureURL;
-  }
+ // Przywrócenie tekstury globu po restarcie
+if (!globeSettings.textureUrl && currentPlanet) {
+  const planet = planetData.find(p => p.name === currentPlanet);
+  globeSettings.textureUrl = planet?.texture || blackTextureURL;
+}
 
-// Tymczasowe wstrzymanie renderowania
- globe.pauseAnimation();
-	
+const textureSrc = globeSettings.textureUrl || blackTextureURL;
 const img = new Image();
 img.crossOrigin = "anonymous";
-img.src = globeSettings.textureUrl || blackTextureURL;
+img.src = textureSrc;
 
 img.onload = () => {
-  console.log("✅ Załadowano obraz tekstury:", img.src);
+  console.log("✅ Załadowano obraz tekstury:", textureSrc);
   console.log("📏 Wymiary obrazu:", img.width, "x", img.height);
 
-  const texture = new THREE.Texture(img);
-  texture.needsUpdate = true;
+  // odczekaj jedną klatkę zanim ustawisz materiał — kontekst WebGL musi być gotowy
+  requestAnimationFrame(() => {
+    const texture = new THREE.Texture(img);
+    texture.needsUpdate = true;
 
-  const material = globe.globeMaterial();
-  material.map = texture;
-  material.needsUpdate = true;
+    const material = globe.globeMaterial();
+    material.map = texture;
+    material.needsUpdate = true;
 
-  console.log("Tekstura globu poprawnie załadowana i przypisana.");
+    console.log("🟢 Tekstura globu poprawnie załadowana i przypisana.");
+    globe.resumeAnimation();
+  });
+};
+
+img.onerror = () => {
+  console.error("❌ Błąd ładowania tekstury:", textureSrc);
   globe.resumeAnimation();
 };
 
-img.onerror = (err) => {
-  console.error("❌ Błąd ładowania tekstury globu:", globeSettings.textureUrl, err);
-};
 
 
   // === TRYB WYBORU PUNKTU ===
