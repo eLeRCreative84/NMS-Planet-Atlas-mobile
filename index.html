@@ -4033,7 +4033,9 @@ function initGlobe() {
   }
  
   // Tworzymy czarną teksturę globalnie, która zastąpi globeImageUrl(null). 
-  const blackTextureURL = "textures/black256.png";
+  const blackTextureURL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR42mP8z/CfAQgwgAmGAgDWxwN7lTDZmgAAAABJRU5ErkJggg==";
+
 
   // Inicjalizacja globu — używamy https aby tło zawsze się załadowało
   globe = Globe()(document.getElementById("globeViz"))
