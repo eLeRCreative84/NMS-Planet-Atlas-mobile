@@ -886,9 +886,10 @@ function openTab(tabId) {
     // fragment odpowiedzialny za Babylon.js
   if (tabId === "journey") {
     showBabylonScene();
+	destroyGlobe();
   } else {
     hideBabylonScene();
-	initGlobe()
+	initGlobe();
   }
 
   // odśwież nagłówek planety 
