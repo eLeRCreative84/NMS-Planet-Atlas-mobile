@@ -888,6 +888,7 @@ function openTab(tabId) {
     showBabylonScene();
   } else {
     hideBabylonScene();
+	initGlobe()
   }
 
   // odśwież nagłówek planety 
@@ -4488,7 +4489,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // start
 window.onload = () => {
-  initGlobe()
+  
   openTab("start"); // aktywuj pierwszą zakładkę
   refreshPlanetList();
   refreshPointsList();
