@@ -4092,12 +4092,19 @@ function initGlobe() {
     globe.htmlElementsData(atlas[currentPlanet].filter(p => p.type === "Pole"));
   }
 
-  // Przywrócenie tekstury globu po restarcie
-  if (!globeSettings.textureUrl && currentPlanet) {
-    const planet = planetData.find(p => p.name === currentPlanet);
-    globeSettings.textureUrl = planet?.texture || blackTextureURL;
+ // Przywrócenie tekstury globu po restarcie
+if (currentPlanet) {
+  const planet = planetData.find(p => p.name === currentPlanet);
+  if (planet && planet.texture) {
+    globeSettings.textureUrl = planet.texture;
+    globe.globeImageUrl(planet.texture);
+  } else {
+    globe.globeImageUrl(null); // brak tekstury = czysty glob
   }
-  globe.globeImageUrl(globeSettings.textureUrl || blackTextureURL);
+} else {
+  console.warn("⚠️ Brak aktywnej planety – pomijam ładowanie tekstury globu.");
+  globe.globeImageUrl(null); // nic nie ładuj dopóki nie będzie planety
+}
 
   // === TRYB WYBORU PUNKTU ===
   const pickBtn = document.getElementById('pickOnGlobeBtn');
