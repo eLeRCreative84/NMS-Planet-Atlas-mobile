@@ -4022,7 +4022,7 @@ function initGlobe() {
 
   // Inicjalizacja globu — używamy https aby tło zawsze się załadowało
   globe = Globe()(document.getElementById("globeViz"))
-    .globeImageUrl(null) // brak domyślnej mapy (pusta/ciemna kula)
+    .globeImageUrl(blackTextureURL) // brak domyślnej mapy (pusta/ciemna kula)
     .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png') // gwiazdy w tle
 
     .pointLat("lat")
