@@ -4031,7 +4031,8 @@ function initGlobe() {
     console.warn("Globe już zainicjalizowany — pomiń lub najpierw wywołaj destroyGlobe().");
     return;
   }
-
+ // Tymczasowe wstrzymanie renderowania
+ globe.pauseAnimation();
   // Tworzymy czarną teksturę globalnie, która zastąpi globeImageUrl(null). 
   const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
@@ -4124,6 +4125,7 @@ img.onload = () => {
   material.needsUpdate = true;
 
   console.log("Tekstura globu poprawnie załadowana i przypisana.");
+	globe.resumeAnimation(); // Wznów renderowanie dopiero po załadowaniu
 };
 
   // === TRYB WYBORU PUNKTU ===
