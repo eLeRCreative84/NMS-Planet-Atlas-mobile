@@ -4096,10 +4096,19 @@ function initGlobe() {
     const planet = planetData.find(p => p.name === currentPlanet);
     globeSettings.textureUrl = planet?.texture || blackTextureURL;
   }
-  const img = new Image();
+const img = new Image();
+img.crossOrigin = "anonymous";
 img.src = globeSettings.textureUrl || blackTextureURL;
 img.onload = () => {
-  globe.globeImageUrl(img.src);
+  const texture = new THREE.Texture(img);
+  texture.needsUpdate = true;
+
+  // ustawiamy teksturę bezpośrednio na materiale globu
+  const material = globe.globeMaterial();
+  material.map = texture;
+  material.needsUpdate = true;
+
+  console.log("Tekstura globu poprawnie załadowana i przypisana.");
 };
 
   // === TRYB WYBORU PUNKTU ===
