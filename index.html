@@ -4411,12 +4411,18 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
     const height = rect.height;
     const cameraPosition = camera.position.clone();
 
+	  // Pobieramy aktualną skalę globu (bo Ty skalujesz całą scenę)
+  const scale = globe.scene().scale.x || 1;
+  const effectiveRadius = radius * scale;
+	  
     labelDivs.forEach(({ div, lat, lng }) => {
       const phi = (90 - lat) * Math.PI / 180;
       const theta = (lng + 90) * Math.PI / 180;
-      const x = -radius * Math.sin(phi) * Math.cos(theta);
-      const z = radius * Math.sin(phi) * Math.sin(theta);
-      const y = radius * Math.cos(phi);
+     
+		// Uwzględniamy skalę przy obliczaniu współrzędnych
+    const x = -effectiveRadius * Math.sin(phi) * Math.cos(theta);
+    const z = effectiveRadius * Math.sin(phi) * Math.sin(theta);
+    const y = effectiveRadius * Math.cos(phi);
 
       const worldVec = new THREE.Vector3(x, y, z);
       const toCamera = cameraPosition.clone().sub(worldVec).normalize();
