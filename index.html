@@ -4106,20 +4106,26 @@ if (currentPlanet) {
     globe.globeImageUrl(null); // brak tekstury = czysty glob
   }
 } else {
-  console.warn("⚠️ Brak aktywnej planety – pomijam ładowanie tekstury globu.");
+  console.warn("Brak aktywnej planety – pomijam ładowanie tekstury globu.");
   globe.globeImageUrl(null); // nic nie ładuj dopóki nie będzie planety
 }
 
-  // === TRYB WYBORU PUNKTU ===
-  const pickBtn = document.getElementById('pickOnGlobeBtn');
-  if (pickBtn) {
-    pickBtn.addEventListener('click', (e) => {
-      e.stopPropagation();// Zatrzymuje propagację, żeby event "poza globem" się nie odpalił
-      pickMode = !pickMode;
-      pickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
-      pickBtn.style.background = pickMode ? '#4CAF50' : '';
-    });
-  }
+// === TRYB WYBORU PUNKTU ===
+const pickBtn = document.getElementById('pickOnGlobeBtn');
+if (pickBtn) {
+  // Usuń poprzedni listener, żeby się nie dublowały
+  pickBtn.replaceWith(pickBtn.cloneNode(true));
+
+  // Pobierz świeży element (po replaceWith)
+  const newPickBtn = document.getElementById('pickOnGlobeBtn');
+  
+  newPickBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Zatrzymuje propagację, żeby event "poza globem" się nie odpalił
+    pickMode = !pickMode;
+    newPickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
+    newPickBtn.style.background = pickMode ? '#4CAF50' : '';
+  });
+}
 	
 // nasłuchiwanie kliknięcia na globie
   globe.onGlobeClick((coords, event) => {
