@@ -1625,30 +1625,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 	
-//wymusza natychmiastowe odświeżenie renderera i animacji globu przy każdym resize
-function handleWindowResize() {
-  if (!globe) return;
-
-  const container = document.getElementById("globeViz");
-  const width = container.offsetWidth;
-  const height = container.offsetHeight;
-
-  // Ustawiamy renderer na dokładny rozmiar kontenera
-  globe.renderer().setSize(width, height, false);
-
-  // Kamera
-  const camera = globe.camera();
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-
-  // Wymuś ponowną aktualizację etykiet
-  if (typeof updateLabels === "function") updateLabels();
-
-  // Wymuś rerender
-  globe.pauseAnimation();
-  globe.resumeAnimation();
-}
-	
 ////////////////////////////////////////////////////////////////////
 //------------------- Sidebar galaktyk ----------------------------//
 ////////////////////////////////////////////////////////////////////
@@ -4201,9 +4177,6 @@ if (pickBtn) {
   if (colorInput) colorInput.value = globeSettings.color;
   if (opacityInput) opacityInput.value = globeSettings.opacity.toString();
 
- // domyślnie siatka co 10 i etykiety co 30
-grid10Cb.checked = true;
-labels30Cb.checked = true;
 refreshGridAndLabels();
 
  // === PUNKTY PLANETY ===
@@ -4242,8 +4215,6 @@ refreshGridAndLabels();
       pointNotesPanel.style.display = "none";
     }
   });
-  //wymusza natychmiastowe odświeżenie renderera i animacji globu przy każdym resize
-  window.addEventListener('resize', handleWindowResize);
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
