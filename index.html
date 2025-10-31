@@ -4066,7 +4066,9 @@ function initGlobe() {
         default:          return "red";
       }
     })
-    .pointRadius(() => globeSettings.pointScale) // używamy zapamiętanej wartości
+    // przywracamy zapisane wartości suwaków (albo domyślne)
+    .pointRadius(() => globeSettings.pointScale ?? 0.4)
+    .pointAltitude(() => (globeSettings.pointsDistanceMultiplier ?? 1) * 0.01)
     .htmlElementsData([])
     .htmlElement(d=>{
       if(d.type==="Pole"){
@@ -4109,6 +4111,34 @@ if (currentPlanet) {
   globe.globeImageUrl(null); // nic nie ładuj dopóki nie będzie planety
 }
 
+// === Przywrócenie wartości suwaków i podpięcie ich reakcji ===
+const scaleInput = document.getElementById("pointScale");
+const scaleValue = document.getElementById("pointScaleValue");
+const heightInput = document.getElementById("pointsDistanceMultiplier");
+const heightValue = document.getElementById("pointsDistanceMultiplierValue");
+
+if (scaleInput) {
+  scaleInput.value = globeSettings.pointScale ?? 0.4;
+  scaleValue.textContent = globeSettings.pointScale ?? 0.4;
+  scaleInput.oninput = () => {
+    const val = parseFloat(scaleInput.value);
+    scaleValue.textContent = val;
+    globe.pointRadius(() => val);
+    globeSettings.pointScale = val;
+  };
+}
+
+if (heightInput) {
+  heightInput.value = globeSettings.pointsDistanceMultiplier ?? 1;
+  heightValue.textContent = globeSettings.pointsDistanceMultiplier ?? 1;
+  heightInput.oninput = () => {
+    const val = parseFloat(heightInput.value);
+    heightValue.textContent = val;
+    globe.pointAltitude(() => val * 0.01);
+    globeSettings.pointsDistanceMultiplier = val;
+  };
+}
+	
 // === TRYB WYBORU PUNKTU ===
 let pickBtn = document.getElementById('pickOnGlobeBtn');
 
@@ -4230,8 +4260,8 @@ function destroyGlobe() {
     showSides: !!labelsSidesCb?.checked,
     color: colorInput?.value || '#888888',
     opacity: parseFloat(opacityInput?.value) || 0.3,
-    pointScale: pointScale,
-    pointsDistanceMultiplier: pointsDistanceMultiplier,
+    pointScale: parseFloat(document.getElementById('pointScale')?.value) || 0.4,
+    pointsDistanceMultiplier: parseFloat(document.getElementById('pointsDistanceMultiplier')?.value) || 1,
     globeZoomMultiplier: globeZoomMultiplier,
     autoRotate: autoRotate,
     rotateSpeed: rotateSpeed,
