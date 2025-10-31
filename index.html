@@ -1624,7 +1624,29 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("musicVolume", vol); // zapamiętaj głośność
   });
 });
+	
+//wymusza natychmiastowe odświeżenie renderera i animacji globu przy każdym resize
+function handleWindowResize() {
+  if (!globe) return;
 
+  const canvas = globe.renderer().domElement;
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+
+  // ustawiamy rozmiar renderera na nowy
+  globe.renderer().setSize(width, height, false);
+
+  // aktualizujemy proporcje kamery
+  const camera = globe.camera();
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+
+  // wymuszamy odświeżenie etykiet
+  if (geoLabelContainer && typeof updateLabels === 'function') {
+    updateLabels();
+  }
+}
+	
 ////////////////////////////////////////////////////////////////////
 //------------------- Sidebar galaktyk ----------------------------//
 ////////////////////////////////////////////////////////////////////
@@ -4218,7 +4240,9 @@ refreshGridAndLabels();
       pointNotesPanel.style.display = "none";
     }
   });
-
+  //wymusza natychmiastowe odświeżenie renderera i animacji globu przy każdym resize
+  window.addEventListener('resize', handleWindowResize);
+	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
 
