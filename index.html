@@ -4113,6 +4113,11 @@ if (currentPlanet) {
 // === TRYB WYBORU PUNKTU ===
 let pickBtn = document.getElementById('pickOnGlobeBtn');
 
+// stała globalna referencja do handlera kliknięcia poza globem
+if (typeof window._handleOutsideClick === 'undefined') {
+  window._handleOutsideClick = null;
+}
+
 if (pickBtn) {
   // Usuń poprzedni listener, żeby się nie dublowały
   pickBtn.replaceWith(pickBtn.cloneNode(true));
@@ -4120,6 +4125,7 @@ if (pickBtn) {
   // Pobierz świeży element (po replaceWith)
   pickBtn = document.getElementById('pickOnGlobeBtn');
 
+  // po kliknięciu włącz tryb wyboru
   pickBtn.addEventListener('click', (e) => {
     e.stopPropagation(); // Zatrzymuje propagację, żeby event "poza globem" się nie odpalił
     pickMode = !pickMode;
@@ -4127,9 +4133,9 @@ if (pickBtn) {
     pickBtn.style.background = pickMode ? '#4CAF50' : '';
   });
 
-  // Nasłuchiwanie kliknięcia na globie
+  // nasłuchiwanie kliknięcia na globie
   globe.onGlobeClick((coords, event) => {
-    event.stopPropagation(); // kliknięcie w glob nie wyłączy trybu
+    event.stopPropagation(); // ważne — kliknięcie w glob nie wyłączy trybu
     if (!pickMode) return;
     const { lat, lng } = coords;
     document.getElementById('lat').value = lat.toFixed(3);
@@ -4141,19 +4147,21 @@ if (pickBtn) {
   });
 
   // Kliknięcie poza globem anuluje tryb wybierania
-  const handleOutsideClick = (e) => {
+    if (window._handleOutsideClick) {
+    document.removeEventListener("click", window._handleOutsideClick); // poprawne usuwanie poprzedniego listenera i utrzymywanie stałej referencji
+  }
+
+  window._handleOutsideClick = (e) => {
     if (!pickMode) return;
-    const globeEl = document.getElementById('globeWrapper');
+    const globeEl = document.getElementById("globeWrapper");
     if (!globeEl.contains(e.target) && e.target !== pickBtn) {
       pickMode = false;
-      pickBtn.textContent = 'Zaznacz na globie';
-      pickBtn.style.background = '';
+      pickBtn.textContent = "Zaznacz na globie";
+      pickBtn.style.background = "";
     }
   };
 
-  // Usuń poprzedni listener (jeśli był) i dodaj świeży
-  document.removeEventListener('click', handleOutsideClick);
-  document.addEventListener('click', handleOutsideClick);
+  document.addEventListener("click", window._handleOutsideClick);
 }
 
   // === DOMYŚLNA SIATKA I ETYKIETY ===
