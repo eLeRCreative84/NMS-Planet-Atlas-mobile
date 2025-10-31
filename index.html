@@ -4442,6 +4442,26 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
   }
 
   globe.controls().addEventListener('change', updateLabels);
+
+// === dynamiczne odświeżanie etykiet ===
+
+//Odświeżanie przy zmianie rozmiaru okna
+window.addEventListener("resize", () => {
+  requestAnimationFrame(updateLabels);
+});
+
+//Odświeżanie przy zmianie skali globu (np. z suwaka)
+const sceneScale = globe.scene().scale;
+const scaleObserver = new MutationObserver(() => requestAnimationFrame(updateLabels));
+
+// obserwuj zmiany w atrybutach skali sceny
+scaleObserver.observe(sceneScale, { attributes: true });
+
+//mały interwał bezpieczeństwa (na wypadek lagów)
+setInterval(() => {
+  requestAnimationFrame(updateLabels);
+}, 1000);
+	
   updateLabels();
 }
 
