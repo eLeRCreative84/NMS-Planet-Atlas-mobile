@@ -4134,8 +4134,8 @@ if (pickBtn) {
     const { lat, lng } = coords;
     document.getElementById('lat').value = lat.toFixed(3);
     document.getElementById('lng').value = lng.toFixed(3);
-    pickBtn.textContent = 'Zaznacz na globie';
-    pickBtn.style.background = '';
+    newPickBtn.textContent = 'Zaznacz na globie';
+    newPickBtn.style.background = '';
     pickMode = false;
     alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
   });
@@ -4144,10 +4144,10 @@ if (pickBtn) {
   const handleOutsideClick = (e) => {
     if (!pickMode) return;
     const globeEl = document.getElementById("globeWrapper");
-    if (!globeEl.contains(e.target) && e.target !== pickBtn) {
+    if (!globeEl.contains(e.target) && e.target !== newPickBtn) {
       pickMode = false;
-      pickBtn.textContent = "Zaznacz na globie";
-      pickBtn.style.background = "";
+      newPickBtn.textContent = "Zaznacz na globie";
+      newPickBtn.style.background = "";
     }
   };
 
