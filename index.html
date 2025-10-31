@@ -4134,26 +4134,27 @@ if (pickBtn) {
     const { lat, lng } = coords;
     document.getElementById('lat').value = lat.toFixed(3);
     document.getElementById('lng').value = lng.toFixed(3);
-    pickBtn.textContent = 'Zaznacz na globie';
-    pickBtn.style.background = '';
+    newPickBtn.textContent = 'Zaznacz na globie';
+    newPickBtn.style.background = '';
     pickMode = false;
     alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
   });
 
 // Kliknięcie poza globem anuluje tryb wybierania
-  document.addEventListener("click", (e) => {
+  const handleOutsideClick = (e) => {
     if (!pickMode) return;
     const globeEl = document.getElementById("globeWrapper");
-    if (!globeEl.contains(e.target) && e.target !== pickBtn) {
+    if (!globeEl.contains(e.target) && e.target !== newPickBtn) {
       pickMode = false;
-      pickBtn.textContent = "Zaznacz na globie";
-      pickBtn.style.background = "";
+      newPickBtn.textContent = "Zaznacz na globie";
+      newPickBtn.style.background = "";
     }
-  });
+  };
 
   // Usuń poprzedni listener (jeśli był) i dodaj świeży
   document.removeEventListener("click", handleOutsideClick);
   document.addEventListener("click", handleOutsideClick);
+
 
   // === DOMYŚLNA SIATKA I ETYKIETY ===
   // Przywracanie stanu z globeSettings
