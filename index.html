@@ -4354,7 +4354,7 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
 
     labelDivs.forEach(({ div, lat, lng }) => {
       const phi = (90 - lat) * Math.PI / 180;
-      const theta = THREE.MathUtils.degToRad(lng - 90);
+      const theta = (lng + 90) * Math.PI / 180;
       const x = -radius * Math.sin(phi) * Math.cos(theta);
       const z = radius * Math.sin(phi) * Math.sin(theta);
       const y = radius * Math.cos(phi);
