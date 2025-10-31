@@ -946,7 +946,6 @@ function updateNoPlanetsMessage() {
 }
   
 // Detale planety 
-
 function loadPlanetDetails(){
   if(!currentPlanet) return;
   const details = planetDetails[currentPlanet] || {};
@@ -1628,19 +1627,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Funkcja, która reaguje na zmianę rozmiaru okna
 function handleWindowResize() {
-  const globeCanvas = globe.renderer().domElement;
-  const width = globeCanvas.clientWidth;
-  const height = globeCanvas.clientHeight;
+  if (!globe) return;
 
+  const canvas = globe.renderer().domElement;
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+
+  // ustawiamy rozmiar renderera na nowy
   globe.renderer().setSize(width, height, false);
 
+  // aktualizujemy proporcje kamery
   const camera = globe.camera();
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
 
-  // jeśli masz dodatkowe rzeczy do odświeżenia, np. etykiety
-  if (geoLabelContainer) {
-    // np. wymuś updateLabels()
+  // wymuszamy odświeżenie etykiet
+  if (geoLabelContainer && typeof updateLabels === 'function') {
+    updateLabels();
   }
 }
 	
