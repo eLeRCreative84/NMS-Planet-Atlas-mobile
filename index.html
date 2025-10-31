@@ -1628,23 +1628,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Funkcja, która reaguje na zmianę rozmiaru okna
 function handleWindowResize() {
-  if (!globe) return;
+  const globeCanvas = globe.renderer().domElement;
+  const width = globeCanvas.clientWidth;
+  const height = globeCanvas.clientHeight;
 
-  // Zaktualizuj wymiary renderera
-  const container = document.getElementById("globeWrapper"); // lub "globeViz"
-  const width = container.clientWidth;
-  const height = container.clientHeight;
+  globe.renderer().setSize(width, height, false);
 
-  const renderer = globe.renderer();
   const camera = globe.camera();
-
-  renderer.setSize(width, height); // Three.js
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
 
-  // Odśwież etykiety (jeśli używasz HTML overlay)
-  if (geoLabelContainer && typeof updateLabels === "function") {
-    updateLabels(); // funkcja z addGeoLabels
+  // jeśli masz dodatkowe rzeczy do odświeżenia, np. etykiety
+  if (geoLabelContainer) {
+    // np. wymuś updateLabels()
   }
 }
 	
