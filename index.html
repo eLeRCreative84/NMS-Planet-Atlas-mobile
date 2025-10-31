@@ -4151,6 +4151,10 @@ if (pickBtn) {
     }
   });
 
+  // Usuń poprzedni listener (jeśli był) i dodaj świeży
+  document.removeEventListener("click", handleOutsideClick);
+  document.addEventListener("click", handleOutsideClick);
+
   // === DOMYŚLNA SIATKA I ETYKIETY ===
   // Przywracanie stanu z globeSettings
   if (grid10Cb && grid30Cb) {
