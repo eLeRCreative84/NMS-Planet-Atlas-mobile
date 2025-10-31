@@ -4117,13 +4117,13 @@ if (pickBtn) {
   pickBtn.replaceWith(pickBtn.cloneNode(true));
 
   // Pobierz świeży element (po replaceWith)
-  const newPickBtn = document.getElementById('pickOnGlobeBtn');
+  const pickBtn = document.getElementById('pickOnGlobeBtn');
   
-  newPickBtn.addEventListener('click', (e) => {
+  pickBtn.addEventListener('click', (e) => {
     e.stopPropagation(); // Zatrzymuje propagację, żeby event "poza globem" się nie odpalił
     pickMode = !pickMode;
-    newPickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
-    newPickBtn.style.background = pickMode ? '#4CAF50' : '';
+    pickBtn.textContent = pickMode ? 'Kliknij na globie...' : 'Zaznacz na globie';
+    pickBtn.style.background = pickMode ? '#4CAF50' : '';
   });
 }
 	
@@ -4134,8 +4134,8 @@ if (pickBtn) {
     const { lat, lng } = coords;
     document.getElementById('lat').value = lat.toFixed(3);
     document.getElementById('lng').value = lng.toFixed(3);
-    newPickBtn.textContent = 'Zaznacz na globie';
-    newPickBtn.style.background = '';
+    pickBtn.textContent = 'Zaznacz na globie';
+    pickBtn.style.background = '';
     pickMode = false;
     alert(`Wybrano punkt: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
   });
@@ -4144,10 +4144,10 @@ if (pickBtn) {
   const handleOutsideClick = (e) => {
     if (!pickMode) return;
     const globeEl = document.getElementById("globeWrapper");
-    if (!globeEl.contains(e.target) && e.target !== newPickBtn) {
+    if (!globeEl.contains(e.target) && e.target !== pickBtn) {
       pickMode = false;
-      newPickBtn.textContent = "Zaznacz na globie";
-      newPickBtn.style.background = "";
+      pickBtn.textContent = "Zaznacz na globie";
+      pickBtn.style.background = "";
     }
   };
 
