@@ -1626,6 +1626,28 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+// Funkcja, która reaguje na zmianę rozmiaru okna
+function handleWindowResize() {
+  if (!globe) return;
+
+  // Zaktualizuj wymiary renderera
+  const container = document.getElementById("globeWrapper"); // lub "globeViz"
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+
+  const renderer = globe.renderer();
+  const camera = globe.camera();
+
+  renderer.setSize(width, height); // Three.js
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+
+  // Odśwież etykiety (jeśli używasz HTML overlay)
+  if (geoLabelContainer && typeof updateLabels === "function") {
+    updateLabels(); // funkcja z addGeoLabels
+  }
+}
+	
 ////////////////////////////////////////////////////////////////////
 //------------------- Sidebar galaktyk ----------------------------//
 ////////////////////////////////////////////////////////////////////
@@ -4219,6 +4241,13 @@ refreshGridAndLabels();
       pointNotesPanel.style.display = "none";
     }
   });
+
+//To wymusza natychmiastowe odświeżenie renderera i animacji globu przy każdym resize okna Windows	
+window.addEventListener("resize", () => {
+  handleWindowResize();
+  globe.pauseAnimation();
+  globe.resumeAnimation();
+});
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
