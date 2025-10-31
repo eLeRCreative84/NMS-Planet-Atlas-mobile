@@ -4248,13 +4248,45 @@ function destroyGlobe() {
     })()
   };
 
-  // usuń siatkę i etykiety
+  // Zatrzymaj animację
+  globe.pauseAnimation();
+
+  // Usuń siatkę i etykiety
   if (geoGridGroup && globe.scene()) globe.scene().remove(geoGridGroup);
   if (geoLabelContainer) geoLabelContainer.remove();
 
-  // usuń renderer z DOM
+  // Zwolnij wszystkie geometrię i materiały w scenie
+  if (globe.scene()) {
+    globe.scene().traverse(obj => {
+      if (obj.isMesh) {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(mat => {
+              if (mat.map) mat.map.dispose();
+              mat.dispose();
+            });
+          } else {
+            if (obj.material.map) obj.material.map.dispose();
+            obj.material.dispose();
+          }
+        }
+      }
+    });
+  }
+
+  // Usuń renderer i canvas
   const canvas = document.querySelector('#globeViz canvas');
-  if (canvas) canvas.remove();
+  if (canvas && globe.renderer) {
+    const renderer = globe.renderer();
+    renderer.forceContextLoss();
+    renderer.dispose();
+    if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+  }
+
+  // Usuń orbit controls
+  const controls = globe.controls?.();
+  if (controls && controls.dispose) controls.dispose();
 
   globe = null;
   geoGridGroup = null;
