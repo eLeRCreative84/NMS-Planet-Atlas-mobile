@@ -3973,6 +3973,11 @@ function updateGlobeZoomMultiplier() {
   globeZoomMultiplier = parseFloat(document.getElementById("globeZoomMultiplier").value);
   document.getElementById("globeZoomMultiplierValue").textContent = globeZoomMultiplier;
   globe.scene().scale.set(globeZoomMultiplier, globeZoomMultiplier, globeZoomMultiplier);
+
+  // Odśwież etykiety po zmianie skali
+  if (typeof updateLabels === 'function') {
+    requestAnimationFrame(updateLabels);
+  }
 }
 function resetGlobeZoomMultiplier(){
   document.getElementById("globeZoomMultiplier").value = 1;
