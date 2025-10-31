@@ -1629,22 +1629,24 @@ document.addEventListener("DOMContentLoaded", () => {
 function handleWindowResize() {
   if (!globe) return;
 
-  const canvas = globe.renderer().domElement;
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
+  const container = document.getElementById("globeViz");
+  const width = container.offsetWidth;
+  const height = container.offsetHeight;
 
-  // ustawiamy rozmiar renderera na nowy
+  // Ustawiamy renderer na dokładny rozmiar kontenera
   globe.renderer().setSize(width, height, false);
 
-  // aktualizujemy proporcje kamery
+  // Kamera
   const camera = globe.camera();
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
 
-  // wymuszamy odświeżenie etykiet
-  if (geoLabelContainer && typeof updateLabels === 'function') {
-    updateLabels();
-  }
+  // Wymuś ponowną aktualizację etykiet
+  if (typeof updateLabels === "function") updateLabels();
+
+  // Wymuś rerender
+  globe.pauseAnimation();
+  globe.resumeAnimation();
 }
 	
 ////////////////////////////////////////////////////////////////////
