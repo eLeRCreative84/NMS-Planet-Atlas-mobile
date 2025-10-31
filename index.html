@@ -3973,10 +3973,14 @@ function updateGlobeZoomMultiplier() {
   globeZoomMultiplier = parseFloat(document.getElementById("globeZoomMultiplier").value);
   document.getElementById("globeZoomMultiplierValue").textContent = globeZoomMultiplier;
   globe.scene().scale.set(globeZoomMultiplier, globeZoomMultiplier, globeZoomMultiplier);
+  refreshGridAndLabels();
+  updateLabels();
 }
 function resetGlobeZoomMultiplier(){
   document.getElementById("globeZoomMultiplier").value = 1;
   updateGlobeZoomMultiplier();
+  refreshGridAndLabels();
+  updateLabels();
 }
 
 function toggleAutoRotate() {
