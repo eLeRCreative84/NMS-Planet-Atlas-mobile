@@ -4327,6 +4327,10 @@ function destroyGlobe() {
   // Usuń orbit controls
   const controls = globe.controls?.();
   if (controls && controls.dispose) controls.dispose();
+	if (window.__labelUpdateInterval) {
+		clearInterval(window.__labelUpdateInterval);
+		window.__labelUpdateInterval = null;
+	}
 
   globe = null;
   geoGridGroup = null;
@@ -4373,12 +4377,20 @@ function addGeoGrid(scene, step = 10, color = '#888888', opacity = 0.3) {
 function addGeoLabels(step = 30, showSides = false, color = '#888888') {
   // usuń poprzednie etykiety i eventy
   if (geoLabelContainer) geoLabelContainer.remove();
+
   if (globe && globe.controls && typeof globe.controls === "function") {
-    globe.controls().removeEventListener('change', updateLabels);
+    if (globalUpdateLabels)
+      globe.controls().removeEventListener('change', globalUpdateLabels);
   }
+
   if (globalUpdateLabels)
-  window.removeEventListener("resize", globalUpdateLabels);
-  if (window.__labelUpdateInterval) clearInterval(window.__labelUpdateInterval);
+    window.removeEventListener("resize", globalUpdateLabels);
+
+  // wyczyść poprzedni interwał jeśli istnieje
+  if (window.__labelUpdateInterval) {
+    clearInterval(window.__labelUpdateInterval);
+    window.__labelUpdateInterval = null;
+  }
 	
   labelDivs = [];
 
@@ -4468,15 +4480,13 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
 // === dynamiczne odświeżanie etykiet ===
 
 //Odświeżanie przy zmianie rozmiaru okna
-window.addEventListener("resize", () => {
-  requestAnimationFrame(updateLabels);
-});
+window.addEventListener("resize", () => requestAnimationFrame(updateLabels));
 
-//mały interwał bezpieczeństwa (na wypadek lagów)
-setInterval(() => {
-  requestAnimationFrame(updateLabels);
-}, 1000);
-	
+  // bezpieczny interwał, pojedynczy na sesję globu
+  window.__labelUpdateInterval = setInterval(() => {
+    if (globe) requestAnimationFrame(updateLabels);
+  }, 1000);
+
   updateLabels();
 }
 
