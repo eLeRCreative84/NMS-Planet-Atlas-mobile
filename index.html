@@ -4411,6 +4411,8 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
 
 
   function updateLabels() {
+	if (!globe || !globe.scene || !globe.renderer || !geoLabelContainer) return;
+	  
     const rect = renderer.domElement.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
