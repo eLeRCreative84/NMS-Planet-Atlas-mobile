@@ -580,6 +580,7 @@ let geoGridGroup = null;
 let geoLabelContainer = null;
 let labelDivs = [];
 let pickMode = false;
+let globalUpdateLabels = null;
 	
 ////////////////////////////////////////////////////////////////////
 //----------------- Zakładki i inne elementy UI -----------------//
@@ -4283,7 +4284,8 @@ function destroyGlobe() {
  
  // usuń eventy od etykiet (żeby nie powodowały migania)
   if (globe.controls && typeof globe.controls === "function") {
-    globe.controls().removeEventListener('change', updateLabels);
+    if (globalUpdateLabels)
+  globe.controls().removeEventListener('change', globalUpdateLabels);
   }
   
 	// Zatrzymaj animację
@@ -4374,7 +4376,8 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
   if (globe && globe.controls && typeof globe.controls === "function") {
     globe.controls().removeEventListener('change', updateLabels);
   }
-  window.removeEventListener("resize", updateLabels);
+  if (globalUpdateLabels)
+  window.removeEventListener("resize", globalUpdateLabels);
   if (window.__labelUpdateInterval) clearInterval(window.__labelUpdateInterval);
 	
   labelDivs = [];
@@ -4459,7 +4462,7 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
       }
     });
   }
-
+  globalUpdateLabels = updateLabels; // funkcję udostępniamy globalnie
   globe.controls().addEventListener('change', updateLabels);
 
 // === dynamiczne odświeżanie etykiet ===
