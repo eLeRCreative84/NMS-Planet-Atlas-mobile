@@ -4280,8 +4280,13 @@ function destroyGlobe() {
       return null;
     })()
   };
-
-  // Zatrzymaj animację
+ 
+ // usuń eventy od etykiet (żeby nie powodowały migania)
+  if (globe.controls && typeof globe.controls === "function") {
+    globe.controls().removeEventListener('change', updateLabels);
+  }
+  
+	// Zatrzymaj animację
   globe.pauseAnimation();
 
   // Usuń siatkę i etykiety
@@ -4364,7 +4369,14 @@ function addGeoGrid(scene, step = 10, color = '#888888', opacity = 0.3) {
 
 // === FUNKCJA TWORZENIA ETYKIET ===
 function addGeoLabels(step = 30, showSides = false, color = '#888888') {
+  // usuń poprzednie etykiety i eventy
   if (geoLabelContainer) geoLabelContainer.remove();
+  if (globe && globe.controls && typeof globe.controls === "function") {
+    globe.controls().removeEventListener('change', updateLabels);
+  }
+  window.removeEventListener("resize", updateLabels);
+  if (window.__labelUpdateInterval) clearInterval(window.__labelUpdateInterval);
+	
   labelDivs = [];
 
   geoLabelContainer = document.createElement('div');
@@ -4409,7 +4421,7 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
 	  }
 	}
 
-
+// ---- AKTUALIZACJA ETYKIET ----
   function updateLabels() {
 	if (!globe || !globe.scene || !globe.renderer || !geoLabelContainer) return;
 	  
