@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1", maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Atlas Planetarny</title>
 <script src="https://unpkg.com/three@0.155.0/build/three.min.js"></script>
 <script src="https://unpkg.com/globe.gl"></script>
@@ -157,7 +157,10 @@
   </div>
 </div>
 
-<div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+
+
+
+  <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
     <h2 data-i18n="start_importExport">Import/Eksport</h2>
     <button class="lock-while-edit" onclick="exportAtlas()" data-i18n="start_btn_export">Eksport JSON</button>
     <input class="lock-while-edit" type="file" id="importFile" accept="application/json" onchange="importAtlas(event)" />
@@ -482,9 +485,11 @@
   <option value="sky3">Skybox 3</option>
   </select>
   </div>
- </div>  
-</div>
+ 
 
+</div>  
+</div>
+	
   <!-- Obszar wizualizacji globu -->
   <div id="globeWrapper" style="position: relative;">
     <!-- nagłówek overlay -->
@@ -4093,13 +4098,6 @@ function initGlobe() {
       }
     });
 
-// --- WYŁĄCZ automatyczny resize Three.js ---
-const renderer = globe.renderer();
-if (renderer && renderer.domElement) {
-  window.removeEventListener('resize', renderer._handleWindowResize, false);
-  delete renderer._handleWindowResize;
-}
-	
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
     globe.pointsData(atlas[currentPlanet]);
@@ -4255,30 +4253,6 @@ refreshGridAndLabels();
     }
   });
 
-// --- FUNKCJA do ręcznego dopasowania rozmiaru ---
-  function resizeGlobe() {
-    if (!globe || !globe.renderer || !globe.camera) return;
-
-    const globeEl = document.getElementById('globeViz');
-    const width = globeEl.clientWidth;
-    const height = globeEl.clientHeight;
-
-    const renderer = globe.renderer();
-    const camera = globe.camera();
-
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-  }
-
-  // --- WYWOŁAJ raz po inicjalizacji ---
-  resizeGlobe();
-
-  // --- ZRÓB REAKCJĘ tylko na realną zmianę orientacji ---
-  window.addEventListener('orientationchange', () => {
-    setTimeout(resizeGlobe, 500);
-  });
-	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
 
