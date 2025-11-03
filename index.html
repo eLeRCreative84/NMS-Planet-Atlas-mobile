@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Atlas Planetarny</title>
 <script src="https://unpkg.com/three@0.155.0/build/three.min.js"></script>
 <script src="https://unpkg.com/globe.gl"></script>
@@ -4098,13 +4098,18 @@ function initGlobe() {
       }
     });
 
-if (globe.renderer()) {
-  const r = globe.renderer();
-  // usuń wewnętrzny listener resize (Three-Globe sam go dodaje)
-  window.removeEventListener('resize', r._handleWindowResize, false);
-  delete r._handleWindowResize;
-  console.log("Auto-resize Globe wyłączony");
+// --- ZAMROŻENIE WYSOKOŚCI VIEWPORTU NA MOBILE ---
+function fixViewportHeight() {
+  const vh = window.innerHeight;
+  document.getElementById("globeViz").style.height = `${vh}px`;
 }
+fixViewportHeight();
+
+// jeśli użytkownik obróci ekran lub zmieni rozmiar okna
+window.addEventListener('resize', () => {
+  fixViewportHeight();
+});
+
 	
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
@@ -4152,36 +4157,6 @@ if (heightInput) {
     globe.pointAltitude(() => val * 0.01);
     globeSettings.pointsDistanceMultiplier = val;
   };
-}
-
-// --- Zablokowanie auto-resize dla mobilnych przeglądarek ---
-if (/Mobi|Android/i.test(navigator.userAgent)) {
-	
-const renderer = globe.renderer();
-const canvas = renderer.domElement;
-
-function fixCanvasSize() {
-  const { width, height } = renderer.getSize(new THREE.Vector2());
-  renderer.setSize(width, height, false);
-}
-
-// ustaw rozmiar początkowy
-fixCanvasSize();
-
-// zatrzymaj automatyczne przeskalowanie przy zmianie viewportu 
-window.addEventListener('resize', (e) => {
-  e.stopImmediatePropagation();
-  fixCanvasSize();
-});
-}	
-
-if (/Mobi|Android/i.test(navigator.userAgent)) {
-  const container = document.getElementById('globeViz');
-  const w = container.offsetWidth;
-  const h = container.offsetHeight;
-
-  globe.width([w]);
-  globe.height([h]);
 }
 	
 // === TRYB WYBORU PUNKTU ===
@@ -4291,13 +4266,6 @@ refreshGridAndLabels();
     }
   });
 
-const wrapper = document.getElementById("globeWrapper");
-
-wrapper.addEventListener("touchmove", (e) => {
-  e.stopPropagation();
-  e.preventDefault();
-}, { passive: false });
-	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
 
