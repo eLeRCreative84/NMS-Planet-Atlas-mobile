@@ -1,8 +1,43 @@
-body { margin: 0; display: flex; height: 100vh; font-family: Arial, sans-serif; overflow: hidden; font-size: 14px; }
-  #form { flex: 0 0 25%; min-width: 340px; max-width: 450px; padding: 1rem; background: #0a1e3a; color: white; overflow-y: auto; box-sizing: border-box; }
-  #globeViz { flex: 1; background: black; position: relative; }
+body { 
+	margin: 0; 
+	display: flex; 
+	height: 100%; 
+	font-family: Arial, sans-serif; 
+	font-size: 14px;
+}
+  #form { 
+	  flex: 0 0 25%; 
+	  min-width: 340px; 
+	  max-width: 450px; 
+	  padding: 1rem; 
+	  background: #0a1e3a; 
+	  color: white; 
+	  overflow-y: auto; 
+	  box-sizing: border-box; 
+  }
+
+  #globeViz { 
+	  flex: 1; 
+	  background: black; 
+	  position: relative; 
+	  overflow: hidden;
+      touch-action: none; /* zapobiega przesuwaniu strony */
+  }
+
+html, body {
+  overflow: hidden; /* absolutnie kluczowe — blokuje przewijanie strony */
+  touch-action: none; /* blokuje zoom i przesuwanie strony palcem */
+}
+
   /* upewniamy się że canvas zajmuje cały obszar kontenera */
-  #globeViz canvas { width: 100% !important; height: 100% !important; display: block; background: transparent; }
+  #globeViz canvas { 
+	  width: 100% !important; 
+	  height: 100% !important; 
+	  display: block; 
+	  background: transparent;
+	  overflow: hidden;
+	  touch-action: none; /* zapobiega przesuwaniu strony */
+  }
 
   h2 { margin-top: 1rem; margin-bottom: 0.5rem; }
   input, select, textarea, button { width: 100%; margin: 0.3rem 0; padding: 0.4rem; box-sizing: border-box; }
@@ -688,6 +723,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
