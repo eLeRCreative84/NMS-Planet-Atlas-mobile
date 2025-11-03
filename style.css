@@ -350,7 +350,7 @@ button:disabled {
 #galaxySidebar {
   position: fixed;
   right: 0;
-  bottom: 5px;
+  top: calc(5px + 450px + 10px); /* odległość od góry = wysokość planetSidebar + mały odstęp */
   height: 200px;                     /* trochę miejsca, ale spójny wygląd */
   width: 220px;                      /* ta sama szerokość */
   background: rgba(10, 30, 60, 0.9); /* to samo tło co planety */
@@ -688,6 +688,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
