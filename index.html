@@ -4252,6 +4252,17 @@ refreshGridAndLabels();
       pointNotesPanel.style.display = "none";
     }
   });
+
+const globeContainer = document.getElementById("globeWrapper");
+
+// Blokuj przewijanie strony, gdy dotykasz globu
+globeContainer.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+}, { passive: false });
+
+globeContainer.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+}, { passive: false });
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
