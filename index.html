@@ -157,10 +157,7 @@
   </div>
 </div>
 
-
-
-
-  <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+<div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
     <h2 data-i18n="start_importExport">Import/Eksport</h2>
     <button class="lock-while-edit" onclick="exportAtlas()" data-i18n="start_btn_export">Eksport JSON</button>
     <input class="lock-while-edit" type="file" id="importFile" accept="application/json" onchange="importAtlas(event)" />
@@ -485,9 +482,7 @@
   <option value="sky3">Skybox 3</option>
   </select>
   </div>
- 
-
-</div>  
+ </div>  
 </div>
 	
   <!-- Obszar wizualizacji globu -->
@@ -4097,29 +4092,6 @@ function initGlobe() {
         return el;
       }
     });
-
-// --- ZAMROŻENIE WYSOKOŚCI VIEWPORTU NA MOBILE ---
-
-function fixViewportHeight() {
-  const vh = window.innerHeight;
-  document.getElementById("globeViz").style.height = `${vh}px`;
-}
-fixViewportHeight();
-
-window.addEventListener('resize', () => {
-  fixViewportHeight();
-  if (globe && globe.renderer && globe.camera) {
-    const renderer = globe.renderer();
-    const camera = globe.camera();
-    const globeEl = document.getElementById('globeViz');
-    const width = globeEl.clientWidth;
-    const height = globeEl.clientHeight;
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-  }
-});
-
 	
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
