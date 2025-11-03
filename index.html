@@ -485,8 +485,6 @@
  </div>  
 </div>
 
-<!-- Stały viewport dla całej aplikacji -->
-<div id="appViewport">
   <!-- Obszar wizualizacji globu -->
   <div id="globeWrapper" style="position: relative;">
     <!-- nagłówek overlay -->
@@ -525,7 +523,7 @@
    <!-- Panel z notatkami punktu -->
 <div id="pointNotesPanel"></div>
 </div>
-</div>
+
 	<!--  Wrapper Babylon -->	
  <div id="babylonWrapper" style="position: relative; width:100%; height:100%; display:none;">
 
@@ -4095,16 +4093,6 @@ function initGlobe() {
       }
     });
 
-// Ustabilizuj wysokość viewportu na mobilkach
-function fixViewportHeight() {
-  const app = document.getElementById('appViewport');
-  if (app) app.style.height = window.innerHeight + 'px';
-}
-
-window.addEventListener('resize', fixViewportHeight);
-window.addEventListener('orientationchange', fixViewportHeight);
-fixViewportHeight();
-	
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
     globe.pointsData(atlas[currentPlanet]);
