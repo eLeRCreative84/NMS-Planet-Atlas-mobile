@@ -4099,15 +4099,25 @@ function initGlobe() {
     });
 
 // --- ZAMROŻENIE WYSOKOŚCI VIEWPORTU NA MOBILE ---
+
 function fixViewportHeight() {
   const vh = window.innerHeight;
   document.getElementById("globeViz").style.height = `${vh}px`;
 }
 fixViewportHeight();
 
-// jeśli użytkownik obróci ekran lub zmieni rozmiar okna
 window.addEventListener('resize', () => {
   fixViewportHeight();
+  if (globe && globe.renderer && globe.camera) {
+    const renderer = globe.renderer();
+    const camera = globe.camera();
+    const globeEl = document.getElementById('globeViz');
+    const width = globeEl.clientWidth;
+    const height = globeEl.clientHeight;
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
 });
 
 	
