@@ -151,6 +151,8 @@ button:disabled {
   transform: translateX(0); /* widoczny */
   max-height: calc(100% - 215px); /* zostawiamy miejsce na galaktyki */
   padding-top: 0; /* nie zostawiaj odstępu nad h3 */
+  -webkit-overflow-scrolling: touch; /* płynny scroll na iOS */
+  overscroll-behavior: contain; /* nie przesuwa całego widoku */
 }
 
 /* Ukryty panel – chowamy w prawo */
@@ -160,7 +162,7 @@ button:disabled {
 
 /* Przycisk do pokazywania/ukrywania panelu */
 #togglePlanetSidebarBtn {
-  position: absolute; 
+  position: fixed; 
   top: 1rem;
   right: 230px; /* szerokość panelu +10 */
   z-index: 1000;
@@ -686,6 +688,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
