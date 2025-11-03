@@ -73,11 +73,6 @@ body { margin: 0; display: flex; height: 100vh; font-family: Arial, sans-serif; 
   display: flex;             /* włącza Flexbox */
   justify-content: center;   /* poziome centrowanie dzieci (canvas) */
   align-items: center;       /* pionowe centrowanie dzieci (canvas) */
-	touch-action: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: none;
 }
   
 /* Definiowanie kontenera w którym renderuje się glob (globe.gl / three.js). */
@@ -138,7 +133,7 @@ button:disabled {
   top: 5px;
   bottom: 5px;
   right: 0;
-  height: 450px; 
+  height: 100%;
   width: 220px;
   background: rgba(10, 30, 60, 0.9);
   color: white;
@@ -156,8 +151,6 @@ button:disabled {
   transform: translateX(0); /* widoczny */
   max-height: calc(100% - 215px); /* zostawiamy miejsce na galaktyki */
   padding-top: 0; /* nie zostawiaj odstępu nad h3 */
-  -webkit-overflow-scrolling: touch; /* płynny scroll na iOS */
-  overscroll-behavior: contain; /* nie przesuwa całego widoku */
 }
 
 /* Ukryty panel – chowamy w prawo */
@@ -167,7 +160,7 @@ button:disabled {
 
 /* Przycisk do pokazywania/ukrywania panelu */
 #togglePlanetSidebarBtn {
-  position: fixed; 
+  position: absolute; 
   top: 1rem;
   right: 230px; /* szerokość panelu +10 */
   z-index: 1000;
@@ -355,7 +348,7 @@ button:disabled {
 #galaxySidebar {
   position: fixed;
   right: 0;
-  top: calc(5px + 450px + 10px); /* odległość od góry = wysokość planetSidebar + mały odstęp */
+  bottom: 5px;
   height: 200px;                     /* trochę miejsca, ale spójny wygląd */
   width: 220px;                      /* ta sama szerokość */
   background: rgba(10, 30, 60, 0.9); /* to samo tło co planety */
@@ -694,15 +687,67 @@ button:disabled {
   padding: 2px 4px;
 }
 
+/* === WERSJA MOBILNA: układ pionowy (góra = panele, dół = globe) === */
+@media (max-width: 768px) {
 
+  /* Ustawienie wrappera globu na dole ekranu */
+  #globeWrapper {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60vh; /* glob zajmuje dolną część ekranu */
+    overflow: hidden;
+    z-index: 1;
+  }
 
+  #globeViz {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
 
+  /* Panele u góry */
+  #planetSidebar,
+  #galaxySidebar {
+    position: relative;
+    top: 0;
+    bottom: auto;
+    right: auto;
+    left: 0;
+    width: 100%;
+    max-height: 40vh; /* ograniczamy, by globe miał miejsce */
+    height: auto;
+    border-left: none;
+    border-bottom: 2px solid #102b56;
+    z-index: 2;
+  }
 
+  /* Układ paneli jeden pod drugim */
+  #planetSidebar {
+    margin-bottom: 4px;
+  }
 
+  /* Przycisk do chowania panelu chowamy */
+  #togglePlanetSidebarBtn {
+    display: none;
+  }
 
+  /* Naprawiamy przewijanie paneli */
+  #planetSidebar,
+  #galaxySidebar {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    overflow-y: auto;
+  }
 
-
-
-
+  /* Zapobiega skakaniu całego ekranu */
+  body {
+    overflow: hidden;
+    height: 100vh;
+  }
+}
 
 
