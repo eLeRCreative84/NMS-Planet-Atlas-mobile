@@ -4289,7 +4289,9 @@ wrapper.addEventListener("touchmove", (e) => {
   e.stopPropagation();
   e.preventDefault();
 }, { passive: false });
-
+	
+  console.log("Globe zainicjalizowany (ustawienia przywrócone).");
+}
 
 // === FUNKCJA DO USUWANIA / WYŁĄCZANIA GLOBE ===
 function destroyGlobe() {
