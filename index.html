@@ -4093,6 +4093,13 @@ function initGlobe() {
       }
     });
 
+// --- WYŁĄCZ automatyczny resize Three.js ---
+const renderer = globe.renderer();
+if (renderer && renderer.domElement) {
+  window.removeEventListener('resize', renderer._handleWindowResize, false);
+  delete renderer._handleWindowResize;
+}
+	
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
     globe.pointsData(atlas[currentPlanet]);
@@ -4248,6 +4255,31 @@ refreshGridAndLabels();
     }
   });
 
+// --- FUNKCJA do ręcznego dopasowania rozmiaru ---
+  function resizeGlobe() {
+    if (!globe || !globe.renderer || !globe.camera) return;
+
+    const globeEl = document.getElementById('globeViz');
+    const width = globeEl.clientWidth;
+    const height = globeEl.clientHeight;
+
+    const renderer = globe.renderer();
+    const camera = globe.camera();
+
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
+
+  // --- WYWOŁAJ raz po inicjalizacji ---
+  resizeGlobe();
+
+  // --- ZRÓB REAKCJĘ tylko na realną zmianę orientacji ---
+  window.addEventListener('orientationchange', () => {
+    setTimeout(resizeGlobe, 500);
+  });
+}
+	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
 
