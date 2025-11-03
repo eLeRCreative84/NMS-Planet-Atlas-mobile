@@ -73,6 +73,11 @@ body { margin: 0; display: flex; height: 100vh; font-family: Arial, sans-serif; 
   display: flex;             /* włącza Flexbox */
   justify-content: center;   /* poziome centrowanie dzieci (canvas) */
   align-items: center;       /* pionowe centrowanie dzieci (canvas) */
+	touch-action: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
 }
   
 /* Definiowanie kontenera w którym renderuje się glob (globe.gl / three.js). */
@@ -688,6 +693,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
