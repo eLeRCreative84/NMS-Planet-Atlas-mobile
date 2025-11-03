@@ -4098,6 +4098,14 @@ function initGlobe() {
       }
     });
 
+if (globe.renderer()) {
+  const r = globe.renderer();
+  // usuń wewnętrzny listener resize (Three-Globe sam go dodaje)
+  window.removeEventListener('resize', r._handleWindowResize, false);
+  delete r._handleWindowResize;
+  console.log("Auto-resize Globe wyłączony");
+}
+	
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
     globe.pointsData(atlas[currentPlanet]);
