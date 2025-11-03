@@ -4145,6 +4145,36 @@ if (heightInput) {
     globeSettings.pointsDistanceMultiplier = val;
   };
 }
+
+// --- Zablokowanie auto-resize dla mobilnych przeglądarek ---
+if (/Mobi|Android/i.test(navigator.userAgent)) {
+	
+const renderer = globe.renderer();
+const canvas = renderer.domElement;
+
+function fixCanvasSize() {
+  const { width, height } = renderer.getSize(new THREE.Vector2());
+  renderer.setSize(width, height, false);
+}
+
+// ustaw rozmiar początkowy
+fixCanvasSize();
+
+// zatrzymaj automatyczne przeskalowanie przy zmianie viewportu 
+window.addEventListener('resize', (e) => {
+  e.stopImmediatePropagation();
+  fixCanvasSize();
+});
+}	
+
+if (/Mobi|Android/i.test(navigator.userAgent)) {
+  const container = document.getElementById('globeViz');
+  const w = container.offsetWidth;
+  const h = container.offsetHeight;
+
+  globe.width([w]);
+  globe.height([h]);
+}
 	
 // === TRYB WYBORU PUNKTU ===
 let pickBtn = document.getElementById('pickOnGlobeBtn');
@@ -4253,19 +4283,13 @@ refreshGridAndLabels();
     }
   });
 
-const globeContainer = document.getElementById("globeWrapper");
+const wrapper = document.getElementById("globeWrapper");
 
-// Blokuj przewijanie strony, gdy dotykasz globu
-globeContainer.addEventListener("touchstart", (e) => {
+wrapper.addEventListener("touchmove", (e) => {
+  e.stopPropagation();
   e.preventDefault();
 }, { passive: false });
 
-globeContainer.addEventListener("touchmove", (e) => {
-  e.preventDefault();
-}, { passive: false });
-	
-  console.log("Globe zainicjalizowany (ustawienia przywrócone).");
-}
 
 // === FUNKCJA DO USUWANIA / WYŁĄCZANIA GLOBE ===
 function destroyGlobe() {
