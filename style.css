@@ -65,6 +65,7 @@ body { margin: 0; display: flex; height: 100vh; font-family: Arial, sans-serif; 
   align-items: center;       /* dzieci flexa wyśrodkowane pionowo */
   overflow: hidden;          /* elementy wystające poza wrapper są ucinane */
   touch-action: none;
+  -webkit-overflow-scrolling: none;
 }
 /* Stylowanie dla całego kontenera #globeViz */
 #globeViz {
@@ -687,6 +688,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
