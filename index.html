@@ -3891,12 +3891,34 @@ function changeTexturePage(delta) {
 ////////////////////////////////////////////////////////////////////  
 
 function exportAtlas(){
-  const blob = new Blob([JSON.stringify({
+  const exportData = {
     atlas,
     planetDetails,
     planetData,
-    textures // dodajemy listę galerii do JSON
-  }, null, 2)], {type:"application/json"});
+    textures,
+    regions: {} // blok na dane z modułu podróży
+  };
+
+  // Zapisz dane o regionach, punktach i połączeniach
+  for (const [key, region] of Object.entries(regions)) {
+    exportData.regions[key] = {
+      pointsData: region.pointsData.map(p => ({
+        id: p.id,
+        x: p.x,
+        y: p.y,
+        z: p.z,
+        galactic: p.galactic || "",
+        name: p.name || "",
+        connectedToPrev: !!p.connectedToPrev
+      })),
+      edges: region.edges ? region.edges.map(e => ({
+        fromId: e.fromId,
+        toId: e.toId
+      })) : []
+    };
+  }
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -3904,6 +3926,7 @@ function exportAtlas(){
   a.click();
   URL.revokeObjectURL(url);
 }
+
 
 function importAtlas(event){
   const file = event.target.files[0];
@@ -3921,6 +3944,20 @@ function importAtlas(event){
         currentTexturePage = 0;     // ustaw początkową stronę
         renderTexturePage();        // odtwórz galerię
       }
+	  
+	        // Nowość: import regionów i punktów
+      if (data.regions) {
+        regions = {}; // wyczyść stare
+        for (const [key, regionData] of Object.entries(data.regions)) {
+          regions[key] = {
+            pointsData: regionData.pointsData || [],
+            edges: regionData.edges || []
+          };
+        }
+        console.log("Zaimportowano regiony:", Object.keys(regions).length);
+      }
+	  
+	  
       const planets = Object.keys(atlas);
       currentPlanet = planets[0] || null;
       if (currentPlanet) selectPlanet(currentPlanet);
@@ -3933,6 +3970,15 @@ function importAtlas(event){
       updateNoPlanetsMessage();
       refreshPlanetSidebar();
 	  refreshGalaxySidebar();
+
+// odśwież Babylon.js scenę
+      if (typeof loadRegionByKey === "function") {
+        clearRenderedPoints();
+        loadedRegionKey = null;
+        drawGalaxyGrid();
+        updateGalaxyTilesHasPoints();
+      }
+
 
       alert(translations[currentLang].alert_import_done);
     } catch(err){ 
