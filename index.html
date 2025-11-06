@@ -4653,24 +4653,6 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", () => {
   setLanguage(currentLang); // ustaw domyślny język
 });
-
-// Pływający hepler do nawigacjaci na użądzeniqach mobilnych
-const helper = document.getElementById('scroll-helper');
-  const vv = window.visualViewport;
-
-  function updateHelperPosition() {
-    const margin = 16; // odstęp od krawędzi ekranu
-    const right = vv.offsetLeft + vv.width - helper.offsetWidth - margin;
-    const bottom = vv.offsetTop + vv.height - helper.offsetHeight - margin;
-
-    helper.style.transform = `translate(${right}px, ${bottom}px)`;
-  }
-
-  vv.addEventListener('scroll', updateHelperPosition);
-  vv.addEventListener('resize', updateHelperPosition);
-  window.addEventListener('scroll', updateHelperPosition);
-
-  updateHelperPosition();
 	
 // start
 window.onload = () => {
