@@ -26,8 +26,7 @@ body {
 	  width: 100% !important; 
 	  height: 100% !important; 
 	  display: block; 
-	  background: transparent; 
-	  min-width: 640px;
+	  background: transparent;
   }
 
   h2 { margin-top: 1rem; margin-bottom: 0.5rem; }
@@ -90,6 +89,7 @@ body {
   justify-content: center;   /* dzieci flexa wyśrodkowane poziomo */
   align-items: center;       /* dzieci flexa wyśrodkowane pionowo */
   overflow: hidden;          /* elementy wystające poza wrapper są ucinane */
+  min-width: 640px;
 }
 /* Stylowanie dla całego kontenera #globeViz */
 #globeViz {
@@ -775,6 +775,7 @@ button:disabled {
     height: 100vh;
   }
 }
+
 
 
 
