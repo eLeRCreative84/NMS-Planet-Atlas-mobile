@@ -4295,40 +4295,33 @@ refreshGridAndLabels();
     }
   });
 
-// „inteligentny przełącznik” dotyków
-  const globeContainer = document.getElementById('globeViz'); 
+if (/Mobi|Android/i.test(navigator.userAgent)) {  // tylko na urządzeniach mobilnych
+  const globeContainer = document.getElementById('globeViz');
+  let lastTap = 0;
 
-const controls = globe.controls(); 
+  globeContainer.addEventListener('touchend', (e) => {
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
 
-let startY = 0;
-let startX = 0;
-let isVerticalScroll = false;
+    if (tapLength < 300 && tapLength > 0) { // podwójny tap w ciągu 300 ms
+      const controls = globe.controls?.();
+      if (controls) {
+        // wykonaj maksymalny zoom out
+        controls.reset(); // resetuje kamerę do początkowej pozycji
+        controls.update();
 
-container.addEventListener('touchstart', (e) => {
-  startY = e.touches[0].clientY;
-  startX = e.touches[0].clientX;
-  isVerticalScroll = false;
-});
+        // ewentualnie można też ręcznie ustawić większy dystans:
+        controls.minDistance = 150;
+        controls.maxDistance = 150;
+        controls.object.position.set(0, 0, 150);
+      }
 
-container.addEventListener('touchmove', (e) => {
-  const dy = Math.abs(e.touches[0].clientY - startY);
-  const dx = Math.abs(e.touches[0].clientX - startX);
-
-  // jeśli gest to głównie pionowy ruch (scroll), wyłącz obrót globu
-  if (dy > dx * 1.5 && dy > 10) {
-    if (!isVerticalScroll) {
-      controls.enabled = false;
-      isVerticalScroll = true;
+      e.preventDefault(); // nie pozwól, by przeglądarka potraktowała to jako zoom gest
     }
-  } else if (!isVerticalScroll) {
-    controls.enabled = true; // nadal gest poziomy → obracanie globu
-  }
-});
 
-container.addEventListener('touchend', () => {
-  // po skończeniu gestu z powrotem włączamy kontrolę globu
-  controls.enabled = true;
-});
+    lastTap = currentTime;
+  });
+}
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
