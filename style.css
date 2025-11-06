@@ -16,11 +16,7 @@ body {
 	  overflow-y: auto; 
 	  box-sizing: border-box; 
   }
-  #globeViz { 
-	  flex: 1; 
-	  background: black; 
-	  position: relative;
-  }
+
   /* upewniamy się że canvas zajmuje cały obszar kontenera */
   #globeViz canvas { 
 	  width: 100% !important; 
@@ -89,7 +85,7 @@ body {
   justify-content: center;   /* dzieci flexa wyśrodkowane poziomo */
   align-items: center;       /* dzieci flexa wyśrodkowane pionowo */
   overflow: hidden;          /* elementy wystające poza wrapper są ucinane */
-  min-width: 640px;
+  min-width: 840px;
 }
 /* Stylowanie dla całego kontenera #globeViz */
 #globeViz {
@@ -99,6 +95,8 @@ body {
   display: flex;             /* włącza Flexbox */
   justify-content: center;   /* poziome centrowanie dzieci (canvas) */
   align-items: center;       /* pionowe centrowanie dzieci (canvas) */
+  flex: 1; 
+  background: black; 
 }
   
 /* Definiowanie kontenera w którym renderuje się glob (globe.gl / three.js). */
@@ -775,6 +773,7 @@ button:disabled {
     height: 100vh;
   }
 }
+
 
 
 
