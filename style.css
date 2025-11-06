@@ -77,7 +77,7 @@ body {
   justify-content: center;   /* dzieci flexa wyśrodkowane poziomo */
   align-items: center;       /* dzieci flexa wyśrodkowane pionowo */
   overflow: hidden;          /* elementy wystające poza wrapper są ucinane */
-  
+  min-width: 700px;
 }
 /* Stylowanie dla całego kontenera #globeViz */
 #globeViz {
@@ -696,6 +696,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
