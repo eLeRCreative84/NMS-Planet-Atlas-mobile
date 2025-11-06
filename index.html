@@ -4295,7 +4295,6 @@ refreshGridAndLabels();
     }
   });
 
-if (/Mobi|Android/i.test(navigator.userAgent)) {  // tylko na urządzeniach mobilnych
   const globeContainer = document.getElementById('globeViz');
   let lastTap = 0;
 
@@ -4321,7 +4320,6 @@ if (/Mobi|Android/i.test(navigator.userAgent)) {  // tylko na urządzeniach mobi
 
     lastTap = currentTime;
   });
-}
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
