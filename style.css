@@ -141,7 +141,7 @@ button:disabled {
 /* Lista planet */
 
 #planetSidebar {
-  position: fixed;
+  position: absolute; 
   top: 5px;
   bottom: 5px;
   right: 0;
@@ -358,7 +358,7 @@ button:disabled {
 
 	/* Panel galaktyk – taki sam styl jak planetSidebar */
 #galaxySidebar {
-  position: fixed;
+  position: absolute; 
   right: 0;
   bottom: 5px;
   height: 200px;                     /* trochę miejsca, ale spójny wygląd */
@@ -698,6 +698,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
