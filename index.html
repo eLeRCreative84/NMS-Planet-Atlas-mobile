@@ -4295,66 +4295,7 @@ refreshGridAndLabels();
     }
   });
 
-// === MUCHAAA: HUD przyklejony do rogu widoku ===
-function addFloatingHelperToGlobe() {
-  if (!globe || !globe.renderer || !globe.camera) return;
-
-  const renderer = globe.renderer();
-  const camera = globe.camera();
-
-  // Kontener globu
-  const globeEl = document.getElementById('globeViz');
-  if (!globeEl) return;
-
-  // Ustaw kontener, by trzymał overlay
-  Object.assign(globeEl.style, {
-    position: 'relative',
-    overflow: 'visible', // <- kluczowe
-  });
-
-  // Stwórz element muchy
-  const fly = document.createElement('div');
-  fly.textContent = '&#129712;';
-  Object.assign(fly.style, {
-    position: 'absolute',
-    fontSize: '36px',
-    pointerEvents: 'auto',
-    zIndex: 99999, // nad wszystkim
-    color: '#fff',
-    background: 'rgba(0,0,0,0.2)',
-    borderRadius: '8px',
-    padding: '2px 6px',
-    backdropFilter: 'blur(4px)',
-    boxShadow: '0 0 6px rgba(0,0,0,0.5)',
-    transition: 'transform 0.2s ease-out',
-  });
-
-  globeEl.appendChild(fly);
-
-  // Aktualizuj pozycję muchy w prawym dolnym rogu obszaru renderera
-  function updateFlyPosition() {
-    const rect = renderer.domElement.getBoundingClientRect();
-    const offsetX = rect.width - 60;
-    const offsetY = rect.height - 60;
-    fly.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-  }
-
-  // Po każdej zmianie kamery lub resize
-  globe.controls().addEventListener('change', updateFlyPosition);
-  window.addEventListener('resize', updateFlyPosition);
-  updateFlyPosition();
-
-  // Efekt kliknięcia
-  fly.addEventListener('click', (e) => {
-    e.stopPropagation();
-    alert('&#129712; Bzzz! Jestem helper przyklejony do globu.');
-  });
-
-  console.log('Mucha HUD dodana i powinna być widoczna.');
-}
-
-
-addFloatingHelperToGlobe();
+addFlyHelper();
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
@@ -4642,7 +4583,85 @@ function refreshGridAndLabels() {
 [grid30Cb, grid10Cb, labels30Cb, labels10Cb, labelsSidesCb, colorInput, opacityInput].forEach(el =>
   el.addEventListener('input', refreshGridAndLabels)
 );
- 
+
+
+// === FLY HELPER - PŁYWAJĄCY HUD NAD GLOBEM ===
+let flyHelperDiv = null;
+let updateFlyHUD = null;
+
+function addFlyHelper() {
+  // usuń poprzednią muchę, jeśli była
+  if (flyHelperDiv) flyHelperDiv.remove();
+
+  const globeEl = document.getElementById('globeViz');
+  if (!globeEl) {
+    console.warn('Brak elementu #globeViz – nie można dodać muchy.');
+    return;
+  }
+
+  // Kontener główny etykiet (ten sam, co dla labeli)
+  const geoLabelContainer =
+    globeEl.querySelector('.geoLabelContainer') ||
+    globeEl.querySelector('div[style*="pointer-events: none"]') ||
+    (() => {
+      // jeśli nie istnieje, utwórz
+      const c = document.createElement('div');
+      c.classList.add('geoLabelContainer');
+      c.style.position = 'absolute';
+      c.style.pointerEvents = 'none';
+      c.style.top = '0';
+      c.style.left = '0';
+      c.style.width = '100%';
+      c.style.height = '100%';
+      c.style.overflow = 'hidden';
+      globeEl.style.position = 'relative';
+      globeEl.appendChild(c);
+      return c;
+    })();
+
+  // Tworzymy muchę
+  flyHelperDiv = document.createElement('div');
+  flyHelperDiv.textContent = '🪰';
+  flyHelperDiv.style.position = 'absolute';
+  flyHelperDiv.style.fontSize = '32px';
+  flyHelperDiv.style.zIndex = '999999';
+  flyHelperDiv.style.pointerEvents = 'auto';
+  flyHelperDiv.style.transition = 'transform 0.2s ease-out';
+  geoLabelContainer.appendChild(flyHelperDiv);
+
+  const renderer = globe.renderer();
+  if (!renderer) {
+    console.warn('Brak renderer w globe – nie można ustawić muchy.');
+    return;
+  }
+
+  // Aktualizacja pozycji muchy
+  updateFlyHUD = () => {
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    // Zawsze w prawym górnym rogu globu
+    const offsetX = rect.width - 50;
+    const offsetY = 20;
+    flyHelperDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  };
+
+  // Nasłuchy, żeby mucha nie znikała
+  window.addEventListener('resize', updateFlyHUD);
+  if (globe && globe.controls) {
+    globe.controls().addEventListener('change', updateFlyHUD);
+  }
+
+  updateFlyHUD();
+
+  // Interakcja z muchą
+  flyHelperDiv.addEventListener('click', (e) => {
+    e.stopPropagation();
+    alert('🪰 Bzzz! Helper przyklejony do widoku.');
+  });
+
+  console.log('🪰 Mucha dodana do widoku.');
+}
+	
 ///// Nasłuchiwacze dla filtrów typów i dodatkowych //////////////////////////////////////
 
   // Checkboxy typów punktów
