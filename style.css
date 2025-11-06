@@ -38,6 +38,20 @@ body {
   .tab-content { display: none; padding: 1rem 0 0 0; overflow-y: auto; }
   .tab-content.active { display: block; }
 
+#scroll-helper {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+  touch-action: auto; /* pozwala scrollować */
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Nagłówek aktualnej planety */
 .currentPlanetHeader {
   margin: 0.2rem 0 0.5rem 0;
@@ -704,6 +718,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
