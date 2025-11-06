@@ -4302,42 +4302,57 @@ function addFloatingHelperToGlobe() {
   const renderer = globe.renderer();
   const camera = globe.camera();
 
-  // Tworzymy element HTML muchy
+  // Kontener globu
+  const globeEl = document.getElementById('globeViz');
+  if (!globeEl) return;
+
+  // Ustaw kontener, by trzymał overlay
+  Object.assign(globeEl.style, {
+    position: 'relative',
+    overflow: 'visible', // <- kluczowe
+  });
+
+  // Stwórz element muchy
   const fly = document.createElement('div');
-  fly.textContent = 'MuCHAAaaa';
+  fly.textContent = '&#129712;';
   Object.assign(fly.style, {
     position: 'absolute',
-    fontSize: '32px',
+    fontSize: '36px',
     pointerEvents: 'auto',
-    zIndex: 9999,
+    zIndex: 99999, // nad wszystkim
+    color: '#fff',
+    background: 'rgba(0,0,0,0.2)',
+    borderRadius: '8px',
+    padding: '2px 6px',
+    backdropFilter: 'blur(4px)',
+    boxShadow: '0 0 6px rgba(0,0,0,0.5)',
     transition: 'transform 0.2s ease-out',
   });
 
-  // Wstawiamy jako overlay na canvas globu
-  const globeEl = document.getElementById('globeViz');
-  globeEl.style.position = 'relative';
   globeEl.appendChild(fly);
 
-  // Funkcja ustawiająca pozycję muchy względem widoku
+  // Aktualizuj pozycję muchy w prawym dolnym rogu obszaru renderera
   function updateFlyPosition() {
     const rect = renderer.domElement.getBoundingClientRect();
-    // Róg ekranu – np. prawy dolny
-    const offsetX = rect.width - 60;  // margines od prawej
-    const offsetY = rect.height - 60; // margines od dołu
+    const offsetX = rect.width - 60;
+    const offsetY = rect.height - 60;
     fly.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
   }
 
-  // Aktualizacja przy zmianie kamery / rozmiaru
+  // Po każdej zmianie kamery lub resize
   globe.controls().addEventListener('change', updateFlyPosition);
   window.addEventListener('resize', updateFlyPosition);
   updateFlyPosition();
 
-  // Prosty event — kliknięcie muchy
-  fly.addEventListener('click', () => {
-    alert('🪰 Cześć! Jestem zawsze przyklejona do kamery 😎');
+  // Efekt kliknięcia
+  fly.addEventListener('click', (e) => {
+    e.stopPropagation();
+    alert('&#129712; Bzzz! Jestem helper przyklejony do globu.');
   });
-	console.log('Mucha HUD dodana do globu.');
+
+  console.log('Mucha HUD dodana i powinna być widoczna.');
 }
+
 
 addFloatingHelperToGlobe();
 	
