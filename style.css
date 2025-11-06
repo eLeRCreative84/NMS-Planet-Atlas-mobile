@@ -1,5 +1,5 @@
 body { 
-	display: absolute; 
+	display: flex; 
 	height: 100vh; 
 	font-family: Arial, sans-serif; 
 	overflow: hidden; 
@@ -697,6 +697,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
