@@ -88,7 +88,8 @@ body {
   justify-content: center;   /* poziome centrowanie dzieci (canvas) */
   align-items: center;       /* pionowe centrowanie dzieci (canvas) */
   flex: 1; 
-  background: black; 
+  background: black;
+  min-width: 700px;
 }
  
 /* Nagłówek nad wizualizacją planety */
@@ -696,6 +697,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
