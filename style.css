@@ -93,7 +93,16 @@ body {
   min-width: 700px;
   overflow: hidden;
 }
- 
+
+#globeViz div {
+  pointer-events: none;
+}
+
+.geoLabelContainer, .label, .geoLabel {
+  overflow: hidden;
+  position: absolute;
+}
+
 /* Nagłówek nad wizualizacją planety */
 #planetOverlayHeader {
   position: absolute;
@@ -699,6 +708,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
