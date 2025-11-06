@@ -1623,37 +1623,49 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function createFloatingHelper() {
-  // sprawdź, czy już istnieje — unikamy duplikatów
   if (document.getElementById("floatingHelper")) return;
 
   const helper = document.createElement("div");
   helper.id = "floatingHelper";
-  helper.textContent = "🪰"; // może być też np. "HELP" albo ikonka info ℹ️
+  helper.textContent = "🪰";
 
   Object.assign(helper.style, {
-    position: "fixed",
-    bottom: "10px",    // przyklejony do dolnego rogu
-    right: "10px",
-    width: "40px",
-    height: "40px",
-    background: "rgba(0,0,0,0.5)",
+    position: "absolute",
+    width: "50px",
+    height: "50px",
+    background: "rgba(0,0,0,0.6)",
     color: "white",
-    fontSize: "24px",
-    borderRadius: "8px",
+    fontSize: "28px",
+    borderRadius: "12px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    zIndex: "999999",  // nad wszystkim
+    zIndex: "9999999",
     userSelect: "none",
-    pointerEvents: "auto", // reaguje na dotyk / kliknięcia
-    touchAction: "none",   // zapobiega scrollowi przy dotyku
-  });
-
-  helper.addEventListener("click", () => {
-    alert("🐝 Cześć! Jestem helperem.");
+    pointerEvents: "auto",
+    touchAction: "none",
+    transition: "transform 0.1s ease-out",
   });
 
   document.body.appendChild(helper);
+
+  const vv = window.visualViewport;
+
+  function updateHelperPosition() {
+    const offsetX = vv.pageLeft + vv.width - helper.offsetWidth - 10;
+    const offsetY = vv.pageTop + vv.height - helper.offsetHeight - 10;
+    helper.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  }
+
+  // aktualizacja przy zoomie / scrollu
+  vv.addEventListener("scroll", updateHelperPosition);
+  vv.addEventListener("resize", updateHelperPosition);
+
+  updateHelperPosition();
+
+  helper.addEventListener("click", () => {
+    alert("🐝 Jestem helperem i nie znikam nawet przy zoomie!");
+  });
 }
 	
 ////////////////////////////////////////////////////////////////////
