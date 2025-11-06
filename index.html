@@ -157,9 +157,6 @@
   </div>
 </div>
 
-
-
-
   <div style="height:5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
     <h2 data-i18n="start_importExport">Import/Eksport</h2>
     <button class="lock-while-edit" onclick="exportAtlas()" data-i18n="start_btn_export">Eksport JSON</button>
@@ -485,10 +482,8 @@
   <option value="sky3">Skybox 3</option>
   </select>
   </div>
- 
-
-</div>  
 </div>
+  </div>
 	
   <!-- Obszar wizualizacji globu -->
   <div id="globeWrapper" style="position: relative;">
@@ -558,9 +553,6 @@
   <!-- Sidebar lista układów -->
 <div id="solarList"></div>
 </div>
-
-<!-- Pływający prostokąt - helper w nawigacji -->
-<div id="scroll-helper"></div>
 	
 <script>
 let atlas = {};
@@ -4303,6 +4295,25 @@ refreshGridAndLabels();
     }
   });
 
+// ograniczenie interakcji
+  const globeContainer = document.getElementById('globeViz'); 
+
+  globeContainer.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    const rect = globeContainer.getBoundingClientRect();
+
+    // jeśli dotyk jest w dolnych 20% ekranu – nie obracamy globu
+    const isScrollZone = touch.clientY > rect.bottom - rect.height * 0.2;
+
+    const controls = globe.controls();
+    if (controls) controls.enabled = !isScrollZone;
+  });
+
+  globeContainer.addEventListener('touchend', () => {
+    const controls = globe.controls();
+    if (controls) controls.enabled = true; // przywróć sterowanie po puszczeniu
+  });
+	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
 
