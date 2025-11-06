@@ -4440,12 +4440,20 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
 	
   labelDivs = [];
 
-  geoLabelContainer = document.createElement('div');
-  geoLabelContainer.style.position = 'absolute';
-  geoLabelContainer.style.pointerEvents = 'none';
-  geoLabelContainer.style.top = '0';
-  geoLabelContainer.style.left = '0';
-  document.body.appendChild(geoLabelContainer);
+geoLabelContainer = document.createElement('div');
+geoLabelContainer.style.position = 'absolute';
+geoLabelContainer.style.pointerEvents = 'none';
+geoLabelContainer.style.top = '0';
+geoLabelContainer.style.left = '0';
+geoLabelContainer.style.width = '100%';
+geoLabelContainer.style.height = '100%';
+geoLabelContainer.style.overflow = 'hidden';
+
+
+const globeEl = document.getElementById('globeViz');
+globeEl.style.position = 'relative';
+globeEl.appendChild(geoLabelContainer);
+
 
   const camera = globe.camera();
   const renderer = globe.renderer();
@@ -4482,6 +4490,14 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
 	  }
 	}
 
+function updateLabelPosition(label, x, y) {
+  const wrapper = document.getElementById("globeViz");
+  const maxX = wrapper.clientWidth - 5;
+  const maxY = wrapper.clientHeight - 5;
+  label.style.left = Math.min(Math.max(x, 5), maxX) + "px";
+  label.style.top = Math.min(Math.max(y, 5), maxY) + "px";
+}
+	
 // ---- AKTUALIZACJA ETYKIET ----
   function updateLabels() {
 	if (!globe || !globe.scene || !globe.renderer || !geoLabelContainer) return;
@@ -4513,8 +4529,9 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
         const vector = worldVec.clone().project(camera);
         const x2d = rect.left + (vector.x * 0.5 + 0.5) * width;
         const y2d = rect.top + (-vector.y * 0.5 + 0.5) * height;
-        div.style.transform = `translate(-50%, -50%) translate(${x2d}px, ${y2d}px)`;
-        div.style.display = 'block';
+		updateLabelPosition(div, x2d, y2d);
+		div.style.transform = 'translate(-50%, -50%)'; // tylko centrowanie
+		div.style.display = 'block';
       } else {
         div.style.display = 'none';
       }
