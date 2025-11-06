@@ -6,8 +6,6 @@ body {
 	overflow: hidden; 
 	font-size: 14px; 
 	min-width: 1040px;
-	height: 100dvh;
-	max-height: 1080px;
 	box-sizing: border-box;
 }
   #form { 
@@ -701,6 +699,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
