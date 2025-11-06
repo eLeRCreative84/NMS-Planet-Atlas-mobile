@@ -711,69 +711,6 @@ button:disabled {
   padding: 2px 4px;
 }
 
-/* === WERSJA MOBILNA: układ pionowy (góra = panele, dół = globe) === */
-@media (max-width: 768px) {
-
-  /* Ustawienie wrappera globu na dole ekranu */
-  #globeWrapper {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60vh; /* glob zajmuje dolną część ekranu */
-    overflow: hidden;
-    z-index: 1;
-  }
-
-  #globeViz {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-  }
-
-  /* Panele u góry */
-  #planetSidebar,
-  #galaxySidebar {
-    position: relative;
-    top: 0;
-    bottom: auto;
-    right: auto;
-    left: 0;
-    width: 100%;
-    max-height: 40vh; /* ograniczamy, by globe miał miejsce */
-    height: auto;
-    border-left: none;
-    border-bottom: 2px solid #102b56;
-    z-index: 2;
-  }
-
-  /* Układ paneli jeden pod drugim */
-  #planetSidebar {
-    margin-bottom: 4px;
-  }
-
-  /* Przycisk do chowania panelu chowamy */
-  #togglePlanetSidebarBtn {
-    display: none;
-  }
-
-  /* Naprawiamy przewijanie paneli */
-  #planetSidebar,
-  #galaxySidebar {
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    overflow-y: auto;
-  }
-
-  /* Zapobiega skakaniu całego ekranu */
-  body {
-    overflow: hidden;
-    height: 100vh;
-  }
-}
-
 
 
 
