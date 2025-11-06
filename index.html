@@ -1622,51 +1622,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-function createFloatingHelper() {
-  if (window.__floatingHelper) return;
-
-  // Tworzymy shadow overlay, który NIE podlega zoomowi
-  const overlay = document.createElement('div');
-  Object.assign(overlay.style, {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    pointerEvents: 'none',
-    zIndex: 999999,
-  });
-
-  const helper = document.createElement('div');
-  helper.textContent = '🪰';
-  Object.assign(helper.style, {
-    position: 'absolute',
-    right: '10px',
-    bottom: '10px',
-    width: '50px',
-    height: '50px',
-    background: 'rgba(0,0,0,0.6)',
-    color: 'white',
-    fontSize: '28px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'auto',
-  });
-
-  helper.addEventListener('click', () => {
-    alert('🐝 Jestem helperem i nawet pinch-zoom mnie nie ruszy!');
-  });
-
-  overlay.appendChild(helper);
-
-  // Dodajemy bezpośrednio do viewportu (nie do body)
-  document.documentElement.appendChild(overlay);
-
-  window.__floatingHelper = overlay;
-}
-	
 ////////////////////////////////////////////////////////////////////
 //------------------- Sidebar galaktyk ----------------------------//
 ////////////////////////////////////////////////////////////////////
@@ -4340,7 +4295,50 @@ refreshGridAndLabels();
     }
   });
 
-createFloatingHelper();
+// === MUCHAAA: HUD przyklejony do rogu widoku ===
+function addFloatingHelperToGlobe() {
+  if (!globe || !globe.renderer || !globe.camera) return;
+
+  const renderer = globe.renderer();
+  const camera = globe.camera();
+
+  // Tworzymy element HTML muchy
+  const fly = document.createElement('div');
+  fly.textContent = '🪰';
+  Object.assign(fly.style, {
+    position: 'absolute',
+    fontSize: '32px',
+    pointerEvents: 'auto',
+    zIndex: 9999,
+    transition: 'transform 0.2s ease-out',
+  });
+
+  // Wstawiamy jako overlay na canvas globu
+  const globeEl = document.getElementById('globeViz');
+  globeEl.style.position = 'relative';
+  globeEl.appendChild(fly);
+
+  // Funkcja ustawiająca pozycję muchy względem widoku
+  function updateFlyPosition() {
+    const rect = renderer.domElement.getBoundingClientRect();
+    // Róg ekranu – np. prawy dolny
+    const offsetX = rect.width - 60;  // margines od prawej
+    const offsetY = rect.height - 60; // margines od dołu
+    fly.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  }
+
+  // Aktualizacja przy zmianie kamery / rozmiaru
+  globe.controls().addEventListener('change', updateFlyPosition);
+  window.addEventListener('resize', updateFlyPosition);
+  updateFlyPosition();
+
+  // Prosty event — kliknięcie muchy
+  fly.addEventListener('click', () => {
+    alert('🪰 Cześć! Jestem zawsze przyklejona do kamery 😎');
+  });
+}
+
+addFloatingHelperToGlobe();
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
