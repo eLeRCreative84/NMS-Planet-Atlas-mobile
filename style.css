@@ -39,7 +39,7 @@ body {
   .tab-content.active { display: block; }
 
 #scroll-helper {
-  position: fixed;
+  position: absolute;
   bottom: 20px;
   right: 20px;
   width: 60px;
@@ -49,7 +49,10 @@ body {
   z-index: 9999;
   backdrop-filter: blur(5px);
   touch-action: auto; /* pozwala scrollować */
-  -webkit-overflow-scrolling: touch;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  user-select: none;
 }
 
 /* Nagłówek aktualnej planety */
@@ -718,6 +721,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
