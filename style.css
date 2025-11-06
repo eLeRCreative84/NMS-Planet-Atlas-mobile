@@ -94,10 +94,6 @@ body {
   overflow: hidden;
 }
 
-#globeViz div {
-  pointer-events: none;
-}
-
 .geoLabelContainer, .label, .geoLabel {
   overflow: hidden;
   position: absolute;
@@ -708,6 +704,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
