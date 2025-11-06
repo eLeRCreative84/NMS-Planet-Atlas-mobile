@@ -17,14 +17,6 @@ body {
 	  box-sizing: border-box; 
   }
 
-  /* upewniamy się że canvas zajmuje cały obszar kontenera */
-  #globeViz canvas { 
-	  width: 100% !important; 
-	  height: 100% !important; 
-	  display: block; 
-	  background: transparent;
-  }
-
   h2 { margin-top: 1rem; margin-bottom: 0.5rem; }
   input, select, textarea, button { width: 100%; margin: 0.3rem 0; padding: 0.4rem; box-sizing: border-box; }
   button { cursor: pointer; }
@@ -704,6 +696,7 @@ button:disabled {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
 
 
 
