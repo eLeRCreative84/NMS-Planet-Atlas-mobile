@@ -4295,24 +4295,40 @@ refreshGridAndLabels();
     }
   });
 
-// ograniczenie interakcji
+// „inteligentny przełącznik” dotyków
   const globeContainer = document.getElementById('globeViz'); 
 
-  globeContainer.addEventListener('touchstart', (e) => {
-    const touch = e.touches[0];
-    const rect = globeContainer.getBoundingClientRect();
+const controls = globe.controls(); 
 
-    // jeśli dotyk jest w dolnych 20% ekranu – nie obracamy globu
-    const isScrollZone = touch.clientY > rect.bottom - rect.height * 0.2;
+let startY = 0;
+let startX = 0;
+let isVerticalScroll = false;
 
-    const controls = globe.controls();
-    if (controls) controls.enabled = !isScrollZone;
-  });
+container.addEventListener('touchstart', (e) => {
+  startY = e.touches[0].clientY;
+  startX = e.touches[0].clientX;
+  isVerticalScroll = false;
+});
 
-  globeContainer.addEventListener('touchend', () => {
-    const controls = globe.controls();
-    if (controls) controls.enabled = true; // przywróć sterowanie po puszczeniu
-  });
+container.addEventListener('touchmove', (e) => {
+  const dy = Math.abs(e.touches[0].clientY - startY);
+  const dx = Math.abs(e.touches[0].clientX - startX);
+
+  // jeśli gest to głównie pionowy ruch (scroll), wyłącz obrót globu
+  if (dy > dx * 1.5 && dy > 10) {
+    if (!isVerticalScroll) {
+      controls.enabled = false;
+      isVerticalScroll = true;
+    }
+  } else if (!isVerticalScroll) {
+    controls.enabled = true; // nadal gest poziomy → obracanie globu
+  }
+});
+
+container.addEventListener('touchend', () => {
+  // po skończeniu gestu z powrotem włączamy kontrolę globu
+  controls.enabled = true;
+});
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
