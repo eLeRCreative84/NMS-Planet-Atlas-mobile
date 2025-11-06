@@ -4295,31 +4295,26 @@ refreshGridAndLabels();
     }
   });
 
-  const globeContainer = document.getElementById('globeViz');
+(function enableDoubleTapZoomSim() {
+  const globeEl = document.getElementById('globeViz');
+  if (!globeEl) return;
+
   let lastTap = 0;
+  let zoomed = false;
 
-  globeContainer.addEventListener('touchend', (e) => {
-    const currentTime = new Date().getTime();
-    const tapLength = currentTime - lastTap;
+  globeEl.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTap < 300) { // podwójne stuknięcie
+      e.preventDefault();
+      zoomed = !zoomed;
 
-    if (tapLength < 300 && tapLength > 0) { // podwójny tap w ciągu 300 ms
-      const controls = globe.controls?.();
-      if (controls) {
-        // wykonaj maksymalny zoom out
-        controls.reset(); // resetuje kamerę do początkowej pozycji
-        controls.update();
-
-        // ewentualnie można też ręcznie ustawić większy dystans:
-        controls.minDistance = 150;
-        controls.maxDistance = 150;
-        controls.object.position.set(0, 0, 150);
-      }
-
-      e.preventDefault(); // nie pozwól, by przeglądarka potraktowała to jako zoom gest
+      document.body.style.transition = 'transform 0.3s ease';
+      document.body.style.transformOrigin = 'center center';
+      document.body.style.transform = zoomed ? 'scale(1.3)' : 'scale(1)';
     }
-
-    lastTap = currentTime;
-  });
+    lastTap = now;
+  }, { passive: false });
+})();
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
