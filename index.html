@@ -4437,23 +4437,21 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
     clearInterval(window.__labelUpdateInterval);
     window.__labelUpdateInterval = null;
   }
-	
+
   labelDivs = [];
 
-geoLabelContainer = document.createElement('div');
-geoLabelContainer.style.position = 'absolute';
-geoLabelContainer.style.pointerEvents = 'none';
-geoLabelContainer.style.top = '0';
-geoLabelContainer.style.left = '0';
-geoLabelContainer.style.width = '100%';
-geoLabelContainer.style.height = '100%';
-geoLabelContainer.style.overflow = 'hidden';
-
-
-const globeEl = document.getElementById('globeViz');
-globeEl.style.position = 'relative';
-globeEl.appendChild(geoLabelContainer);
-
+  // kontener wewnątrz globu
+  const globeEl = document.getElementById('globeViz');
+  geoLabelContainer = document.createElement('div');
+  geoLabelContainer.style.position = 'absolute';
+  geoLabelContainer.style.pointerEvents = 'none';
+  geoLabelContainer.style.top = '0';
+  geoLabelContainer.style.left = '0';
+  geoLabelContainer.style.width = '100%';
+  geoLabelContainer.style.height = '100%';
+  geoLabelContainer.style.overflow = 'hidden';
+  globeEl.style.position = 'relative';
+  globeEl.appendChild(geoLabelContainer);
 
   const camera = globe.camera();
   const renderer = globe.renderer();
@@ -4466,6 +4464,8 @@ globeEl.appendChild(geoLabelContainer);
     div.style.fontSize = '10px';
     div.style.color = color;
     div.style.textShadow = '0 0 2px #000';
+    div.style.whiteSpace = 'nowrap';
+    div.style.transform = 'translate(-50%, -50%)';
     geoLabelContainer.appendChild(div);
     labelDivs.push({ div, lat, lng });
   }
@@ -4476,76 +4476,69 @@ globeEl.appendChild(geoLabelContainer);
     addLabel(lat, 180, `${lat}°`);
   }
 
-  // południki co step
+  // południki
   for (let lng = -180; lng < 180; lng += step) {
     addLabel(0, lng, `${lng}°`);
   }
 
-	// dodatkowe etykiety ±90° na południkach ±90°
-	if (showSides) {
-	  for (let lat = -90; lat <= 90; lat += step) {
-		if (lat === -90 || lat === 90) continue; // pomiń bieguny
-		addLabel(lat, 90, `${lat}°`);
-		addLabel(lat, -90, `${lat}°`);
-	  }
-	}
+// dodatkowe etykiety ±90° na południkach ±90°
+  if (showSides) {
+    for (let lat = -90; lat <= 90; lat += step) {
+      if (lat === -90 || lat === 90) continue;
+      addLabel(lat, 90, `${lat}°`);
+      addLabel(lat, -90, `${lat}°`);
+    }
+  }
 
-function updateLabelPosition(label, x, y) {
-  const wrapper = document.getElementById("globeViz");
-  const maxX = wrapper.clientWidth - 5;
-  const maxY = wrapper.clientHeight - 5;
-  label.style.left = Math.min(Math.max(x, 5), maxX) + "px";
-  label.style.top = Math.min(Math.max(y, 5), maxY) + "px";
-}
-	
-// ---- AKTUALIZACJA ETYKIET ----
+  // ---- AKTUALIZACJA ETYKIET ----
   function updateLabels() {
-	if (!globe || !globe.scene || !globe.renderer || !geoLabelContainer) return;
-	  
+    if (!globe || !globe.scene || !globe.renderer || !geoLabelContainer) return;
+
     const rect = renderer.domElement.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
     const cameraPosition = camera.position.clone();
 
-	  // Pobieramy aktualną skalę globu (bo Ty skalujesz całą scenę)
-  const scale = globe.scene().scale.x || 1;
-  const effectiveRadius = radius * scale;
-	  
+    const scale = globe.scene().scale.x || 1;
+    const effectiveRadius = radius * scale;
+
     labelDivs.forEach(({ div, lat, lng }) => {
       const phi = (90 - lat) * Math.PI / 180;
       const theta = (lng + 90) * Math.PI / 180;
-     
-		// Uwzględniamy skalę przy obliczaniu współrzędnych
-    const x = -effectiveRadius * Math.sin(phi) * Math.cos(theta);
-    const z = effectiveRadius * Math.sin(phi) * Math.sin(theta);
-    const y = effectiveRadius * Math.cos(phi);
+
+      const x = -effectiveRadius * Math.sin(phi) * Math.cos(theta);
+      const z = effectiveRadius * Math.sin(phi) * Math.sin(theta);
+      const y = effectiveRadius * Math.cos(phi);
 
       const worldVec = new THREE.Vector3(x, y, z);
       const toCamera = cameraPosition.clone().sub(worldVec).normalize();
       const normal = worldVec.clone().normalize();
-      const visible = normal.dot(toCamera) > 0;
+      const visible = normal.dot(toCamera) > 0; // czy jest "przodem" do kamery
 
       if (visible) {
         const vector = worldVec.clone().project(camera);
-        const x2d = rect.left + (vector.x * 0.5 + 0.5) * width;
-        const y2d = rect.top + (-vector.y * 0.5 + 0.5) * height;
-		updateLabelPosition(div, x2d, y2d);
-		div.style.transform = 'translate(-50%, -50%)'; // tylko centrowanie
-		div.style.display = 'block';
+        const x2d = (vector.x * 0.5 + 0.5) * width;
+        const y2d = (-vector.y * 0.5 + 0.5) * height;
+
+        div.style.display = 'block';
+        div.style.left = `${x2d}px`;
+        div.style.top = `${y2d}px`;
       } else {
         div.style.display = 'none';
       }
     });
   }
-  globalUpdateLabels = updateLabels; // funkcję udostępniamy globalnie
+
+  globalUpdateLabels = updateLabels;
   globe.controls().addEventListener('change', updateLabels);
 
 // === dynamiczne odświeżanie etykiet ===
 
 //Odświeżanie przy zmianie rozmiaru okna
-window.addEventListener("resize", () => requestAnimationFrame(updateLabels));
 
-  // bezpieczny interwał, pojedynczy na sesję globu
+  window.addEventListener("resize", () => requestAnimationFrame(updateLabels));
+
+// bezpieczny interwał, pojedynczy na sesję globu
   window.__labelUpdateInterval = setInterval(() => {
     if (globe) requestAnimationFrame(updateLabels);
   }, 1000);
