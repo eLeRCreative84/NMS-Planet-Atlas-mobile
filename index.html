@@ -4621,7 +4621,7 @@ function addFlyHelper() {
 
   // Tworzymy muchę
   flyHelperDiv = document.createElement('div');
-  flyHelperDiv.textContent = '🪰';
+  flyHelperDiv.textContent = 'X';
   flyHelperDiv.style.position = 'absolute';
   flyHelperDiv.style.fontSize = '32px';
   flyHelperDiv.style.zIndex = '999999';
@@ -4656,10 +4656,10 @@ function addFlyHelper() {
   // Interakcja z muchą
   flyHelperDiv.addEventListener('click', (e) => {
     e.stopPropagation();
-    alert('🪰 Bzzz! Helper przyklejony do widoku.');
+    alert('X Bzzz! Helper przyklejony do widoku.');
   });
 
-  console.log('🪰 Mucha dodana do widoku.');
+  console.log('X Mucha dodana do widoku.');
 }
 	
 ///// Nasłuchiwacze dla filtrów typów i dodatkowych //////////////////////////////////////
