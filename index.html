@@ -4587,77 +4587,41 @@ function refreshGridAndLabels() {
 
 // === FLY HELPER - PŁYWAJĄCY HUD NAD GLOBEM ===
 let flyHelperDiv = null;
-let updateFlyHUD = null;
 
 function addFlyHelper() {
-  // usuń poprzednią muchę, jeśli była
-  if (flyHelperDiv) flyHelperDiv.remove();
-
   const globeEl = document.getElementById('globeViz');
   if (!globeEl) {
-    console.warn('Brak elementu #globeViz – nie można dodać muchy.');
+    console.warn('Brak #globeViz — mucha nie dodana');
     return;
   }
 
-  // Kontener główny etykiet (ten sam, co dla labeli)
-  const geoLabelContainer =
-    globeEl.querySelector('.geoLabelContainer') ||
-    globeEl.querySelector('div[style*="pointer-events: none"]') ||
-    (() => {
-      // jeśli nie istnieje, utwórz
-      const c = document.createElement('div');
-      c.classList.add('geoLabelContainer');
-      c.style.position = 'absolute';
-      c.style.pointerEvents = 'none';
-      c.style.top = '0';
-      c.style.left = '0';
-      c.style.width = '100%';
-      c.style.height = '100%';
-      c.style.overflow = 'hidden';
-      globeEl.style.position = 'relative';
-      globeEl.appendChild(c);
-      return c;
-    })();
+  // usuń starą muchę
+  if (flyHelperDiv) flyHelperDiv.remove();
 
-  // Tworzymy muchę
+  // stwórz muchę
   flyHelperDiv = document.createElement('div');
   flyHelperDiv.textContent = 'X';
-  flyHelperDiv.style.position = 'absolute';
-  flyHelperDiv.style.fontSize = '32px';
-  flyHelperDiv.style.zIndex = '999999';
-  flyHelperDiv.style.pointerEvents = 'auto';
+  flyHelperDiv.style.position = 'fixed';
+  flyHelperDiv.style.zIndex = '9999999';
+  flyHelperDiv.style.fontSize = '40px';
+  flyHelperDiv.style.pointerEvents = 'none';
+  flyHelperDiv.style.userSelect = 'none';
   flyHelperDiv.style.transition = 'transform 0.2s ease-out';
-  geoLabelContainer.appendChild(flyHelperDiv);
+  document.body.appendChild(flyHelperDiv);
 
-  const renderer = globe.renderer();
-  if (!renderer) {
-    console.warn('Brak renderer w globe – nie można ustawić muchy.');
-    return;
+  function updateFlyPosition() {
+    const rect = globeEl.getBoundingClientRect();
+    const x = rect.right - 60; // trochę odstępu od krawędzi globu
+    const y = rect.top + 20;
+    flyHelperDiv.style.transform = `translate(${x}px, ${y}px)`;
   }
 
-  // Aktualizacja pozycji muchy
-  updateFlyHUD = () => {
-    const rect = renderer.domElement.getBoundingClientRect();
+  // Nasłuch aktualizacji
+  window.addEventListener('scroll', updateFlyPosition);
+  window.addEventListener('resize', updateFlyPosition);
+  setInterval(updateFlyPosition, 500);
 
-    // Zawsze w prawym górnym rogu globu
-    const offsetX = rect.width - 50;
-    const offsetY = 20;
-    flyHelperDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-  };
-
-  // Nasłuchy, żeby mucha nie znikała
-  window.addEventListener('resize', updateFlyHUD);
-  if (globe && globe.controls) {
-    globe.controls().addEventListener('change', updateFlyHUD);
-  }
-
-  updateFlyHUD();
-
-  // Interakcja z muchą
-  flyHelperDiv.addEventListener('click', (e) => {
-    e.stopPropagation();
-    alert('X Bzzz! Helper przyklejony do widoku.');
-  });
+  updateFlyPosition();
 
   console.log('X Mucha dodana do widoku.');
 }
