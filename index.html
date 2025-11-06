@@ -4517,8 +4517,8 @@ function addGeoLabels(step = 30, showSides = false, color = '#888888') {
 
       if (visible) {
         const vector = worldVec.clone().project(camera);
-        const x2d = (vector.x * 0.5 + 0.5) * width;
-        const y2d = (-vector.y * 0.5 + 0.5) * height;
+const x2d = rect.left + (vector.x * 0.5 + 0.5) * width - rect.left;
+const y2d = rect.top + (-vector.y * 0.5 + 0.5) * height - rect.top;
 
         div.style.display = 'block';
         div.style.left = `${x2d}px`;
