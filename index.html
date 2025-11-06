@@ -1623,49 +1623,48 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function createFloatingHelper() {
-  if (document.getElementById("floatingHelper")) return;
+  if (window.__floatingHelper) return;
 
-  const helper = document.createElement("div");
-  helper.id = "floatingHelper";
-  helper.textContent = "🪰";
+  // Tworzymy shadow overlay, który NIE podlega zoomowi
+  const overlay = document.createElement('div');
+  Object.assign(overlay.style, {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    pointerEvents: 'none',
+    zIndex: 999999,
+  });
 
+  const helper = document.createElement('div');
+  helper.textContent = '🪰';
   Object.assign(helper.style, {
-    position: "absolute",
-    width: "50px",
-    height: "50px",
-    background: "rgba(0,0,0,0.6)",
-    color: "white",
-    fontSize: "28px",
-    borderRadius: "12px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: "9999999",
-    userSelect: "none",
-    pointerEvents: "auto",
-    touchAction: "none",
-    transition: "transform 0.1s ease-out",
+    position: 'absolute',
+    right: '10px',
+    bottom: '10px',
+    width: '50px',
+    height: '50px',
+    background: 'rgba(0,0,0,0.6)',
+    color: 'white',
+    fontSize: '28px',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'auto',
   });
 
-  document.body.appendChild(helper);
-
-  const vv = window.visualViewport;
-
-  function updateHelperPosition() {
-    const offsetX = vv.pageLeft + vv.width - helper.offsetWidth - 10;
-    const offsetY = vv.pageTop + vv.height - helper.offsetHeight - 10;
-    helper.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-  }
-
-  // aktualizacja przy zoomie / scrollu
-  vv.addEventListener("scroll", updateHelperPosition);
-  vv.addEventListener("resize", updateHelperPosition);
-
-  updateHelperPosition();
-
-  helper.addEventListener("click", () => {
-    alert("🐝 Jestem helperem i nie znikam nawet przy zoomie!");
+  helper.addEventListener('click', () => {
+    alert('🐝 Jestem helperem i nawet pinch-zoom mnie nie ruszy!');
   });
+
+  overlay.appendChild(helper);
+
+  // Dodajemy bezpośrednio do viewportu (nie do body)
+  document.documentElement.appendChild(overlay);
+
+  window.__floatingHelper = overlay;
 }
 	
 ////////////////////////////////////////////////////////////////////
