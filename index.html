@@ -4599,11 +4599,15 @@ function enableFlyTapHelper() {
   if (!flyHelperDiv) {
     flyHelperDiv = document.createElement('div');
     flyHelperDiv.textContent = '🪐';
-    flyHelperDiv.style.position = 'fixed';
-    flyHelperDiv.style.zIndex = '999999';
-    flyHelperDiv.style.fontSize = '40px';
-    flyHelperDiv.style.pointerEvents = 'none';
-    flyHelperDiv.style.userSelect = 'none';
+      flyHelperDiv.style.position = 'fixed';
+  flyHelperDiv.style.zIndex = '9999999';
+  flyHelperDiv.style.fontSize = '40px';
+  flyHelperDiv.style.width = '60px';
+  flyHelperDiv.style.height = '60px';
+  flyHelperDiv.style.display = 'flex';
+  flyHelperDiv.style.alignItems = 'center';
+  flyHelperDiv.style.justifyContent = 'center';
+  flyHelperDiv.style.userSelect = 'none';
     flyHelperDiv.style.transition = 'transform 0.3s ease-out, opacity 0.4s';
     flyHelperDiv.style.opacity = '0';
     document.body.appendChild(flyHelperDiv);
@@ -4620,6 +4624,12 @@ function enableFlyTapHelper() {
     flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
     flyHelperDiv.style.opacity = '1';
   });
+
+  // Nie blokuj innych gestów, tylko kliknięcia bezpośrednio na muchę
+  flyHelperDiv.addEventListener('touchstart', (e) => {
+    e.stopPropagation(); // żeby tap na muchę nie przekazywał się do globu
+  });
+	
 }
 
 enableFlyTapHelper();
