@@ -4615,18 +4615,20 @@ function enableFlyTapHelper() {
   // tooltip
   if (!tooltipDiv) {
     tooltipDiv = document.createElement('div');
-    tooltipDiv.textContent = '💡Zagubiony w kosmosie? <br> Użyj na mnie gestów do nawigacji.';
+    tooltipDiv.innerHTML = "💡 Zagubiony w kosmosie?<br>Użyj na mnie gestów do nawigacji.";
     tooltipDiv.style.position = 'fixed';
-    tooltipDiv.style.zIndex = '10000000';
-	tooltipDiv.style.whiteSpace = 'normal';
-    tooltipDiv.style.padding = '8px 12px';
-    tooltipDiv.style.background = 'rgba(0, 0, 0, 0.7)';
+    tooltipDiv.style.background = 'rgba(0, 0, 0, 0.85)';
     tooltipDiv.style.color = 'white';
-    tooltipDiv.style.fontSize = '13px';
-    tooltipDiv.style.borderRadius = '8px';
-    tooltipDiv.style.whiteSpace = 'nowrap';
+    tooltipDiv.style.padding = '8px 12px';
+    tooltipDiv.style.borderRadius = '10px';
+    tooltipDiv.style.fontSize = '14px';
+    tooltipDiv.style.textAlign = 'center';
+    tooltipDiv.style.lineHeight = '1.4';
+    tooltipDiv.style.whiteSpace = 'normal';
+    tooltipDiv.style.zIndex = '99999999';
+    tooltipDiv.style.pointerEvents = 'none';
     tooltipDiv.style.opacity = '0';
-    tooltipDiv.style.transition = 'opacity 0.4s ease';
+    tooltipDiv.style.transition = 'opacity 0.5s ease';
     document.body.appendChild(tooltipDiv);
   }
 
