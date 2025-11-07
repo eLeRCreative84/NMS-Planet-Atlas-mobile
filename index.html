@@ -4642,6 +4642,10 @@ function enableFlyTapHelper() {
   globeEl.addEventListener('touchend', (e) => {
     if (e.touches.length > 0) return;
     const touch = e.changedTouches[0];
+
+	 // jeśli tapnięcie trafiło w punkt planety → nie ruszaj muchy
+  if (isTouchOnGlobePoint(touch)) return; 
+	  
     const x = touch.clientX;
     const y = touch.clientY;
 
@@ -4688,6 +4692,20 @@ function hideTooltip() {
 }
 
 enableFlyTapHelper();
+
+// === Pomocnicza funkcja: sprawdza, czy tapnięcie trafiło w punkt globu ===
+function isTouchOnGlobePoint(touch) {
+  const mouse = new THREE.Vector2();
+  const raycaster = new THREE.Raycaster();
+
+  const rect = globe.renderer().domElement.getBoundingClientRect();
+  mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, globe.camera());
+  const intersects = raycaster.intersectObjects(globe.pointsData().map(p => p.__threeObj), true);
+  return intersects.length > 0;
+}
 	
 ///// Nasłuchiwacze dla filtrów typów i dodatkowych //////////////////////////////////////
 
