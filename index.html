@@ -4589,10 +4589,14 @@ let flyHelperDiv = null;
 let tooltipDiv = null;
 let tooltipTimeout = null;
 let tooltipShown = false; // żeby nie spamować tooltipem
+let lastTouchedPoint = null; // aby wykryć tapnięcie punktu na globie
 
 function enableFlyTapHelper() {
   const globeEl = document.getElementById('globeViz');
-  if (!globeEl) return;
+  if (!globeEl || !window.globe) {
+    console.warn('Brak #globeViz lub instancji globe');
+    return;
+  }
 
   // 🪐 stwórz helper jeśli nie istnieje
   if (!flyHelperDiv) {
@@ -4612,44 +4616,53 @@ function enableFlyTapHelper() {
     document.body.appendChild(flyHelperDiv);
   }
 
-  // tooltip
- if (!tooltipDiv) {
-      tooltipDiv = document.createElement('div');
-      tooltipDiv.innerHTML = "💡 Zagubiony w kosmosie?<br>Użyj na mnie gestów do nawigacji.";
-      tooltipDiv.style.position = 'fixed';
-      tooltipDiv.style.background = 'rgba(0, 0, 0, 0.85)';
-      tooltipDiv.style.color = 'white';
-      tooltipDiv.style.padding = '8px 12px';
-      tooltipDiv.style.borderRadius = '10px';
-      tooltipDiv.style.fontSize = '14px';
-      tooltipDiv.style.textAlign = 'center';
-      tooltipDiv.style.lineHeight = '1.4';
-	  tooltipDiv.style.whiteSpace = 'normal';
-      tooltipDiv.style.zIndex = '99999999';
-      tooltipDiv.style.pointerEvents = 'none';
-      tooltipDiv.style.opacity = '0';
-      tooltipDiv.style.transition = 'opacity 0.5s ease';
-      document.body.appendChild(tooltipDiv);
-    }
+  // === TOOLTIP ===
+  if (!tooltipDiv) {
+    tooltipDiv = document.createElement('div');
+    tooltipDiv.innerHTML = "💡 Zagubiony w kosmosie?<br>Użyj na mnie gestów do nawigacji.";
+    tooltipDiv.style.position = 'fixed';
+    tooltipDiv.style.background = 'rgba(0, 0, 0, 0.85)';
+    tooltipDiv.style.color = 'white';
+    tooltipDiv.style.padding = '8px 12px';
+    tooltipDiv.style.borderRadius = '10px';
+    tooltipDiv.style.fontSize = '14px';
+    tooltipDiv.style.textAlign = 'center';
+    tooltipDiv.style.lineHeight = '1.4';
+    tooltipDiv.style.whiteSpace = 'normal';
+    tooltipDiv.style.zIndex = '99999999';
+    tooltipDiv.style.pointerEvents = 'none';
+    tooltipDiv.style.opacity = '0';
+    tooltipDiv.style.transition = 'opacity 0.5s ease';
+    document.body.appendChild(tooltipDiv);
+  }
 
-// 🪐 ustaw tooltip NAD helperem
-    const rect = flyHelperDiv.getBoundingClientRect();
-    tooltipDiv.style.left = `${rect.left + rect.width / 2 - tooltipDiv.offsetWidth / 2}px`;
-    tooltipDiv.style.top = `${rect.top - 50}px`; // 50px nad helperem
-    tooltipDiv.style.opacity = '1';	
-	
-  // nasłuch tapnięcia (pojedynczy tap)
+  // 🪐 ustaw tooltip NAD helperem
+  const rect = flyHelperDiv.getBoundingClientRect();
+  tooltipDiv.style.left = `${rect.left + rect.width / 2 - tooltipDiv.offsetWidth / 2}px`;
+  tooltipDiv.style.top = `${rect.top - 50}px`; // 50px nad helperem
+  tooltipDiv.style.opacity = '1';
+
+  // === REJESTRACJA TAPNIĘCIA W PUNKT NA GLOBIE ===
+  // Gdy użytkownik tapnie w istniejący punkt (np. zasób, ruiny itp.),
+  // ustawiamy flagę, żeby helper się nie przenosił.
+  globe.onPointClick(point => {
+    lastTouchedPoint = point;
+    // reset po chwili, aby kolejne tapy działały normalnie
+    setTimeout(() => { lastTouchedPoint = null; }, 300);
+  });
+
+  // === NASŁUCH TAPNIĘCIA NA OBSZARZE GLOBU ===
   globeEl.addEventListener('touchend', (e) => {
-    if (e.touches.length > 0) return;
-    const touch = e.changedTouches[0];
+    if (e.touches.length > 0) return; // jeśli wielodotyk → pomiń
 
-	 // jeśli tapnięcie trafiło w punkt planety → nie ruszaj muchy
-  if (isTouchOnGlobePoint(touch)) return; 
-	  
+    // jeśli tapnięcie trafiło w punkt planety → nie ruszaj helpera
+    if (lastTouchedPoint) return;
+
+    const touch = e.changedTouches[0];
     const x = touch.clientX;
     const y = touch.clientY;
 
-    // przesuń helper
+    // przesuń helper w to miejsce
     flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
     flyHelperDiv.style.opacity = '1';
 
@@ -4660,20 +4673,20 @@ function enableFlyTapHelper() {
     }
   });
 
-	// tapnięcie bezpośrednio na helper
- flyHelperDiv.addEventListener('touchstart', (e) => {
+  // === TAPNIĘCIE BEZPOŚREDNIO NA HELPER ===
+  flyHelperDiv.addEventListener('touchstart', (e) => {
     e.stopPropagation(); // nie przekazuj do globu
     hideTooltip();
   });
 
-  // ukrywanie tooltipa po dotyku gdziekolwiek
+  // === UKRYWANIE TOOLTIPA PO DOTYKU GDZIEKOLWIEK ===
   document.addEventListener('touchstart', hideTooltip, { passive: true });
 
-  // co 20 sekund pozwól tooltipowi znowu się pojawić (antyspam)
+  // === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
   setInterval(() => tooltipShown = false, 20000);
 }
 
-// === Funkcje tooltipa ===
+// === FUNKCJE TOOLTIPA ===
 function showTooltip(x, y) {
   if (!tooltipDiv) return;
 
@@ -4691,22 +4704,9 @@ function hideTooltip() {
   clearTimeout(tooltipTimeout);
 }
 
+// === URUCHOMIENIE ===
 enableFlyTapHelper();
 
-// === Pomocnicza funkcja: sprawdza, czy tapnięcie trafiło w punkt globu ===
-function isTouchOnGlobePoint(touch) {
-  const mouse = new THREE.Vector2();
-  const raycaster = new THREE.Raycaster();
-
-  const rect = globe.renderer().domElement.getBoundingClientRect();
-  mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
-  mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
-
-  raycaster.setFromCamera(mouse, globe.camera());
-  const intersects = raycaster.intersectObjects(globe.pointsData().map(p => p.__threeObj), true);
-  return intersects.length > 0;
-}
-	
 ///// Nasłuchiwacze dla filtrów typów i dodatkowych //////////////////////////////////////
 
   // Checkboxy typów punktów
