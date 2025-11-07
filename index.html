@@ -4609,6 +4609,7 @@ function enableFlyTapHelper() {
     flyHelperDiv.style.userSelect = 'none';
     flyHelperDiv.style.transition = 'transform 0.3s ease-out, opacity 0.4s';
     flyHelperDiv.style.opacity = '0';
+    flyHelperDiv.style.pointerEvents = 'none'; // ✅ nie blokuj kliknięć pod spodem, gdy ukryta
     document.body.appendChild(flyHelperDiv);
   }
 
@@ -4642,6 +4643,7 @@ function enableFlyTapHelper() {
     // przesuń helper
     flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
     flyHelperDiv.style.opacity = '1';
+    flyHelperDiv.style.pointerEvents = 'auto'; // ✅ teraz można kliknąć muchę
 
     // pokaż tooltip tylko raz (np. przy pierwszym tapnięciu)
     if (!tooltipShown) {
@@ -4658,7 +4660,8 @@ function enableFlyTapHelper() {
 
   // ukrywanie tooltipa po dotyku gdziekolwiek
   document.addEventListener('touchstart', hideTooltip, { passive: true });
-	// === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
+  
+  // === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
   setInterval(() => tooltipShown = false, 20000);
 }
 
@@ -4678,6 +4681,9 @@ function hideTooltip() {
   if (!tooltipDiv) return;
   tooltipDiv.style.opacity = '0';
   clearTimeout(tooltipTimeout);
+
+  // ✅ gdy tooltip znika, helper znów nie blokuje kliknięć
+  if (flyHelperDiv) flyHelperDiv.style.pointerEvents = 'none';
 }
 
 enableFlyTapHelper();
