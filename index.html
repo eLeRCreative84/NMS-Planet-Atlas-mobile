@@ -4592,29 +4592,27 @@ let tooltipShown = false; // żeby nie spamować tooltipem
 
 function enableFlyTapHelper() {
   const globeEl = document.getElementById('globeViz');
-  if (!globeEl) {
-    return;
-  }
+  if (!globeEl) return;
 
-  // 🪐 stwórz jeśli nie istnieje
+  // 🪐 stwórz helper jeśli nie istnieje
   if (!flyHelperDiv) {
     flyHelperDiv = document.createElement('div');
     flyHelperDiv.textContent = '🪐';
-      flyHelperDiv.style.position = 'fixed';
-  flyHelperDiv.style.zIndex = '9999999';
-  flyHelperDiv.style.fontSize = '40px';
-  flyHelperDiv.style.width = '60px';
-  flyHelperDiv.style.height = '60px';
-  flyHelperDiv.style.display = 'flex';
-  flyHelperDiv.style.alignItems = 'center';
-  flyHelperDiv.style.justifyContent = 'center';
-  flyHelperDiv.style.userSelect = 'none';
+    flyHelperDiv.style.position = 'fixed';
+    flyHelperDiv.style.zIndex = '9999999';
+    flyHelperDiv.style.fontSize = '40px';
+    flyHelperDiv.style.width = '60px';
+    flyHelperDiv.style.height = '60px';
+    flyHelperDiv.style.display = 'flex';
+    flyHelperDiv.style.alignItems = 'center';
+    flyHelperDiv.style.justifyContent = 'center';
+    flyHelperDiv.style.userSelect = 'none';
     flyHelperDiv.style.transition = 'transform 0.3s ease-out, opacity 0.4s';
     flyHelperDiv.style.opacity = '0';
     document.body.appendChild(flyHelperDiv);
   }
 
-// tooltip
+  // tooltip
   if (!tooltipDiv) {
     tooltipDiv = document.createElement('div');
     tooltipDiv.textContent = 'Zagubiony w kosmosie? Użyj na mnie gestów do nawigacji.';
@@ -4630,27 +4628,26 @@ function enableFlyTapHelper() {
     tooltipDiv.style.transition = 'opacity 0.4s ease';
     document.body.appendChild(tooltipDiv);
   }
-	
-  //  nasłuch tapnięcia (pojedynczy tap)
+
+  // nasłuch tapnięcia (pojedynczy tap)
   globeEl.addEventListener('touchend', (e) => {
-    if (e.touches.length > 0) return; // jeśli wielodotyk — pomiń
+    if (e.touches.length > 0) return;
     const touch = e.changedTouches[0];
     const x = touch.clientX;
     const y = touch.clientY;
 
-    // przesuń helper w to miejsce
+    // przesuń helper
     flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
     flyHelperDiv.style.opacity = '1';
-  });
 
     // pokaż tooltip tylko raz (np. przy pierwszym tapnięciu)
     if (!tooltipShown) {
       tooltipShown = true;
       showTooltip(x, y);
     }
-  };
-	
-  // Nie blokuj innych gestów, tylko kliknięcia bezpośrednio na helper
+  });
+
+	// tapnięcie bezpośrednio na helper
  flyHelperDiv.addEventListener('touchstart', (e) => {
     e.stopPropagation(); // nie przekazuj do globu
     hideTooltip();
@@ -4659,8 +4656,8 @@ function enableFlyTapHelper() {
   // ukrywanie tooltipa po dotyku gdziekolwiek
   document.addEventListener('touchstart', hideTooltip, { passive: true });
 
-  // co 30 sekund pozwól tooltipowi znowu się pojawić (antyspam)
-  setInterval(() => tooltipShown = false, 30000);
+  // co minutę pozwól tooltipowi znowu się pojawić (antyspam)
+  setInterval(() => tooltipShown = false, 60000);
 }
 
 // === Funkcje tooltipa ===
