@@ -4589,14 +4589,10 @@ let flyHelperDiv = null;
 let tooltipDiv = null;
 let tooltipTimeout = null;
 let tooltipShown = false; // żeby nie spamować tooltipem
-let lastTouchedPoint = null; // aby wykryć tapnięcie punktu na globie
 
 function enableFlyTapHelper() {
   const globeEl = document.getElementById('globeViz');
-  if (!globeEl || !window.globe) {
-    console.warn('Brak #globeViz lub instancji globe');
-    return;
-  }
+  if (!globeEl) return;
 
   // 🪐 stwórz helper jeśli nie istnieje
   if (!flyHelperDiv) {
@@ -4616,53 +4612,32 @@ function enableFlyTapHelper() {
     document.body.appendChild(flyHelperDiv);
   }
 
-  // === TOOLTIP ===
+  // tooltip
   if (!tooltipDiv) {
     tooltipDiv = document.createElement('div');
-    tooltipDiv.innerHTML = "💡 Zagubiony w kosmosie?<br>Użyj na mnie gestów do nawigacji.";
+    tooltipDiv.textContent = '💡Zagubiony w kosmosie? <br> Użyj na mnie gestów do nawigacji.';
     tooltipDiv.style.position = 'fixed';
-    tooltipDiv.style.background = 'rgba(0, 0, 0, 0.85)';
-    tooltipDiv.style.color = 'white';
+    tooltipDiv.style.zIndex = '10000000';
+	tooltipDiv.style.whiteSpace = 'normal';
     tooltipDiv.style.padding = '8px 12px';
-    tooltipDiv.style.borderRadius = '10px';
-    tooltipDiv.style.fontSize = '14px';
-    tooltipDiv.style.textAlign = 'center';
-    tooltipDiv.style.lineHeight = '1.4';
-    tooltipDiv.style.whiteSpace = 'normal';
-    tooltipDiv.style.zIndex = '99999999';
-    tooltipDiv.style.pointerEvents = 'none';
+    tooltipDiv.style.background = 'rgba(0, 0, 0, 0.7)';
+    tooltipDiv.style.color = 'white';
+    tooltipDiv.style.fontSize = '13px';
+    tooltipDiv.style.borderRadius = '8px';
+    tooltipDiv.style.whiteSpace = 'nowrap';
     tooltipDiv.style.opacity = '0';
-    tooltipDiv.style.transition = 'opacity 0.5s ease';
+    tooltipDiv.style.transition = 'opacity 0.4s ease';
     document.body.appendChild(tooltipDiv);
   }
 
-  // 🪐 ustaw tooltip NAD helperem
-  const rect = flyHelperDiv.getBoundingClientRect();
-  tooltipDiv.style.left = `${rect.left + rect.width / 2 - tooltipDiv.offsetWidth / 2}px`;
-  tooltipDiv.style.top = `${rect.top - 50}px`; // 50px nad helperem
-  tooltipDiv.style.opacity = '1';
-
-  // === REJESTRACJA TAPNIĘCIA W PUNKT NA GLOBIE ===
-  // Gdy użytkownik tapnie w istniejący punkt (np. zasób, ruiny itp.),
-  // ustawiamy flagę, żeby helper się nie przenosił.
-  globe.onPointClick(point => {
-    lastTouchedPoint = point;
-    // reset po chwili, aby kolejne tapy działały normalnie
-    setTimeout(() => { lastTouchedPoint = null; }, 300);
-  });
-
-  // === NASŁUCH TAPNIĘCIA NA OBSZARZE GLOBU ===
+  // nasłuch tapnięcia (pojedynczy tap)
   globeEl.addEventListener('touchend', (e) => {
-    if (e.touches.length > 0) return; // jeśli wielodotyk → pomiń
-
-    // jeśli tapnięcie trafiło w punkt planety → nie ruszaj helpera
-    if (lastTouchedPoint) return;
-
+    if (e.touches.length > 0) return;
     const touch = e.changedTouches[0];
     const x = touch.clientX;
     const y = touch.clientY;
 
-    // przesuń helper w to miejsce
+    // przesuń helper
     flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
     flyHelperDiv.style.opacity = '1';
 
@@ -4673,20 +4648,19 @@ function enableFlyTapHelper() {
     }
   });
 
-  // === TAPNIĘCIE BEZPOŚREDNIO NA HELPER ===
+  // tapnięcie bezpośrednio na helper
   flyHelperDiv.addEventListener('touchstart', (e) => {
     e.stopPropagation(); // nie przekazuj do globu
     hideTooltip();
   });
 
-  // === UKRYWANIE TOOLTIPA PO DOTYKU GDZIEKOLWIEK ===
+  // ukrywanie tooltipa po dotyku gdziekolwiek
   document.addEventListener('touchstart', hideTooltip, { passive: true });
-
-  // === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
+	// === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
   setInterval(() => tooltipShown = false, 20000);
 }
 
-// === FUNKCJE TOOLTIPA ===
+// === Funkcje tooltipa ===
 function showTooltip(x, y) {
   if (!tooltipDiv) return;
 
@@ -4704,7 +4678,6 @@ function hideTooltip() {
   clearTimeout(tooltipTimeout);
 }
 
-// === URUCHOMIENIE ===
 enableFlyTapHelper();
 
 ///// Nasłuchiwacze dla filtrów typów i dodatkowych //////////////////////////////////////
