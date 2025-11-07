@@ -4615,7 +4615,7 @@ function enableFlyTapHelper() {
   // tooltip
   if (!tooltipDiv) {
     tooltipDiv = document.createElement('div');
-    tooltipDiv.textContent = 'Zagubiony w kosmosie? Użyj na mnie gestów do nawigacji.';
+    tooltipDiv.textContent = '💡Zagubiony w kosmosie?<br>Użyj na mnie gestów do nawigacji.';
     tooltipDiv.style.position = 'fixed';
     tooltipDiv.style.zIndex = '10000000';
     tooltipDiv.style.padding = '8px 12px';
@@ -4629,6 +4629,12 @@ function enableFlyTapHelper() {
     document.body.appendChild(tooltipDiv);
   }
 
+// 🪐 ustaw tooltip NAD helperem
+    const rect = flyHelperDiv.getBoundingClientRect();
+    tooltipDiv.style.left = `${rect.left + rect.width / 2 - tooltipDiv.offsetWidth / 2}px`;
+    tooltipDiv.style.top = `${rect.top - 50}px`; // 50px nad helperem
+    tooltipDiv.style.opacity = '1';	
+	
   // nasłuch tapnięcia (pojedynczy tap)
   globeEl.addEventListener('touchend', (e) => {
     if (e.touches.length > 0) return;
@@ -4656,8 +4662,8 @@ function enableFlyTapHelper() {
   // ukrywanie tooltipa po dotyku gdziekolwiek
   document.addEventListener('touchstart', hideTooltip, { passive: true });
 
-  // co minutę pozwól tooltipowi znowu się pojawić (antyspam)
-  setInterval(() => tooltipShown = false, 60000);
+  // co 20 sekund pozwól tooltipowi znowu się pojawić (antyspam)
+  setInterval(() => tooltipShown = false, 20000);
 }
 
 // === Funkcje tooltipa ===
@@ -4669,7 +4675,7 @@ function showTooltip(x, y) {
   tooltipDiv.style.opacity = '1';
 
   clearTimeout(tooltipTimeout);
-  tooltipTimeout = setTimeout(hideTooltip, 5000); // auto-znikanie po 5s
+  tooltipTimeout = setTimeout(hideTooltip, 7000); // auto-znikanie po 7s
 }
 
 function hideTooltip() {
