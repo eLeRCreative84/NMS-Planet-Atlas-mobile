@@ -4584,14 +4584,15 @@ function refreshGridAndLabels() {
   el.addEventListener('input', refreshGridAndLabels)
 );
 
-// === FLY HELPER (🪐) — POJAWIA SIĘ TAM, GDZIE TAP ===
+// === HELPER (🪐) — POJAWIA SIĘ TAM, GDZIE TAP ===
 let flyHelperDiv = null;
 let flyTimeout = null;
+let tooltipTimeout = null;
+let tooltipShown = false; // żeby nie spamować tooltipem
 
 function enableFlyTapHelper() {
   const globeEl = document.getElementById('globeViz');
   if (!globeEl) {
-    console.warn('Brak #globeViz — mucha nieaktywna');
     return;
   }
 
@@ -4613,6 +4614,23 @@ function enableFlyTapHelper() {
     document.body.appendChild(flyHelperDiv);
   }
 
+// tooltip
+  if (!tooltipDiv) {
+    tooltipDiv = document.createElement('div');
+    tooltipDiv.textContent = 'Zagubiony w kosmosie? Użyj na mnie gestów do nawigacji.';
+    tooltipDiv.style.position = 'fixed';
+    tooltipDiv.style.zIndex = '10000000';
+    tooltipDiv.style.padding = '8px 12px';
+    tooltipDiv.style.background = 'rgba(0, 0, 0, 0.7)';
+    tooltipDiv.style.color = 'white';
+    tooltipDiv.style.fontSize = '13px';
+    tooltipDiv.style.borderRadius = '8px';
+    tooltipDiv.style.whiteSpace = 'nowrap';
+    tooltipDiv.style.opacity = '0';
+    tooltipDiv.style.transition = 'opacity 0.4s ease';
+    document.body.appendChild(tooltipDiv);
+  }
+	
   //  nasłuch tapnięcia (pojedynczy tap)
   globeEl.addEventListener('touchend', (e) => {
     if (e.touches.length > 0) return; // jeśli wielodotyk — pomiń
@@ -4620,21 +4638,50 @@ function enableFlyTapHelper() {
     const x = touch.clientX;
     const y = touch.clientY;
 
-    // przesuń muchę w to miejsce
+    // przesuń helper w to miejsce
     flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
     flyHelperDiv.style.opacity = '1';
   });
 
-  // Nie blokuj innych gestów, tylko kliknięcia bezpośrednio na muchę
-  flyHelperDiv.addEventListener('touchstart', (e) => {
-    e.stopPropagation(); // żeby tap na muchę nie przekazywał się do globu
+    // pokaż tooltip tylko raz (np. przy pierwszym tapnięciu)
+    if (!tooltipShown) {
+      tooltipShown = true;
+      showTooltip(x, y);
+    }
   });
 	
+  // Nie blokuj innych gestów, tylko kliknięcia bezpośrednio na helper
+ flyHelperDiv.addEventListener('touchstart', (e) => {
+    e.stopPropagation(); // nie przekazuj do globu
+    hideTooltip();
+  });
+
+  // ukrywanie tooltipa po dotyku gdziekolwiek
+  document.addEventListener('touchstart', hideTooltip, { passive: true });
+
+  // co 30 sekund pozwól tooltipowi znowu się pojawić (antyspam)
+  setInterval(() => tooltipShown = false, 30000);
+}
+
+// === Funkcje tooltipa ===
+function showTooltip(x, y) {
+  if (!tooltipDiv) return;
+
+  tooltipDiv.style.left = `${x + 40}px`;
+  tooltipDiv.style.top = `${y - 20}px`;
+  tooltipDiv.style.opacity = '1';
+
+  clearTimeout(tooltipTimeout);
+  tooltipTimeout = setTimeout(hideTooltip, 5000); // auto-znikanie po 5s
+}
+
+function hideTooltip() {
+  if (!tooltipDiv) return;
+  tooltipDiv.style.opacity = '0';
+  clearTimeout(tooltipTimeout);
 }
 
 enableFlyTapHelper();
-
-	
 	
 ///// Nasłuchiwacze dla filtrów typów i dodatkowych //////////////////////////////////////
 
