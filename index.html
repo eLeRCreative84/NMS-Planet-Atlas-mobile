@@ -4295,7 +4295,7 @@ refreshGridAndLabels();
     }
   });
 
-addFlyHelper();
+enableFlyTapHelper();
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
@@ -4584,65 +4584,47 @@ function refreshGridAndLabels() {
   el.addEventListener('input', refreshGridAndLabels)
 );
 
+/ === FLY HELPER (🪐) — POJAWIA SIĘ TAM, GDZIE TAP ===
 let flyHelperDiv = null;
-let flyUpdateInterval = null;
+let flyTimeout = null;
 
-function addFlyHelper() {
+function enableFlyTapHelper() {
   const globeEl = document.getElementById('globeViz');
-  if (!globeEl || !globe) {
-    console.warn('Brak #globeViz lub globu — mucha nie dodana');
+  if (!globeEl) {
+    console.warn('Brak #globeViz — mucha nieaktywna');
     return;
   }
 
-  // usuń starą muchę
-  if (flyHelperDiv) flyHelperDiv.remove();
-  if (flyUpdateInterval) clearInterval(flyUpdateInterval);
-
-  // 🪐 stwórz muchę
-  flyHelperDiv = document.createElement('div');
-  flyHelperDiv.textContent = '🪐';
-  flyHelperDiv.style.position = 'absolute';
-  flyHelperDiv.style.zIndex = '999999';
-  flyHelperDiv.style.fontSize = '32px';
-  flyHelperDiv.style.pointerEvents = 'none';
-  flyHelperDiv.style.userSelect = 'none';
-  flyHelperDiv.style.transition = 'transform 0.1s linear';
-  globeEl.style.position = 'relative';
-  globeEl.appendChild(flyHelperDiv);
-
-  const camera = globe.camera();
-  const renderer = globe.renderer();
-  const controls = globe.controls();
-
-  function updateFlyPosition() {
-    if (!camera || !controls || !renderer || !flyHelperDiv) return;
-
-    // Pobieramy punkt, w który patrzy kamera (target)
-    const target = controls.target.clone();
-    const vector = target.project(camera);
-
-    const rect = renderer.domElement.getBoundingClientRect();
-    const x2d = (vector.x * 0.5 + 0.5) * rect.width;
-    const y2d = (-vector.y * 0.5 + 0.5) * rect.height;
-
-    // Offset względem rogu widoku
-  //  const offsetX = 40;  // px w prawo
- //   const offsetY = 40;  // px w dół
-
-//    flyHelperDiv.style.transform = `translate(${x2d + offsetX}px, ${y2d + offsetY}px)`;
+  // 🪐 stwórz jeśli nie istnieje
+  if (!flyHelperDiv) {
+    flyHelperDiv = document.createElement('div');
+    flyHelperDiv.textContent = '🪐';
+    flyHelperDiv.style.position = 'fixed';
+    flyHelperDiv.style.zIndex = '999999';
+    flyHelperDiv.style.fontSize = '40px';
+    flyHelperDiv.style.pointerEvents = 'none';
+    flyHelperDiv.style.userSelect = 'none';
+    flyHelperDiv.style.transition = 'transform 0.3s ease-out, opacity 0.4s';
+    flyHelperDiv.style.opacity = '0';
+    document.body.appendChild(flyHelperDiv);
   }
 
-  // aktualizacje przy ruchu kamery
-  if (controls) controls.addEventListener('change', updateFlyPosition);
-  window.addEventListener('resize', updateFlyPosition);
+  //  nasłuch tapnięcia (pojedynczy tap)
+  globeEl.addEventListener('touchend', (e) => {
+    if (e.touches.length > 0) return; // jeśli wielodotyk — pomiń
+    const touch = e.changedTouches[0];
+    const x = touch.clientX;
+    const y = touch.clientY;
 
-  // cykliczne odświeżanie co 200 ms
-  flyUpdateInterval = setInterval(updateFlyPosition, 200);
-
-  updateFlyPosition();
-  console.log('🪐 Mucha przyklejona do widoku kamery');
+    // przesuń muchę w to miejsce
+    flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
+    flyHelperDiv.style.opacity = '1';
+  });
 }
 
+enableFlyTapHelper();
+
+	
 	
 ///// Nasłuchiwacze dla filtrów typów i dodatkowych //////////////////////////////////////
 
