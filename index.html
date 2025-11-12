@@ -4666,18 +4666,16 @@ function enableFlyTapHelperForElement(targetEl) {
   // === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
   setInterval(() => tooltipShown = false, 20000);
 
-  // === DOUBLE TAP — toggle helpera ===
-  let lastTapTime = 0;
+   // === DŁUGIE PRZYTRZYMANIE (3s) — toggle helpera ===
+  let longPressTimer = null;
 
-  targetEl.addEventListener('touchend', (e) => {
-    const currentTime = Date.now();
-    const tapLength = currentTime - lastTapTime;
-    lastTapTime = currentTime;
+  targetEl.addEventListener('touchstart', (e) => {
+    // zapamiętaj pozycję startową
+    const startX = e.touches[0].clientX;
+    const startY = e.touches[0].clientY;
 
-    if (tapLength < 300) { // wykryj szybkie 2 tapnięcia
-      e.preventDefault();
-
-      // Przełącz widoczność helpera 🪐
+    longPressTimer = setTimeout(() => {
+      // jeśli nadal przytrzymane — przełącz helpera
       if (flyHelperDiv.style.opacity === '1') {
         flyHelperDiv.style.opacity = '0';
         flyHelperDiv.style.pointerEvents = 'none';
@@ -4686,8 +4684,31 @@ function enableFlyTapHelperForElement(targetEl) {
         flyHelperDiv.style.opacity = '1';
         flyHelperDiv.style.pointerEvents = 'auto';
       }
+    }, 3000); // 3 sekundy
+  });
+
+  targetEl.addEventListener('touchmove', (e) => {
+    if (!longPressTimer) return;
+
+    const moveX = e.touches[0].clientX;
+    const moveY = e.touches[0].clientY;
+
+    // jeśli użytkownik przesunął palec > 15px — anuluj
+    if (Math.abs(moveX - e.touches[0].clientX) > 15 || Math.abs(moveY - e.touches[0].clientY) > 15) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
     }
-  }, { passive: false });
+  });
+
+  targetEl.addEventListener('touchend', () => {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  });
+
+  targetEl.addEventListener('touchcancel', () => {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  });
 	
 }
 
