@@ -4634,23 +4634,23 @@ function enableFlyTapHelperForElement(targetEl) {
     tooltipDiv.style.transition = 'opacity 0.5s ease';
     document.body.appendChild(tooltipDiv);
 
-    // tapnięcie w tooltip = schowaj helpera na 30 sekund
+    // tapnięcie w tooltip = schowaj helpera na 20 sekund
     tooltipDiv.addEventListener('touchstart', () => {
       hideTooltip();
+
       if (flyHelperDiv) {
         flyHelperDiv.style.opacity = '0';
         flyHelperDiv.style.pointerEvents = 'none';
-        // helper pojawi się z powrotem po 30 sekundach
-        setTimeout(() => {
-          flyHelperDiv.style.opacity = '1';
-        }, 30000);
+        helperHiddenUntil = Date.now() + 20000; // zapamiętaj czas blokady
       }
     });
   }
-	
-   // nasłuch tapnięcia (pojedynczy tap)
+
+  // tapnięcie na glob
   targetEl.addEventListener('touchend', (e) => {
     if (e.touches.length > 0) return;
+    if (Date.now() < helperHiddenUntil) return; // helper zablokowany — nic nie rób
+
     const touch = e.changedTouches[0];
     const x = touch.clientX;
     const y = touch.clientY;
