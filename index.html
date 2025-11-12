@@ -4689,6 +4689,7 @@ function showTooltip(x, y) {
   tooltipDiv.style.left = `${x + 40}px`;
   tooltipDiv.style.top = `${y - 20}px`;
   tooltipDiv.style.opacity = '1';
+	tooltipDiv.style.pointerEvents = 'auto'; // ✅ aktywny tylko gdy widoczny
 
   clearTimeout(tooltipTimeout);
   tooltipTimeout = setTimeout(hideTooltip, 7000); // auto-znikanie po 7s
@@ -4697,6 +4698,7 @@ function showTooltip(x, y) {
 function hideTooltip() {
   if (!tooltipDiv) return;
   tooltipDiv.style.opacity = '0';
+	tooltipDiv.style.pointerEvents = 'none'; // ✅ wyłącz kliknięcia po ukryciu
   clearTimeout(tooltipTimeout);
 
   // ✅ gdy tooltip znika, helper znów nie blokuje kliknięć
