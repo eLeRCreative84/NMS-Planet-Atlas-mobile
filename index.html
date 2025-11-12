@@ -4646,10 +4646,14 @@ function enableFlyTapHelperForElement(targetEl) {
   }
 
   // nasłuch tapnięcia (pojedynczy tap)
-  targetEl.addEventListener('touchstart', function(e){
-    // niech domyślne zachowanie nie robi text-selection/scroll glitch
-    if (e.cancelable) e.preventDefault();
-  }, { passive: false });
+targetEl.addEventListener('touchstart', function(e){
+  // Nie blokujemy wszystkiego, tylko gdy dotyk NIE jest tapnięciem w punkt
+  // (czyli pozwalamy Globe.js normalnie obsłużyć tapnięcie punktu)
+  if (!window.recentGlobePointClick && e.cancelable) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
 
   // nasłuch tapnięcia (pojedynczy tap) - zamiast natychmiast działać, odroczymy decyzję o ~80ms
   targetEl.addEventListener('touchend', (e) => {
