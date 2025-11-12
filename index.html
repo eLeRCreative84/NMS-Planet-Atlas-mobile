@@ -4596,6 +4596,8 @@ let tooltipShown = false; // żeby nie spamować tooltipem
 function enableFlyTapHelperForElement(targetEl) {
   if (!targetEl) return;
 
+let helperHiddenUntil = 0; // blokada czasowa
+	
   // 🪐 stwórz helper jeśli nie istnieje
   if (!flyHelperDiv) {
     flyHelperDiv = document.createElement('div');
