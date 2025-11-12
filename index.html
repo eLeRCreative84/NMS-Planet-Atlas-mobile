@@ -769,6 +769,8 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   }
 });
 
+	enableFlyTapHelperForElement(document.getElementById('babylonCanvas'));
+	
   // === Render loop (raz na zawsze) ===
   babylonEngine.runRenderLoop(() => {
     if (babylonRenderLoopActive && babylonScene.activeCamera) {
@@ -4295,7 +4297,7 @@ refreshGridAndLabels();
     }
   });
 
-enableFlyTapHelper();
+enableFlyTapHelperForElement(document.getElementById('globeViz'));
 	
   console.log("Globe zainicjalizowany (ustawienia przywrócone).");
 }
@@ -4590,9 +4592,9 @@ let tooltipDiv = null;
 let tooltipTimeout = null;
 let tooltipShown = false; // żeby nie spamować tooltipem
 
-function enableFlyTapHelper() {
-  const globeEl = document.getElementById('globeViz');
-  if (!globeEl) return;
+// ✅ UNIWERSALNA FUNKCJA — można użyć dla globe lub Babylon
+function enableFlyTapHelperForElement(targetEl) {
+  if (!targetEl) return;
 
   // 🪐 stwórz helper jeśli nie istnieje
   if (!flyHelperDiv) {
@@ -4634,7 +4636,7 @@ function enableFlyTapHelper() {
   }
 
   // nasłuch tapnięcia (pojedynczy tap)
-  globeEl.addEventListener('touchend', (e) => {
+  targetEl.addEventListener('touchend', (e) => {
     if (e.touches.length > 0) return;
     const touch = e.changedTouches[0];
     const x = touch.clientX;
@@ -4654,13 +4656,13 @@ function enableFlyTapHelper() {
 
   // tapnięcie bezpośrednio na helper
   flyHelperDiv.addEventListener('touchstart', (e) => {
-    e.stopPropagation(); // nie przekazuj do globu
+    e.stopPropagation(); // nie przekazuj do sceny
     hideTooltip();
   });
 
   // ukrywanie tooltipa po dotyku gdziekolwiek
   document.addEventListener('touchstart', hideTooltip, { passive: true });
-  
+
   // === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
   setInterval(() => tooltipShown = false, 20000);
 }
@@ -4686,7 +4688,8 @@ function hideTooltip() {
   if (flyHelperDiv) flyHelperDiv.style.pointerEvents = 'none';
 }
 
-enableFlyTapHelper();
+// 🔧 Domyślnie aktywuj dla globu
+enableFlyTapHelperForElement(document.getElementById('globeViz'));
 
 ///// Nasłuchiwacze dla filtrów typów i dodatkowych //////////////////////////////////////
 
