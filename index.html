@@ -4622,9 +4622,6 @@ function enableFlyTapHelperForElement(targetEl) {
     document.body.appendChild(flyHelperDiv);
   }
 
-  // ✅ ustaw pozycję początkową na dole ekranu
-  flyHelperDiv.style.transform = `translate(${window.innerWidth / 2 - 30}px, ${window.innerHeight - 120}px)`;
-  	
   // 💡 tooltip
   if (!tooltipDiv) {
     tooltipDiv = document.createElement('div');
@@ -4689,6 +4686,16 @@ function enableFlyTapHelperForElement(targetEl) {
   // === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
   setInterval(() => tooltipShown = false, 20000);
 
+// Dostosowanie pozycji dla desktopa
+if (!('ontouchstart' in window)) {
+  // przesuń helper i tooltip w dół ( na środek dolnej krawędzi)
+  flyHelperDiv.style.transform = `translate(${window.innerWidth / 2 - 30}px, ${window.innerHeight - 120}px)`;
+  flyHelperDiv.style.opacity = '1';
+
+  tooltipDiv.style.left = `${window.innerWidth / 2 - 80}px`;
+  tooltipDiv.style.top = `${window.innerHeight - 180}px`;
+}
+	
 }
 
 // === Funkcje tooltipa ===
