@@ -4646,12 +4646,12 @@ function enableFlyTapHelperForElement(targetEl) {
   }
 
   // nasłuch tapnięcia (pojedynczy tap)
-targetEl.addEventListener('touchstart', function(e){
-    
+  targetEl.addEventListener('touchstart', function(e){
+    // niech domyślne zachowanie nie robi text-selection/scroll glitch
     if (e.cancelable) e.preventDefault();
   }, { passive: false });
 
-  // nasłuch tapnięcia (pojedynczy tap) 
+  // nasłuch tapnięcia (pojedynczy tap) - zamiast natychmiast działać, odroczymy decyzję o ~80ms
   targetEl.addEventListener('touchend', (e) => {
     if (e.changedTouches && e.changedTouches.length === 0) return;
     const touch = e.changedTouches ? e.changedTouches[0] : e;
@@ -4665,18 +4665,19 @@ targetEl.addEventListener('touchstart', function(e){
       if (window.recentGlobePointClick) {
         return;
       }
-	  
-    // przesuń helper
-    flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
-    flyHelperDiv.style.opacity = '1';
-    flyHelperDiv.style.pointerEvents = 'auto'; // ✅ teraz można kliknąć muchę
 
-    // pokaż tooltip tylko raz (np. przy pierwszym tapnięciu)
-    if (!tooltipShown) {
-      tooltipShown = true;
-      showTooltip(x, y);
-    }
-  });
+      // brak kliknięcia punktu → przesuwamy helper
+      flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
+      flyHelperDiv.style.opacity = '1';
+      flyHelperDiv.style.pointerEvents = 'auto'; // można tapnąć helper
+
+      // pokaż tooltip tylko raz (np. przy pierwszym tapnięciu)
+      if (!tooltipShown) {
+        tooltipShown = true;
+        showTooltip(x, y);
+      }
+    }, 80); 
+  }, { passive: true });
 
   // tapnięcie bezpośrednio na helper
   flyHelperDiv.addEventListener('touchstart', (e) => {
