@@ -570,6 +570,10 @@ let isEditing = false; // globalna flaga
 let highlightTimeout = null;
 let headerLock = true; // blokada na starcie celem zablokowania możliwości nadpisania nagłówka
 
+// === GLOBALNY ATLAS GALAKTYK ===
+let galaxiesAtlas = {};  // każda galaktyka trzyma własne regiony
+let currentGalaxy = "Euclid";  // globalny wskaźnik aktywnej galaktyki
+	
 // === GLOBALNE ZMIENNE STANU GLOBU ===
 let globe = null; 
 let geoGridGroup = null;
@@ -1655,7 +1659,8 @@ function refreshGalaxySidebar() {
       currentGalaxy = g;          // ustawiamy globalną zmienną
       refreshPlanetSidebar();     // odśwież listę planet dla tej galaktyki
       refreshGalaxySidebar();
-
+      setActiveGalaxyForBabylon(g); // aktualizacja galaktyki dla babylon
+		
       // ustaw input galaktyki w szczegółach planety (jeśli jest aktywna planeta)
       const galaxyInput = document.getElementById("galaxyInput");
       if (galaxyInput) {
@@ -1681,7 +1686,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (input) input.value = currentGalaxy || "";
   refreshGalaxySidebar();
   refreshPlanetSidebar();
-
+  setActiveGalaxyForBabylon(currentGalaxy); // startowa aktywacja Babylon dla tej galaktyki
   if (!input || !dropdown) return;
 
   // pokazanie listy przy wpisywaniu
@@ -1731,6 +1736,29 @@ document.addEventListener("DOMContentLoaded", () => {
 //------------------ Moduł podróż -------------------//
 //////////////////////////////////////////////////////////////////// 
 
+//Babylon.js ma zareagować na wybór galaktyki w sidebarze Globe to i podmienipodmienić dane
+function setActiveGalaxyForBabylon(name) {
+  // jeśli nie istnieje w atlasie, zainicjalizuj pustą galaktykę
+  if (!galaxiesAtlas[name]) {
+    galaxiesAtlas[name] = { regions: {} };
+  }
+
+  currentGalaxy = name;
+  regions = galaxiesAtlas[name].regions; // ← PODPIĘCIE
+
+  // wyczyść scenę Babylon
+  clearRenderedPoints();
+  loadedRegionKey = null;
+
+  // odśwież UI regionów
+  drawGalaxyGrid();
+  updateGalaxyTilesHasPoints();
+  groupNameLabel.textContent = `Galaktyka: ${name}`;
+
+  console.log("🌌 Aktywna galaktyka Babylon:", currentGalaxy);
+}
+
+	
 // ==== pomocnik: klucz regionu bazowany na indeksie regionu (0..15)
 function regionIndexKey(ix, iz) {
     return `${ix}_${iz}`; // klucz do obiektów i tablic w kodzie
@@ -3894,27 +3922,9 @@ function exportAtlas(){
     planetDetails,
     planetData,
     textures,
-    regions: {} // blok na dane z modułu podróży
-  };
-
-  // Zapisz dane o regionach, punktach i połączeniach
-  for (const [key, region] of Object.entries(regions)) {
-    exportData.regions[key] = {
-      pointsData: region.pointsData.map(p => ({
-        id: p.id,
-        x: p.x,
-        y: p.y,
-        z: p.z,
-        galactic: p.galactic || "",
-        name: p.name || "",
-        connectedToPrev: !!p.connectedToPrev
-      })),
-      edges: region.edges ? region.edges.map(e => ({
-        fromId: e.fromId,
-        toId: e.toId
-      })) : []
-    };
-  }
+    galaxiesAtlas, // teraz zapisujemy WSZYSTKIE galaktyki
+    currentGalaxy   // zapamiętaj aktywną
+};
 
   const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -3924,7 +3934,6 @@ function exportAtlas(){
   a.click();
   URL.revokeObjectURL(url);
 }
-
 
 function importAtlas(event){
   const file = event.target.files[0];
@@ -3943,16 +3952,14 @@ function importAtlas(event){
         renderTexturePage();        // odtwórz galerię
       }
 	  
-	        // Nowość: import regionów i punktów
-      if (data.regions) {
-        regions = {}; // wyczyść stare
-        for (const [key, regionData] of Object.entries(data.regions)) {
-          regions[key] = {
-            pointsData: regionData.pointsData || [],
-            edges: regionData.edges || []
-          };
-        }
-        console.log("Zaimportowano regiony:", Object.keys(regions).length);
+  // import pełnego atlasu galaktyk
+      if (data.galaxiesAtlas) {
+        galaxiesAtlas = data.galaxiesAtlas;
+        console.log("Zaimportowano galaktyki:", Object.keys(galaxiesAtlas));
+
+        // ustaw aktywną galaktykę
+        const gal = data.currentGalaxy || Object.keys(galaxiesAtlas)[0] || "Euclid";
+        setActiveGalaxyForBabylon(gal);
       }
 	  
 	  
