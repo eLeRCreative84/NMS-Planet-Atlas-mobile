@@ -4666,32 +4666,28 @@ function enableFlyTapHelperForElement(targetEl) {
   // === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
   setInterval(() => tooltipShown = false, 20000);
 
-  // === DŁUGIE PRZYTRZYMANIE (3 sekundy) — toggle helpera ===
-  let longPressTimer = null;
-  let longPressTriggered = false;
+  // === DOUBLE TAP — toggle helpera ===
+  let lastTapTime = 0;
 
-  targetEl.addEventListener('touchstart', (e) => {
-    longPressTriggered = false;
-    // uruchamiamy licznik
-    longPressTimer = setTimeout(() => {
-      longPressTriggered = true;
+  targetEl.addEventListener('touchend', (e) => {
+    const currentTime = Date.now();
+    const tapLength = currentTime - lastTapTime;
+    lastTapTime = currentTime;
 
+    if (tapLength < 300) { // wykryj szybkie 2 tapnięcia
+      e.preventDefault();
+
+      // Przełącz widoczność helpera 🪐
       if (flyHelperDiv.style.opacity === '1') {
-        // ukryj helpera
         flyHelperDiv.style.opacity = '0';
         flyHelperDiv.style.pointerEvents = 'none';
         hideTooltip();
       } else {
-        // pokaż helpera w centrum ekranu (lub ostatnim miejscu)
         flyHelperDiv.style.opacity = '1';
         flyHelperDiv.style.pointerEvents = 'auto';
       }
-    }, 3000); // 3 sekundy przytrzymania
-  }, { passive: true });
-
-  // Anulowanie długiego przytrzymania gdy palec oderwany lub przesunięty
-  targetEl.addEventListener('touchend', () => clearTimeout(longPressTimer), { passive: true });
-  targetEl.addEventListener('touchmove', () => clearTimeout(longPressTimer), { passive: true });
+    }
+  }, { passive: false });
 	
 }
 
