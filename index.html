@@ -4665,6 +4665,34 @@ function enableFlyTapHelperForElement(targetEl) {
 
   // === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
   setInterval(() => tooltipShown = false, 20000);
+
+  // === DŁUGIE PRZYTRZYMANIE (3 sekundy) — toggle helpera ===
+  let longPressTimer = null;
+  let longPressTriggered = false;
+
+  targetEl.addEventListener('touchstart', (e) => {
+    longPressTriggered = false;
+    // uruchamiamy licznik
+    longPressTimer = setTimeout(() => {
+      longPressTriggered = true;
+
+      if (flyHelperDiv.style.opacity === '1') {
+        // ukryj helpera
+        flyHelperDiv.style.opacity = '0';
+        flyHelperDiv.style.pointerEvents = 'none';
+        hideTooltip();
+      } else {
+        // pokaż helpera w centrum ekranu (lub ostatnim miejscu)
+        flyHelperDiv.style.opacity = '1';
+        flyHelperDiv.style.pointerEvents = 'auto';
+      }
+    }, 3000); // 3 sekundy przytrzymania
+  }, { passive: true });
+
+  // Anulowanie długiego przytrzymania gdy palec oderwany lub przesunięty
+  targetEl.addEventListener('touchend', () => clearTimeout(longPressTimer), { passive: true });
+  targetEl.addEventListener('touchmove', () => clearTimeout(longPressTimer), { passive: true });
+	
 }
 
 // === Funkcje tooltipa ===
