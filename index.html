@@ -4142,16 +4142,6 @@ function initGlobe() {
       }
     });
 
-// nasłuchiwanie kliknięcia w punkty globu
-globe.onPointClick((point, event) => {
-  // krótka flaga: wskazuje że kliknięto punkt. Trwa 400ms.
-  window.recentGlobePointClick = true;
-  setTimeout(() => { window.recentGlobePointClick = false; }, 400);
-
-  // zachowujemy również lastClickedPointTime jeżeli gdzieś jeszcze używasz
-  window.lastClickedPointTime = Date.now();
-});
-
   // ustawienie punktów dla aktualnej planety
   if (currentPlanet && atlas[currentPlanet]) {
     globe.pointsData(atlas[currentPlanet]);
@@ -4645,43 +4635,24 @@ function enableFlyTapHelperForElement(targetEl) {
     document.body.appendChild(tooltipDiv);
   }
 
-  // nasłuch tapnięcia (pojedynczy tap)
-targetEl.addEventListener('touchstart', function(e){
-  // Nie blokujemy wszystkiego, tylko gdy dotyk NIE jest tapnięciem w punkt
-  // (czyli pozwalamy Globe.js normalnie obsłużyć tapnięcie punktu)
-  if (!window.recentGlobePointClick && e.cancelable) {
-    e.preventDefault();
-  }
-}, { passive: false });
-
-
-  // nasłuch tapnięcia (pojedynczy tap) - zamiast natychmiast działać, odroczymy decyzję o ~80ms
+   // nasłuch tapnięcia (pojedynczy tap)
   targetEl.addEventListener('touchend', (e) => {
-    if (e.changedTouches && e.changedTouches.length === 0) return;
-    const touch = e.changedTouches ? e.changedTouches[0] : e;
+    if (e.touches.length > 0) return;
+    const touch = e.changedTouches[0];
     const x = touch.clientX;
     const y = touch.clientY;
 
-    // POZOSTAWIAMY MAŁE OPÓŹNIENIE: pozwala globowi (globe.onPointClick) 
-    // ustawić flagę recentGlobePointClick jeśli doszło do kliknięcia punktu.
-    setTimeout(() => {
-      // jeśli flagę ustawiono — to było kliknięcie punktu, nic nie rób
-      if (window.recentGlobePointClick) {
-        return;
-      }
+    // przesuń helper
+    flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
+    flyHelperDiv.style.opacity = '1';
+    flyHelperDiv.style.pointerEvents = 'auto'; // ✅ teraz można kliknąć muchę
 
-      // brak kliknięcia punktu → przesuwamy helper
-      flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
-      flyHelperDiv.style.opacity = '1';
-      flyHelperDiv.style.pointerEvents = 'auto'; // można tapnąć helper
-
-      // pokaż tooltip tylko raz (np. przy pierwszym tapnięciu)
-      if (!tooltipShown) {
-        tooltipShown = true;
-        showTooltip(x, y);
-      }
-    }, 80); 
-  }, { passive: true });
+    // pokaż tooltip tylko raz (np. przy pierwszym tapnięciu)
+    if (!tooltipShown) {
+      tooltipShown = true;
+      showTooltip(x, y);
+    }
+  });
 
   // tapnięcie bezpośrednio na helper
   flyHelperDiv.addEventListener('touchstart', (e) => {
