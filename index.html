@@ -4647,9 +4647,10 @@ function enableFlyTapHelperForElement(targetEl) {
     const x = touch.clientX;
     const y = touch.clientY;
 
-  // 🪐 NIE ruszaj helpera, jeśli przed chwilą kliknięto punkt
-  const clickedRecently = window.lastClickedPointTime && (Date.now() - window.lastClickedPointTime < 200);
-  if (clickedRecently) return;
+if (window.lastClickedPointTime && Date.now() - window.lastClickedPointTime < 300) {
+  // Kliknięto punkt — nie przenoś helpera
+  return;
+}
 	  
     // przesuń helper
     flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
