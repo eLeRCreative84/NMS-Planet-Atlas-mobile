@@ -4142,9 +4142,9 @@ function initGlobe() {
       }
     });
 
-	.globe
-.onPointClick((point, event) => {
-  window.lastClickedPointTime = Date.now(); // znacznik czasu ostatniego kliknięcia w punkt
+// nasłuchiwanie kliknięcia w punkty globu
+globe.onPointClick((point, event) => {
+  window.lastClickedPointTime = Date.now(); // zapamiętaj moment kliknięcia w punkt
 });
 
   // ustawienie punktów dla aktualnej planety
