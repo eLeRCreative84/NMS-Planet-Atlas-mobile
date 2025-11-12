@@ -4615,10 +4615,10 @@ function enableFlyTapHelperForElement(targetEl) {
     document.body.appendChild(flyHelperDiv);
   }
 
-  // tooltip
+  // 💡 tooltip
   if (!tooltipDiv) {
     tooltipDiv = document.createElement('div');
-    tooltipDiv.innerHTML = "💡 Zagubiony w kosmosie? <br> Użyj na mnie gestów do nawigacji.";
+    tooltipDiv.innerHTML = "💡 Zagubiony w kosmosie? <br> Użyj na mnie gestów do nawigacji. <br> Stuknij by mnie schować";
     tooltipDiv.style.position = 'fixed';
     tooltipDiv.style.background = 'rgba(0, 0, 0, 0.85)';
     tooltipDiv.style.color = 'white';
@@ -4629,13 +4629,12 @@ function enableFlyTapHelperForElement(targetEl) {
     tooltipDiv.style.lineHeight = '1.4';
     tooltipDiv.style.whiteSpace = 'normal';
     tooltipDiv.style.zIndex = '99999999';
-    tooltipDiv.style.pointerEvents = 'none';
+    tooltipDiv.style.pointerEvents = 'auto'; // teraz tooltip reaguje na tapnięcie
     tooltipDiv.style.opacity = '0';
     tooltipDiv.style.transition = 'opacity 0.5s ease';
     document.body.appendChild(tooltipDiv);
-  }
 
-   // tapnięcie w tooltip = schowaj helpera na 30 sekund
+    // tapnięcie w tooltip = schowaj helpera na 30 sekund
     tooltipDiv.addEventListener('touchstart', () => {
       hideTooltip();
       if (flyHelperDiv) {
