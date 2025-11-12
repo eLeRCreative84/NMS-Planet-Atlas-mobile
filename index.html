@@ -4144,7 +4144,12 @@ function initGlobe() {
 
 // nasłuchiwanie kliknięcia w punkty globu
 globe.onPointClick((point, event) => {
-  window.lastClickedPointTime = Date.now(); // zapamiętaj moment kliknięcia w punkt
+  // krótka flaga: wskazuje że kliknięto punkt. Trwa 400ms.
+  window.recentGlobePointClick = true;
+  setTimeout(() => { window.recentGlobePointClick = false; }, 400);
+
+  // zachowujemy również lastClickedPointTime jeżeli gdzieś jeszcze używasz
+  window.lastClickedPointTime = Date.now();
 });
 
   // ustawienie punktów dla aktualnej planety
@@ -4641,16 +4646,25 @@ function enableFlyTapHelperForElement(targetEl) {
   }
 
   // nasłuch tapnięcia (pojedynczy tap)
+targetEl.addEventListener('touchstart', function(e){
+    
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  // nasłuch tapnięcia (pojedynczy tap) 
   targetEl.addEventListener('touchend', (e) => {
-    if (e.touches.length > 0) return;
-    const touch = e.changedTouches[0];
+    if (e.changedTouches && e.changedTouches.length === 0) return;
+    const touch = e.changedTouches ? e.changedTouches[0] : e;
     const x = touch.clientX;
     const y = touch.clientY;
 
-if (window.lastClickedPointTime && Date.now() - window.lastClickedPointTime < 300) {
-  // Kliknięto punkt — nie przenoś helpera
-  return;
-}
+    // POZOSTAWIAMY MAŁE OPÓŹNIENIE: pozwala globowi (globe.onPointClick) 
+    // ustawić flagę recentGlobePointClick jeśli doszło do kliknięcia punktu.
+    setTimeout(() => {
+      // jeśli flagę ustawiono — to było kliknięcie punktu, nic nie rób
+      if (window.recentGlobePointClick) {
+        return;
+      }
 	  
     // przesuń helper
     flyHelperDiv.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
