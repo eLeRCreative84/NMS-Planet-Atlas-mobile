@@ -4591,13 +4591,12 @@ let flyHelperDiv = null;
 let tooltipDiv = null;
 let tooltipTimeout = null;
 let tooltipShown = false; // żeby nie spamować tooltipem
+let helperHiddenUntil = 0; // blokada czasowa
 
 // ✅ UNIWERSALNA FUNKCJA — można użyć dla globe lub Babylon
 function enableFlyTapHelperForElement(targetEl) {
   if (!targetEl) return;
 
-let helperHiddenUntil = 0; // blokada czasowa
-	
   // 🪐 stwórz helper jeśli nie istnieje
   if (!flyHelperDiv) {
     flyHelperDiv = document.createElement('div');
