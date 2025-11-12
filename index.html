@@ -4666,49 +4666,85 @@ function enableFlyTapHelperForElement(targetEl) {
   // === ANTYSPAM TOOLTIPA — CO 20 SEKUND MOŻE POJAWIĆ SIĘ ZNOWU ===
   setInterval(() => tooltipShown = false, 20000);
 
-   // === DŁUGIE PRZYTRZYMANIE (3s) — toggle helpera ===
-  let longPressTimer = null;
+  // === DŁUGIE PRZYTRZYMANIE (3s) — toggle helpera (stabilna wersja + debug) ===
+// (wklej poniżej inside enableFlyTapHelperForElement)
+let longPressTimer = null;
+let longPressStart = null;
+let longPressStartPos = null;
+const LONG_PRESS_MS = 3000;
+const MOVE_CANCEL_THRESHOLD = 12; // px
 
-  targetEl.addEventListener('touchstart', (e) => {
-    // zapamiętaj pozycję startową
-    const startX = e.touches[0].clientX;
-    const startY = e.touches[0].clientY;
+// pomocniczka - pokaz/ukryj helper w bezpieczny sposób
+function setFlyHelperVisible(show) {
+  if (!flyHelperDiv) return;
+  if (show) {
+    flyHelperDiv.style.opacity = '1';
+    flyHelperDiv.style.pointerEvents = 'auto';
+    // opcjonalnie: flyHelperDiv.style.display = 'flex';
+    console.log('[flyHelper] show');
+  } else {
+    flyHelperDiv.style.opacity = '0';
+    flyHelperDiv.style.pointerEvents = 'none';
+    // opcjonalnie: flyHelperDiv.style.display = 'none';
+    hideTooltip();
+    console.log('[flyHelper] hide');
+  }
+}
 
-    longPressTimer = setTimeout(() => {
-      // jeśli nadal przytrzymane — przełącz helpera
-      if (flyHelperDiv.style.opacity === '1') {
-        flyHelperDiv.style.opacity = '0';
-        flyHelperDiv.style.pointerEvents = 'none';
-        hideTooltip();
-      } else {
-        flyHelperDiv.style.opacity = '1';
-        flyHelperDiv.style.pointerEvents = 'auto';
-      }
-    }, 3000); // 3 sekundy
-  });
+// START: user touches targetEl -> uruchom timer
+targetEl.addEventListener('touchstart', function onTouchStart(e) {
+  if (!e.touches || e.touches.length === 0) return;
 
-  targetEl.addEventListener('touchmove', (e) => {
-    if (!longPressTimer) return;
+  // zapis pozycji startowej i czasu
+  const t = e.touches[0];
+  longPressStart = Date.now();
+  longPressStartPos = { x: t.clientX, y: t.clientY };
 
-    const moveX = e.touches[0].clientX;
-    const moveY = e.touches[0].clientY;
+  // debug
+  console.log('[longpress] touchstart', longPressStartPos);
 
-    // jeśli użytkownik przesunął palec > 15px — anuluj
-    if (Math.abs(moveX - e.touches[0].clientX) > 15 || Math.abs(moveY - e.touches[0].clientY) > 15) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-  });
+  // ustaw timer
+  longPressTimer = setTimeout(() => {
+    console.log('[longpress] fired after', LONG_PRESS_MS, 'ms');
+    // toggle visibility
+    const currentlyVisible = !!(flyHelperDiv && flyHelperDiv.style.opacity === '1');
+    setFlyHelperVisible(!currentlyVisible);
+    longPressTimer = null;
+  }, LONG_PRESS_MS);
+}, { passive: true });
 
-  targetEl.addEventListener('touchend', () => {
+// MOVE: jeśli przesuniecie > threshold -> anuluj timer
+targetEl.addEventListener('touchmove', function onTouchMove(e) {
+  if (!longPressTimer || !longPressStartPos) return;
+  const t = e.touches[0];
+  const dx = t.clientX - longPressStartPos.x;
+  const dy = t.clientY - longPressStartPos.y;
+  if (Math.hypot(dx, dy) > MOVE_CANCEL_THRESHOLD) {
     clearTimeout(longPressTimer);
     longPressTimer = null;
-  });
+    console.log('[longpress] canceled by move', dx, dy);
+  }
+}, { passive: true });
 
-  targetEl.addEventListener('touchcancel', () => {
+// END / CANCEL: jeśli puści wcześniej -> anuluj
+function cancelLongPress() {
+  if (longPressTimer) {
     clearTimeout(longPressTimer);
     longPressTimer = null;
-  });
+    console.log('[longpress] canceled by end/cancel');
+  }
+  longPressStart = null;
+  longPressStartPos = null;
+}
+
+targetEl.addEventListener('touchend', (e) => {
+  cancelLongPress();
+}, { passive: true });
+
+targetEl.addEventListener('touchcancel', (e) => {
+  cancelLongPress();
+}, { passive: true });
+
 	
 }
 
