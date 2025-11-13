@@ -3915,15 +3915,39 @@ function changeTexturePage(delta) {
 //---------------- Eksport / Import Atlasu ---------------//
 ////////////////////////////////////////////////////////////////////  
 
-function exportAtlas(){
+function exportAtlas() {
   const exportData = {
     atlas,
     planetDetails,
     planetData,
     textures,
-    galaxiesAtlas, // teraz zapisujemy WSZYSTKIE galaktyki
-    currentGalaxy   // zapamiętaj aktywną
-};
+    galaxiesAtlas: {}, // 🌌 teraz trzymamy regiony w ramach galaktyk
+  };
+
+  // Eksport każdej galaktyki
+  for (const [galaxyName, galaxyData] of Object.entries(galaxiesAtlas)) {
+    exportData.galaxiesAtlas[galaxyName] = {
+      regions: {},
+    };
+
+    for (const [key, region] of Object.entries(galaxyData.regions || {})) {
+      exportData.galaxiesAtlas[galaxyName].regions[key] = {
+        pointsData: region.pointsData?.map(p => ({
+          id: p.id,
+          x: p.x,
+          y: p.y,
+          z: p.z,
+          galactic: p.galactic || "",
+          name: p.name || "",
+          connectedToPrev: !!p.connectedToPrev,
+        })) || [],
+        edges: region.edges?.map(e => ({
+          fromId: e.fromId,
+          toId: e.toId,
+        })) || [],
+      };
+    }
+  }
 
   const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -3934,36 +3958,46 @@ function exportAtlas(){
   URL.revokeObjectURL(url);
 }
 
-function importAtlas(event){
+function importAtlas(event) {
   const file = event.target.files[0];
-  if(!file) return;
+  if (!file) return;
   const reader = new FileReader();
+
   reader.onload = e => {
-    try{
+    try {
       const data = JSON.parse(e.target.result);
-      if(data.atlas) atlas = data.atlas;
-      if(data.planetDetails) planetDetails = data.planetDetails;
-      if(data.planetData) planetData = data.planetData;
-      if(data.textures) {
-        textures.length = 0;        // wyczyść obecną listę
-        textures.push(...data.textures); // wczytaj importowane
-        currentTexturePage = 0;     // ustaw początkową stronę
-        renderTexturePage();        // odtwórz galerię
+
+      if (data.atlas) atlas = data.atlas;
+      if (data.planetDetails) planetDetails = data.planetDetails;
+      if (data.planetData) planetData = data.planetData;
+
+      if (data.textures) {
+        textures.length = 0;
+        textures.push(...data.textures);
+        currentTexturePage = 0;
+        renderTexturePage();
       }
-	  
-  // import pełnego atlasu galaktyk
+
+      // Obsługa importu dla nowego formatu (multi-galaktyki)
       if (data.galaxiesAtlas) {
         galaxiesAtlas = data.galaxiesAtlas;
         console.log("Zaimportowano galaktyki:", Object.keys(galaxiesAtlas));
-
-        // ustaw aktywną galaktykę
-        const gal = data.currentGalaxy || Object.keys(galaxiesAtlas)[0] || "Euclid";
-        setActiveGalaxyForBabylon(gal);
       }
-	  
-	  
+
+      // Kompatybilność ze starym formatem (jeden zestaw regions)
+      else if (data.regions) {
+        galaxiesAtlas = {
+          [currentGalaxy]: { regions: data.regions },
+        };
+        console.log("Zaimportowano regiony w starej strukturze:", Object.keys(data.regions).length);
+      }
+
+      // Przywróć aktywną galaktykę i regiony
+      setActiveGalaxyForBabylon(currentGalaxy);
+
       const planets = Object.keys(atlas);
       currentPlanet = planets[0] || null;
+
       if (currentPlanet) selectPlanet(currentPlanet);
       else globe.globeImageUrl(blackTextureURL);
 
@@ -3973,9 +4007,9 @@ function importAtlas(event){
       refreshGlobePoints();
       updateNoPlanetsMessage();
       refreshPlanetSidebar();
-	  refreshGalaxySidebar();
+      refreshGalaxySidebar();
 
-// odśwież Babylon.js scenę
+      // Odśwież scenę Babylon
       if (typeof loadRegionByKey === "function") {
         clearRenderedPoints();
         loadedRegionKey = null;
@@ -3983,13 +4017,13 @@ function importAtlas(event){
         updateGalaxyTilesHasPoints();
       }
 
-
       alert(translations[currentLang].alert_import_done);
-    } catch(err){ 
+    } catch (err) {
       console.error(err);
-      alert(translations[currentLang].alert_import_error); 
+      alert(translations[currentLang].alert_import_error);
     }
   };
+
   reader.readAsText(file);
 }
 
@@ -4690,8 +4724,7 @@ function enableFlyTapHelperForElement(targetEl) {
 if (!('ontouchstart' in window)) {
   // przesuń helper i tooltip w dół ( na środek dolnej krawędzi)
   flyHelperDiv.style.transform = `translate(${window.innerWidth / 2 - 30}px, ${window.innerHeight - 120}px)`;
-  flyHelperDiv.style.opacity = '1';
-
+  
   tooltipDiv.style.left = `${window.innerWidth / 2 - 80}px`;
   tooltipDiv.style.top = `${window.innerHeight - 180}px`;
 }
