@@ -482,10 +482,7 @@
   <option value="sky3">Skybox 3</option>
   </select>
   </div>
-	<div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
-	<div>
-		<button id="toggleNumbering">Tryb: Globalna</button>
-	</div>
+
 </div>
   </div>
 	
@@ -602,7 +599,6 @@ const REGION_HEIGHT = 256;
 const GROUPS_PER_AXIS = 4;
 const REGIONS_PER_GROUP = 4;
 const REGIONS_AXIS = GROUPS_PER_AXIS * REGIONS_PER_GROUP; // 16 regionów w osi
-let numberingMode = "global"; // zmiana numeracji regionów
 
 let renderedPoints = [];
 let renderedEdges = [];
@@ -2046,17 +2042,8 @@ function drawGroupGrid(groupX, groupZ){
       const regionZ = groupZ * REGIONS_PER_GROUP + rz;
 
       // numeracja od 1 do 256 (tylko wizualna)
-		
-if (numberingMode === "global") {
-  // globalna numeracja (ciągła 1–256)
-  const globalRegionX = gx * REGIONS_PER_GROUP + rx;
-  const globalRegionZ = gz * REGIONS_PER_GROUP + rz;
-  regionNumber = globalRegionZ * REGIONS_AXIS + globalRegionX + 1;
-} else {
-  // lokalna numeracja (1–16)
-  regionNumber = rz * REGIONS_PER_GROUP + rx + 1;
-}
-tile.textContent = regionNumber;
+      const regionNumber = regionZ * REGIONS_AXIS + regionX + 1;
+      tile.textContent = regionNumber;
       
       tile.dataset.ix = regionX;
       tile.dataset.iz = regionZ;
@@ -2215,16 +2202,6 @@ function updateGalaxyCenterPosition(groupX, groupZ) {
     galaxyCenter.style.display = "block";
   }
 }
-
-	// Obsługa przełącznika zmiany numeracji regionów
-document.getElementById("toggleNumbering").addEventListener("click", () => {
-  numberingMode = numberingMode === "global" ? "local" : "global";
-  document.getElementById("toggleNumbering").textContent =
-    `Tryb: ${numberingMode === "global" ? "Globalna" : "Lokalna"}`;
-  
-  drawGroupGrid(currentGroupX, currentGroupZ); // odśwież widok bieżącej grupy
-});
-
 
 /* ===============================
    SIDEBAR – lista układów
