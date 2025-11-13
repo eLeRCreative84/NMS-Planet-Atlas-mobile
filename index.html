@@ -1755,7 +1755,7 @@ function setActiveGalaxyForBabylon(name) {
   updateGalaxyTilesHasPoints();
   groupNameLabel.textContent = `Galaktyka: ${name}`;
 
-  console.log("🌌 Aktywna galaktyka Babylon:", currentGalaxy);
+  updateGalaxyHeader();
 }
 	
 // ==== pomocnik: klucz regionu bazowany na indeksie regionu (0..15)
@@ -1965,6 +1965,13 @@ function addSolarSystemPoint(x, y, z, gal, targetRegionKey = null) {
 --- TUTAJ DOPISUJEMY SIATKĘ ---
  ============================== */
 
+function updateGalaxyHeader() {
+  const header = document.getElementById("regionMapHeader");
+  if (header) {
+    header.textContent = `Mapa galaktyki: ${currentGalaxy}`;
+  }
+}
+	
 const regionMapEl = document.getElementById("regionMap");
 const enterBtn = document.getElementById("enterGroup");
 const exitBtn = document.getElementById("exitGroup");
