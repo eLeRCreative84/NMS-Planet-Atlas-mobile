@@ -539,7 +539,7 @@
 	  </div>
  
 <!-- Sidebar Mapa galaktyki - nagłowek -->
-<div id="regionMapHeader">Mapa galaktyki</div>
+<div id="regionMapHeader">Galaktyka</div>
 <div id="galaxyCenter">☀</div>
 <div id="regionMap"></div>
 <div id="regionControls">
@@ -801,12 +801,13 @@ function showBabylonScene() {
 }
 
 function hideBabylonScene() {
-	  level = 0;
-  currentGroupX = 0; currentGroupZ = 0;
+// domyślny widok mapy regionów
+	level = 0;
+	currentGroupX = 0; currentGroupZ = 0;
 	solarListEl.innerHTML = ""; //wyczyść widok układów
-  drawGalaxyGrid();
-  // wróć do napisu podpowiedzi
-  groupNameLabel.textContent = "Wybierz regiony";
+	drawGalaxyGrid();
+	// wróć do napisu podpowiedzi
+	groupNameLabel.textContent = "Wybierz regiony";
   // czyścimy załadowany region ze sceny (jeśli chcesz, możesz zostawić)
   clearRenderedPoints();
   updateControlsState();
