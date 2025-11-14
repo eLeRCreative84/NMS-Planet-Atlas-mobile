@@ -2294,14 +2294,18 @@ document.getElementById("showSystemPlanetsBtn").addEventListener("click", () => 
     }
 
     const firstPlanet = planets[0];
-
+	hideBabylonScene();
+	initGlobe();
+	openTab("tab-planety");
+	
+	setTimeout(() => {
     currentPlanet = firstPlanet;
 
     if (typeof refreshPlanetSidebar === "function") refreshPlanetSidebar();
     if (typeof selectPlanet === "function") selectPlanet(firstPlanet);
-
-    console.log("Wybrano planetę układu:", firstPlanet);
-});
+	
+	}, 200);
+    });
 
 
 /* ================================
