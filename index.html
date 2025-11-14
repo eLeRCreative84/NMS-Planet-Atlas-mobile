@@ -473,6 +473,7 @@
 <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div> 
   <div>
     <button id="zoomToPointSolarSystem">Zoom</button>
+	  <button id="showSystemPlanetsBtn">Pokaż planety układu</button>
 	<button id="movePointsMode">Przemieszczaj układy</button>
 <button id="confirmMove" style="display:none;">Zatwierdź zmiany</button>
 <button id="cancelMove" style="display:none;">Anuluj</button>
@@ -2264,6 +2265,49 @@ function removeFromSolarListById(id) {
   if (!loadedRegionKey) return;
   refreshSolarListForLoadedRegion();
 }
+
+// obsługa przycisku „Pokaż planety układu”.
+document.getElementById("showSystemPlanetsBtn").addEventListener("click", () => {
+
+    if (!selectedPoint) {
+        alert("Najpierw wybierz układ z listy lub ze sceny.");
+        return;
+    }
+
+    // identyfikator układu – nazwa lub galactic, zależnie od tego co masz w planetach
+    const systemKey = selectedPoint.metadata.name?.trim() || 
+                      selectedPoint.metadata.galactic?.trim();
+
+    if (!systemKey) {
+        alert("Ten układ nie posiada nazwy ani adresu Galactic.");
+        return;
+    }
+
+    // sprawdzamy czy istnieją planety tego układu
+    if (!planetDetails[systemKey]) {
+        alert("Ten układ nie ma zapisanych planet.");
+        return;
+    }
+
+    const planets = Object.keys(planetDetails[systemKey]);
+
+    if (planets.length === 0) {
+        alert("Ten układ nie ma planet.");
+        return;
+    }
+
+    // wybierz pierwszą planetę
+    const firstPlanet = planets[0];
+
+    // ustaw aktualną planetę w Twoim systemie
+    currentPlanet = firstPlanet;
+
+    // odśwież panel planet (Twoje funkcje)
+    if (typeof refreshPlanetSidebar === "function") refreshPlanetSidebar();
+    if (typeof selectPlanet === "function") selectPlanet(firstPlanet);
+
+    console.log("Wybrano planetę układu:", firstPlanet);
+});
 
 /* ================================
    Reszta Twojego HUD (bez zmian)
