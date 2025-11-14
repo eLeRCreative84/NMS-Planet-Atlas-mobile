@@ -607,6 +607,8 @@ let regions = {};
 let uniqueIdCounter = 0;
 let loadedRegionKey = null;
 
+let systemLinks = {}; // globalny magazyn powiązań miedzy globe a babylon	
+	
 // globalne zmienne materiałów
 let pointMat = null;
 let selectedMat = null;
@@ -1931,6 +1933,8 @@ function addSolarSystemPoint(x, y, z, gal, targetRegionKey = null) {
 
   regions[key].pointsData.push(pd);
 
+checkForPlanetNameMatch(name, regionKey, id); //sprawdza czy ta sama nazwa układu istnieje w globe
+	
   // rysujemy węzeł od zaznaczonego punktu, tylko jeśli istnieje zaznaczony w tym regionie
   if (selectedPoint && selectedPoint.metadata && selectedPoint.metadata.regionKey === key) {
     // upewnij się, że nie tworzymy krawędzi do samego siebie (czyli duplikatu)
@@ -1969,7 +1973,29 @@ function addSolarSystemPoint(x, y, z, gal, targetRegionKey = null) {
 
   return id;
 }
+	
+// Funkcja porównująca nazwy układ vs planety
+function checkForPlanetNameMatch(systemName, regionKey, systemId) {
+  // sprawdź czy istnieje planeta o tej nazwie
+  const planetNames = Object.keys(planetDetails);
+  
+  const match = planetNames.find(p => p.toLowerCase() === systemName.toLowerCase());
+  if (!match) return; // brak powiązania
 
+  // jeśli region nie istnieje w systemLinks → utwórz
+  if (!systemLinks[regionKey]) {
+    systemLinks[regionKey] = {};
+  }
+
+  // jeśli już jest powiązany → nic nie rób
+  if (systemLinks[regionKey][systemId]) return;
+
+  // ZAPYTAJ UŻYTKOWNIKA
+  if (confirm(`Znaleziono planetę o nazwie "${match}". Czy powiązać z układem "${systemName}"?`)) {
+    systemLinks[regionKey][systemId] = match;
+   }
+}
+	
 /* ==============================
 --- TUTAJ DOPISUJEMY SIATKĘ ---
  ============================== */
@@ -2327,6 +2353,9 @@ function createMeshForPointData(pd) {
     document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
     const li = solarListEl.querySelector(`[data-id="${pd.id}"]`);
     if (li) li.classList.add("selected");
+
+handleSystemSelection(regionKey, systemId);  //Reakcja Globe gdy wybieramy układ w Babylon
+	  
   }));
   return sphere;
 }
@@ -2397,6 +2426,9 @@ function loadRegionByKey(regionKey, options = {}) {
 		}
 		focusCameraOn(mesh, 200);
 	  }
+
+handleSystemSelection(regionKey, systemId); //Reakcja Globe gdy wybieramy układ w Babylon
+		
 	}
 }
 
@@ -2506,7 +2538,24 @@ document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
   markRegionTileHasPoints(loadedRegionKey);
   if(level === 0) updateGalaxyTilesHasPoints();
 });
+	
+// Funkcja obsługująca przejście do planety na Globe
+function handleSystemSelection(regionKey, systemId) {
+  if (!systemLinks[regionKey]) return;
+  const planetName = systemLinks[regionKey][systemId];
+  if (!planetName) return;
 
+  if (!atlas[planetName]) return; // gdyby planeta została usunięta
+
+  // AUTOMATYCZNIE WYBIERZ PLANETĘ W GLOBE
+  currentPlanet = planetName;
+  selectPlanet(planetName);
+  refreshPlanetList();
+  refreshPointsList();
+  refreshGlobePoints();
+
+}
+	
 ////////////////////////////////////////////////////////////////////
 // ===== TRYB PRZEMIESZCZANIA UKŁADÓW =====
 ////////////////////////////////////////////////////////////////////
@@ -3936,7 +3985,8 @@ function exportAtlas() {
     planetDetails,
     planetData,
     textures,
-    galaxiesAtlas: {}, // 🌌 teraz trzymamy regiony w ramach galaktyk
+    galaxiesAtlas: {}, // teraz trzymamy regiony w ramach galaktyk
+	systemLinks: systemLinks
   };
 
   // Eksport każdej galaktyki
@@ -3991,6 +4041,9 @@ function importAtlas(event) {
         textures.push(...data.textures);
         currentTexturePage = 0;
         renderTexturePage();
+		  
+	  if (data.systemLinks) systemLinks = data.systemLinks;
+		  
       }
 
       // Obsługa importu dla nowego formatu (multi-galaktyki)
