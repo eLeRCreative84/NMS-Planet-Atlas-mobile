@@ -801,19 +801,6 @@ function showBabylonScene() {
 }
 
 function hideBabylonScene() {
-// domyślny widok mapy regionów
-	level = 0;
-	currentGroupX = 0; currentGroupZ = 0;
-	solarListEl.innerHTML = ""; //wyczyść widok układów
-	drawGalaxyGrid();
-	// wróć do napisu podpowiedzi
-	groupNameLabel.textContent = "Wybierz regiony";
-  // czyścimy załadowany region ze sceny (jeśli chcesz, możesz zostawić)
-  clearRenderedPoints();
-  updateControlsState();
-  loadedRegionKey = null;
-  updateGalaxyTilesHasPoints();
-  updateGalaxyCenterPosition(145, 113);
   document.getElementById("babylonWrapper").style.display = "none";
   document.getElementById("globeWrapper").style.display = "block";
   babylonRenderLoopActive = false;
@@ -1767,6 +1754,17 @@ function setActiveGalaxyForBabylon(name) {
   drawGalaxyGrid();
   updateGalaxyTilesHasPoints();
   updateGalaxyHeader();
+
+	// domyślny widok mapy regionów
+	level = 0;
+	currentGroupX = 0; currentGroupZ = 0;
+	solarListEl.innerHTML = ""; //wyczyść widok układów
+	// wróć do napisu podpowiedzi
+	groupNameLabel.textContent = "Wybierz regiony";
+  // czyścimy załadowany region ze sceny (jeśli chcesz, możesz zostawić)
+  updateControlsState();
+  updateGalaxyCenterPosition(145, 113);
+	
 }
 	
 // ==== pomocnik: klucz regionu bazowany na indeksie regionu (0..15)
