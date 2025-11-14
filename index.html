@@ -1750,11 +1750,6 @@ function setActiveGalaxyForBabylon(name) {
   clearRenderedPoints();
   loadedRegionKey = null;
 
-  // odśwież UI regionów
-  drawGalaxyGrid();
-  updateGalaxyTilesHasPoints();
-  updateGalaxyHeader();
-
 	// domyślny widok mapy regionów
 	level = 0;
 	currentGroupX = 0; currentGroupZ = 0;
@@ -1765,6 +1760,11 @@ function setActiveGalaxyForBabylon(name) {
   updateControlsState();
   updateGalaxyCenterPosition(145, 113);
 	
+  // odśwież UI regionów
+  drawGalaxyGrid();
+  updateGalaxyTilesHasPoints();
+  updateGalaxyHeader();
+
 }
 	
 // ==== pomocnik: klucz regionu bazowany na indeksie regionu (0..15)
