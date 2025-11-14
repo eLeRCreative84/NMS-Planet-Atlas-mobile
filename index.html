@@ -2354,7 +2354,7 @@ function createMeshForPointData(pd) {
     const li = solarListEl.querySelector(`[data-id="${pd.id}"]`);
     if (li) li.classList.add("selected");
 
-handleSystemSelection(regionKey, systemId);  //Reakcja Globe gdy wybieramy układ w Babylon
+handleSystemSelection(sphere.metadata.regionKey, sphere.metadata.id);  //Reakcja Globe gdy wybieramy układ w Babylon
 	  
   }));
   return sphere;
@@ -2426,9 +2426,6 @@ function loadRegionByKey(regionKey, options = {}) {
 		}
 		focusCameraOn(mesh, 200);
 	  }
-
-handleSystemSelection(regionKey, systemId); //Reakcja Globe gdy wybieramy układ w Babylon
-		
 	}
 }
 
