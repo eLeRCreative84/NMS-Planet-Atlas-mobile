@@ -1704,6 +1704,10 @@ highlightRegionOnGalaxyMap(found.regionKey);
 function highlightRegionOnGalaxyMap(regionKey) {
     if (!regionKey) return;
 
+    // Jeśli jesteśmy w widoku regionu → wróć do widoku galaktyki
+    if (level === 1) {
+        exitBtn.click(); 
+    }	
     // regionKey: "ix_iz"
     const [ix, iz] = regionKey.split("_").map(Number);
 
