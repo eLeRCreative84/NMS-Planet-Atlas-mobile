@@ -1632,79 +1632,84 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Logika obsługi przycisku - pokaż układ w babylon
-document.getElementById("gotoSystemBtn").addEventListener("click", () => {
-    const systemName = document.getElementById("detailPlanetSystem").value.trim();
+document.getElementById("gotoSystemInBabylonBtn").addEventListener("click", () => {
+    const systemKey = document.getElementById("detailPlanetSystem").value.trim();
 
-    if (!systemName) {
-        alert("Najpierw wpisz nazwę układu planetarnego.");
+    if (!systemKey) {
+        alert("Wpisz nazwę układu planetarnego.");
         return;
     }
 
-    // 🔍 Znajdź punkt w Babylonie
-    let foundMesh = null;
+    // SZUKAJ w Babylonie – analogicznie jak Ty szukasz planet
+    let found = null;
 
-    // przejdź po wszystkich aktualnie załadowanych regionach
     for (const regionKey in regions) {
         const region = regions[regionKey];
         if (!region || !region.pointsData) continue;
 
-        const point = region.pointsData.find(p => String(p.id) === systemName);
+        const point = region.pointsData.find(p =>
+            (p.name && p.name.trim() === systemKey) ||
+            (p.galactic && p.galactic.trim() === systemKey) ||
+            (String(p.id) === systemKey)
+        );
 
         if (point) {
-            foundMesh = { regionKey, point };
+            found = { regionKey, point };
             break;
         }
     }
 
-    if (!foundMesh) {
+    if (!found) {
         alert("Nie znaleziono takiego układu w Babylonie.");
         return;
     }
 
-    // -----------------------------------------
-    //  Przełączamy z Globe → Babylon
-    // -----------------------------------------
+    // ------------------------------
+    // 🔥 Przełącz na Babylon
+    // ------------------------------
     hideGlobe();
     showBabylonScene();
-
-    // Przełącz zakładkę na Journey
     openTab("journey");
 
-    // Załaduj odpowiedni region jeśli to nie jest aktualny
-    if (loadedRegionKey !== foundMesh.regionKey) {
-        loadRegionByKey(foundMesh.regionKey, () => {
-            // po załadowaniu regionu zaznaczamy układ
-            selectBabylonSolarSystem(systemName);
+    // jeśli region nie jest wczytany → wczytaj
+    if (loadedRegionKey !== found.regionKey) {
+        loadRegionByKey(found.regionKey, () => {
+            selectBabylonSolarSystemByName(systemKey);
         });
     } else {
-        // region już wczytany
-        selectBabylonSolarSystem(systemName);
+        selectBabylonSolarSystemByName(systemKey);
     }
 });
+
 	
 //Funkcja selekcji systemu w Babylonie
-function selectBabylonSolarSystem(id) {
-    const mesh = renderedPoints.find(m => m.metadata && m.metadata.id == id);
+function selectBabylonSolarSystemByName(systemKey) {
+    const mesh = renderedPoints.find(m =>
+        m.metadata &&
+        (
+            m.metadata.name === systemKey ||
+            m.metadata.galactic === systemKey ||
+            String(m.metadata.id) === systemKey
+        )
+    );
 
     if (!mesh) {
-        alert("Załadowano region, ale nie znaleziono tego systemu.");
+        alert("Region załadowany, ale nie znaleziono układu.");
         return;
     }
 
-    // podświetlenie
     if (selectedPoint) selectedPoint.material = pointMat.clone();
     selectedPoint = mesh;
     selectedPoint.material = selectedMat;
 
-    // ustaw focus
     focusCameraOn(mesh);
 
-    // wypełnij inputy Babylon UI, jeśli masz
     xInput.value = mesh.position.x.toFixed(2);
     yInput.value = mesh.position.y.toFixed(2);
     zInput.value = mesh.position.z.toFixed(2);
     coordInput.value = mesh.metadata.galactic || "";
 }
+
 
 	
 ////////////////////////////////////////////////////////////////////
