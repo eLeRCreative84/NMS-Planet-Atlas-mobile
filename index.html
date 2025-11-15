@@ -1645,7 +1645,7 @@ document.getElementById("gotoSystemBtn").addEventListener("click", () => {
 
     for (const regionKey in regions) {
         const region = regions[regionKey];
-        if (!region || !region.pointsData) continue;
+        if (!region || !region.pointsData) continue;[
 
         const point = region.pointsData.find(p =>
             (p.name && p.name.trim() === systemKey) ||
@@ -1681,6 +1681,22 @@ document.getElementById("gotoSystemBtn").addEventListener("click", () => {
     }
 });
 
+	// Programowo (nie poprzez kliknięcie) zaznacza układ na liście Babylon
+	function highlightSolarListItem(systemKey) {
+    const items = document.querySelectorAll(".solarItem");
+
+    items.forEach(el => el.classList.remove("selected"));
+
+    const match = Array.from(items).find(el =>
+        el.textContent.trim() === systemKey ||
+        el.dataset.id === systemKey
+    );
+
+    if (match) {
+        match.classList.add("selected");
+        match.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+}
 	
 //Funkcja selekcji systemu w Babylonie
 function selectBabylonSolarSystemByName(systemKey) {
@@ -1708,6 +1724,9 @@ function selectBabylonSolarSystemByName(systemKey) {
     yInput.value = mesh.position.y.toFixed(2);
     zInput.value = mesh.position.z.toFixed(2);
     coordInput.value = mesh.metadata.galactic || "";
+
+	refreshSolarListForLoadedRegion();
+    highlightSolarListItem(systemKey);
 }
 
 
