@@ -1671,6 +1671,9 @@ document.getElementById("gotoSystemBtn").addEventListener("click", () => {
     showBabylonScene();
     openTab("journey");
 
+	// podświetl kafelek na mapie
+highlightRegionOnGalaxyMap(found.regionKey);
+	
     // jeśli region nie jest wczytany → wczytaj
     if (loadedRegionKey !== found.regionKey) {
         loadRegionByKey(found.regionKey, () => {
@@ -1695,6 +1698,51 @@ document.getElementById("gotoSystemBtn").addEventListener("click", () => {
     if (match) {
         match.classList.add("selected");
         match.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+}
+// Programowo (nie poprzez kliknięcie) zaznacza kafelek na mapie Babylon
+function highlightRegionOnGalaxyMap(regionKey) {
+    if (!regionKey) return;
+
+    // regionKey: "ix_iz"
+    const [ix, iz] = regionKey.split("_").map(Number);
+
+    // obliczamy grupę
+    const gx = Math.floor(ix / REGIONS_PER_GROUP);
+    const gz = Math.floor(iz / REGIONS_PER_GROUP);
+
+    // jeśli jesteśmy na poziomie galaktyki (level 0)
+    if (level === 0) {
+        // zaznacz kafelek grupy
+        const groupTile = regionMapEl.querySelector(
+            `.regionTile[data-gx='${gx}'][data-gz='${gz}']`
+        );
+        if (groupTile) {
+            if (selectedTile) selectedTile.classList.remove("selected");
+            selectedTile = groupTile;
+            groupTile.classList.add("selected");
+        }
+
+        // wejdź do grupy
+        currentGroupX = gx;
+        currentGroupZ = gz;
+        level = 1;
+        drawGroupGrid(gx, gz);
+        updateControlsState();
+    }
+
+    // jeśli jesteśmy już na poziomie 1 (grupa regionów)
+    if (level === 1) {
+
+        const regionTile = regionMapEl.querySelector(
+            `.regionTile[data-ix='${ix}'][data-iz='${iz}']`
+        );
+
+        if (regionTile) {
+            if (selectedTile) selectedTile.classList.remove("selected");
+            selectedTile = regionTile;
+            regionTile.classList.add("selected");
+        }
     }
 }
 	
