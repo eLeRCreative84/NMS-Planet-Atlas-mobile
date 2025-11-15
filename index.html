@@ -1676,12 +1676,16 @@ highlightRegionOnGalaxyMap(found.regionKey);
 	
     // jeśli region nie jest wczytany → wczytaj
     if (loadedRegionKey !== found.regionKey) {
-        loadRegionByKey(found.regionKey, () => {
-            selectBabylonSolarSystemByName(systemKey);
-        });
-    } else {
+    loadRegionByKey(found.regionKey, () => {
+        refreshSolarListForLoadedRegion(); 
+        highlightSolarListItem(systemKey);
         selectBabylonSolarSystemByName(systemKey);
-    }
+    });
+} else {
+    refreshSolarListForLoadedRegion();
+    highlightSolarListItem(systemKey);
+    selectBabylonSolarSystemByName(systemKey);
+}
 });
 
 	// Programowo (nie poprzez kliknięcie) zaznacza układ na liście Babylon
@@ -1776,12 +1780,7 @@ function selectBabylonSolarSystemByName(systemKey) {
     yInput.value = mesh.position.y.toFixed(2);
     zInput.value = mesh.position.z.toFixed(2);
     coordInput.value = mesh.metadata.galactic || "";
-
-	refreshSolarListForLoadedRegion();
-    highlightSolarListItem(systemKey);
 }
-
-
 	
 ////////////////////////////////////////////////////////////////////
 //------------------- Sidebar galaktyk ----------------------------//
