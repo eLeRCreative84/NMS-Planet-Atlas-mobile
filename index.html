@@ -1640,12 +1640,12 @@ document.getElementById("gotoSystemBtn").addEventListener("click", () => {
         return;
     }
 
-    // SZUKAJ w Babylonie – analogicznie jak Ty szukasz planet
+    
     let found = null;
 
     for (const regionKey in regions) {
         const region = regions[regionKey];
-        if (!region || !region.pointsData) continue;[
+        if (!region || !region.pointsData) continue;
 
         const point = region.pointsData.find(p =>
             (p.name && p.name.trim() === systemKey) ||
