@@ -2051,6 +2051,26 @@ function addSolarSystemPoint(x, y, z, gal, targetRegionKey = null) {
   // inicjalizacja regionu jeśli nie istnieje
   if (!regions[key]) regions[key] = { pointsData: [], edges: [] };
 
+	// === BLOKADA: nazwa układu musi być unikalna w całej galaktyce ===
+const newName = nameInput.value.trim();
+if (newName) {
+  let nameExists = false;
+
+  for (const k in regions) {
+    if (!regions[k] || !regions[k].pointsData) continue;
+
+    if (regions[k].pointsData.some(p => p.name?.trim() === newName)) {
+      nameExists = true;
+      break;
+    }
+  }
+
+  if (nameExists) {
+    alert("Układ o tej nazwie już istnieje w galaktyce. Nadaj inną nazwę.");
+    return null;
+  }
+}
+	
   //sprawdzenie, czy w tym regionie już istnieje punkt o identycznych współrzędnych
 	const EPS = 0.01; // tolerancja błędu
 	const duplicate = regions[key].pointsData.find(
