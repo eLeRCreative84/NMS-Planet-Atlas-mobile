@@ -2674,7 +2674,13 @@ function loadRegionByKey(regionKey, options = {}) {
 		zInput.value = mesh.position.z.toFixed(2);
 		coordInput.value = mesh.metadata.galactic || "";
 		nameInput.value = mesh.metadata.name || "";
-
+          
+		  spectralClassSelect.value = pd.spectralClass || "";
+		  dominantRaceSelect.value = pd.dominantRace || "";
+		  economySelect.value = pd.economyType || "";
+		  economyDescriptors.value = pd.economyDescriptors || "";
+		  conflictSelect.value = pd.conflictLevel || "";
+		  
 		// highlight item
 		const li = solarListEl.querySelector(`[data-id="${selectId}"]`);
 		if (li) {
