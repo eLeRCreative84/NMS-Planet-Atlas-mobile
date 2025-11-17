@@ -2861,7 +2861,7 @@ document.getElementById("editPointSolarSystem").addEventListener("click",()=>{
   refreshSolarListForLoadedRegion();
 });
 
-	//zapis detali układu planetarnego
+	
 document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
   if(!selectedPoint) return alert("Nie zaznaczono punktu!");
   const id = selectedPoint.metadata && selectedPoint.metadata.id;
@@ -2926,9 +2926,7 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
   // ustaw kolor układu (jeśli zaznaczony – i tak za chwilę poprawimy na pomarańcz)
   selectedPoint.material.emissiveColor = baseColor;
 
-  // przywróć kolor zaznaczenia
-  selectedPoint.material.emissiveColor = new BABYLON.Color3(1, 0.5, 0);
-
+  
   alert("Detale układu zapisane.");
 });
 	
