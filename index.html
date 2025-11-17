@@ -2473,33 +2473,48 @@ function refreshSolarListForLoadedRegion() {
   if (!loadedRegionKey) return;
   const region = regions[loadedRegionKey];
   if (!region || !region.pointsData) return;
+
   region.pointsData.forEach(pd => {
     const item = document.createElement("div");
     item.className = "solarItem";
     item.textContent = pd.name || pd.galactic || `Układ ${pd.id}`;
     item.dataset.id = pd.id;
+
     item.addEventListener("click", () => {
-      // usuwamy zaznaczenie poprzedniego
+      // usuń zaznaczenie poprzedniego
       document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
       item.classList.add("selected");
 
-      // znajdź mesh odpowiadający temu id w renderedPoints i zaznacz
+      // znajdź mesh odpowiadający temu id w renderedPoints
       const mesh = renderedPoints.find(m => m.metadata && m.metadata.id === pd.id);
       if (mesh) {
         if (selectedPoint) selectedPoint.material = pointMat.clone();
         selectedPoint = mesh;
         selectedPoint.material = selectedMat;
-        // wypełnij inputy
+
+        // uzupełnij inputy
         xInput.value = mesh.position.x.toFixed(2);
         yInput.value = mesh.position.y.toFixed(2);
         zInput.value = mesh.position.z.toFixed(2);
         coordInput.value = mesh.metadata.galactic || "";
+        nameInput.value = mesh.metadata.name || "";
+
+        // 🔹 ustaw selektory detali układu
+        spectralClassSelect.value = mesh.metadata.spectralClass || "";
+        dominantRaceSelect.value = mesh.metadata.dominantRace || "";
+        economySelect.value = mesh.metadata.economyType || "";
+        economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
+        conflictSelect.value = mesh.metadata.conflictLevel || "";
+
+        // ustaw kamerę nad tym punktem
         focusCameraOn(mesh);
       }
     });
+
     solarListEl.appendChild(item);
   });
 }
+
 
 // aktualizacja listy po usunięciu punktu (reload region)
 function removeFromSolarListById(id) {
