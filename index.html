@@ -745,13 +745,6 @@ function initBabylon() {
  
  setSkybox("sky1");
 
-//Materiały
-    pointMat = new BABYLON.StandardMaterial("pointMat", babylonScene);
-    pointMat.emissiveColor = new BABYLON.Color3(0,1,0); // zielony
-
-    selectedMat = new BABYLON.StandardMaterial("selectedMat", babylonScene);
-    selectedMat.emissiveColor = new BABYLON.Color3(1,0,0); // czerwony
-
   // === Inicjalizacja struktur regionów ===
   for (let iz = 0; iz < REGIONS_AXIS; iz++) {
     for (let ix = 0; ix < REGIONS_AXIS; ix++) {
@@ -2174,7 +2167,7 @@ if (newName) {
     galactic: gal || "",
     name: newName || "",
     // pola detali pozostawiamy puste na start
-    spectralClass: "",
+    spectralClass,   // domyślna żółta
     dominantRace: "",
     economyType: "",
     economyDescriptors: "",
@@ -2221,7 +2214,7 @@ if (newName) {
 
   return id;
 }
-
+	
 /* ==============================
 --- TUTAJ DOPISUJEMY SIATKĘ ---
  ============================== */
@@ -2620,53 +2613,72 @@ function clearRenderedPoints(){
 function createMeshForPointData(pd) {
   const sphere = BABYLON.MeshBuilder.CreateSphere(`m_${pd.id}`, { diameter: 2 }, babylonScene);
   sphere.position.set(pd.x, pd.y, pd.z);
-  sphere.material = pointMat.clone();
-    // metadata zawiera wszystko co potrzebne — potem łatwo odczytamy
+
+  // ustaw materiał w zależności od klasy spektralnej (domyślnie "Żółta")
+  const spectralColors = {
+    "Żółta": new BABYLON.Color3(1, 1, 0),
+    "Czerwona": new BABYLON.Color3(1, 0, 0),
+    "Zielona": new BABYLON.Color3(0, 1, 0),
+    "Niebieska": new BABYLON.Color3(0, 0, 1),
+    "Fioletowa": new BABYLON.Color3(0.5, 0, 0.5)
+  };
+  const color = spectralColors[pd.spectralClass || "Żółta"] || new BABYLON.Color3(1, 1, 0);
+
+  const mat = new BABYLON.StandardMaterial(`mat_${pd.id}`, babylonScene);
+  mat.emissiveColor = color;
+  mat.disableLighting = true;
+  sphere.material = mat;
+
+  // metadata
   sphere.metadata = {
     id: pd.id,
     galactic: pd.galactic || "",
     name: pd.name || "",
-    regionKey: null, // będzie nadpisane przy pushu
-    spectralClass: pd.spectralClass || "",
+    regionKey: null,
+    spectralClass: pd.spectralClass || "Żółta",
     dominantRace: pd.dominantRace || "",
     economyType: pd.economyType || "",
     economyDescriptors: pd.economyDescriptors || "",
     conflictLevel: pd.conflictLevel || ""
   };
+
   sphere.actionManager = new BABYLON.ActionManager(babylonScene);
-  sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger,()=>{
-    // zaznaczenie wizualne
-	if(selectedPoint) selectedPoint.material = pointMat.clone();
-    selectedPoint = sphere; selectedPoint.material = selectedMat;
+  sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+    BABYLON.ActionManager.OnPickTrigger,
+    () => {
+      // zaznaczenie - pomarańczowe
+      if (selectedPoint) {
+        // przywróć kolor w zależności od klasy spektralnej poprzedniego punktu
+        const prevColor = spectralColors[selectedPoint.metadata.spectralClass || "Żółta"] || new BABYLON.Color3(1, 1, 0);
+        selectedPoint.material.emissiveColor = prevColor;
+      }
 
-	// uzupełnij inputy 
-    document.getElementById("xInput").value = sphere.position.x.toFixed(2);
-    document.getElementById("yInput").value = sphere.position.y.toFixed(2);
-    document.getElementById("zInput").value = sphere.position.z.toFixed(2);
-    document.getElementById("coordInput").value = sphere.metadata.galactic || "";
-	document.getElementById("nameInput").value = sphere.metadata.name || "";
+      selectedPoint = sphere;
+      selectedPoint.material.emissiveColor = new BABYLON.Color3(1, 0.5, 0); // pomarańcz
 
- // uzupełnij selektory detalów układu
-    // (upewnij się że istnieją elementy select o tych id)
-    const spectralClassSelect = document.getElementById("spectralClassSelect");
-    const dominantRaceSelect = document.getElementById("dominantRaceSelect");
-    const economySelect = document.getElementById("economySelect");
-    const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
-    const conflictSelect = document.getElementById("conflictSelect");
+      // wypełnij inputy
+      xInput.value = sphere.position.x.toFixed(2);
+      yInput.value = sphere.position.y.toFixed(2);
+      zInput.value = sphere.position.z.toFixed(2);
+      coordInput.value = sphere.metadata.galactic || "";
+      nameInput.value = sphere.metadata.name || "";
 
-    if (spectralClassSelect) spectralClassSelect.value = sphere.metadata.spectralClass || "";
-    if (dominantRaceSelect) dominantRaceSelect.value = sphere.metadata.dominantRace || "";
-    if (economySelect) economySelect.value = sphere.metadata.economyType || "";
-    if (economyDescriptorsSelect) economyDescriptorsSelect.value = sphere.metadata.economyDescriptors || "";
-    if (conflictSelect) conflictSelect.value = sphere.metadata.conflictLevel || "";
-	  
-    // highlight corresponding item in list
-    document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
-    const li = solarListEl.querySelector(`[data-id="${pd.id}"]`);
-    if (li) li.classList.add("selected");
-  }));
+      spectralClassSelect.value = sphere.metadata.spectralClass || "Żółta";
+      dominantRaceSelect.value = sphere.metadata.dominantRace || "";
+      economySelect.value = sphere.metadata.economyType || "";
+      economyDescriptorsSelect.value = sphere.metadata.economyDescriptors || "";
+      conflictSelect.value = sphere.metadata.conflictLevel || "";
+
+      // highlight na liście
+      document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
+      const li = solarListEl.querySelector(`[data-id="${pd.id}"]`);
+      if (li) li.classList.add("selected");
+    }
+  ));
+
   return sphere;
 }
+
 
 // Ładuje region do sceny na podstawie klucza regionu (np. "3_5")
 // opcje: { selectId: 'pt_x' } => po załadowaniu zaznacz ten punkt
