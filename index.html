@@ -2677,13 +2677,12 @@ function loadRegionByKey(regionKey, options = {}) {
 		coordInput.value = mesh.metadata.galactic || "";
 		nameInput.value = mesh.metadata.name || "";
           
-const meta = mesh.metadata;
+spectralClassSelect.value = pd.spectralClass || "";
+dominantRaceSelect.value = pd.dominantRace || "";
+economySelect.value = pd.economyType || "";
+economyDescriptorsSelect.value = pd.economyDescriptors || "";
+conflictSelect.value = pd.conflictLevel || "";
 
-spectralClassSelect.value      = meta.spectralClass      || "";
-dominantRaceSelect.value       = meta.dominantRace       || "";
-economySelect.value            = meta.economyType        || "";
-economyDescriptorsSelect.value = meta.economyDescriptors || "";
-conflictSelect.value           = meta.conflictLevel      || "";
 
 		  
 		// highlight item
