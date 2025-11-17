@@ -2621,7 +2621,6 @@ function createMeshForPointData(pd) {
   const sphere = BABYLON.MeshBuilder.CreateSphere(`m_${pd.id}`, { diameter: 2 }, babylonScene);
   sphere.position.set(pd.x, pd.y, pd.z);
 
-  // ustaw materiał w zależności od klasy spektralnej (domyślnie "Żółta")
   const spectralColors = {
     "Żółta": new BABYLON.Color3(1, 1, 0),
     "Czerwona": new BABYLON.Color3(1, 0, 0),
@@ -2629,12 +2628,14 @@ function createMeshForPointData(pd) {
     "Niebieska": new BABYLON.Color3(0, 0, 1),
     "Fioletowa": new BABYLON.Color3(0.5, 0, 0.5)
   };
-const color = spectralColors[pd.spectralClass] || spectralColors["Żółta"];
 
-const mat = new BABYLON.StandardMaterial(`mat_${pd.id}`, babylonScene);
-mat.emissiveColor = color;  
-mat.disableLighting = true;
-sphere.material = mat;
+  const color = spectralColors[pd.spectralClass || "Żółta"] || spectralColors["Żółta"];
+
+  const mat = new BABYLON.StandardMaterial(`mat_${pd.id}`, babylonScene);
+  mat.emissiveColor = color;
+  mat.disableLighting = true;
+
+  sphere.material = mat;
 
   // metadata
   sphere.metadata = {
