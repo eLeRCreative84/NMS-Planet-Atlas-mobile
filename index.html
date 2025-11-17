@@ -747,10 +747,10 @@ function initBabylon() {
 
 //Materiały
     pointMat = new BABYLON.StandardMaterial("pointMat", babylonScene);
-    pointMat.emissiveColor = new BABYLON.Color3(0,1,0); // zielony
+    pointMat.emissiveColor = new BABYLON.Color3(1,1,0); // żółty jako kolor domyślny
 
     selectedMat = new BABYLON.StandardMaterial("selectedMat", babylonScene);
-    selectedMat.emissiveColor = new BABYLON.Color3(1,0,0); // czerwony
+    selectedMat.emissiveColor = new BABYLON.Color3(1,0.5,0); // pomarańcz
 	
   // === Inicjalizacja struktur regionów ===
   for (let iz = 0; iz < REGIONS_AXIS; iz++) {
@@ -2632,7 +2632,7 @@ function createMeshForPointData(pd) {
   const color = spectralColors[pd.spectralClass || "Żółta"] || new BABYLON.Color3(1, 1, 0);
 
   const mat = new BABYLON.StandardMaterial(`mat_${pd.id}`, babylonScene);
-  mat.emissiveColor = color;
+  mat.emissiveColor = spectralColors[sc];  // kolor klasy spektralnej
   mat.disableLighting = true;
   sphere.material = mat;
 
