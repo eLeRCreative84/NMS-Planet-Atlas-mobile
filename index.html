@@ -2154,14 +2154,25 @@ if (newName) {
     z = Math.min(Math.max(z + randomOffset(), 0), REGION_DEPTH);
   }
 
-  //tworzymy nowy punkt
+	//tworzymy nowy punkt
   const id = `pt_${uniqueIdCounter++}`;
-  const pd = { id, x, y, z, galactic: gal || "", name: nameInput.value.trim() || "" };
-pd.spectralClass = spectralClass.value;
-pd.dominantRace = dominantRaceSelect.value;   
-pd.economyType = economySelect.value;       
-pd.economyDescriptors = economyDescriptors.value;
-pd.conflictLevel = conflictSelect.value; 
+
+const spectralClass = document.getElementById("spectralClassSelect").value;
+const dominantRace = document.getElementById("dominantRaceSelect").value;
+const economyType = document.getElementById("economySelect").value;
+const economyDescriptors = document.getElementById("economyDescriptorsSelect").value;
+const conflictLevel = document.getElementById("conflictSelect").value;
+	
+  const pd = {id, x, y, z,
+  galactic: gal || "",
+  name: nameInput.value.trim() || "",
+  spectralClass: spectralClass.value,
+  dominantRace: dominantRaceSelect.value,
+  economyType: economySelect.value,
+  economyDescriptors: economyDescriptors.value,
+  conflictLevel: conflictSelect.value
+};
+ 
   regions[key].pointsData.push(pd);
 
   // rysujemy węzeł od zaznaczonego punktu, tylko jeśli istnieje zaznaczony w tym regionie
