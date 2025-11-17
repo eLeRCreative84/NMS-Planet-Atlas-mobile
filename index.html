@@ -487,6 +487,7 @@
   </div>
 	
 <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div> 
+	<h2>Detale układu planetarnego</h2>
   <div>
 <label>Klasa spektralna:
   <select id="spectralClassSelect">
@@ -539,6 +540,7 @@
     <option value="3">3 – wysoki</option>
   </select>
 </label>
+	  <button id="saveSystemDetailsBtn">Zapisz detale układu</button>
 </div>
 	
 </div>
@@ -2164,16 +2166,16 @@ const economyDescriptors = document.getElementById("economyDescriptorsSelect").v
 const conflictLevel = document.getElementById("conflictSelect").value;
 
 const pd = {
-    id, x, y, z,
-    galactic: gal || "",
-    name: nameInput.value.trim() || "",
-    spectralClass,
-    dominantRace,
-    economyType,
-    economyDescriptors,
-    conflictLevel
+  id, x, y, z,
+  galactic: gal || "",
+  name: nameInput.value.trim() || "",
+  
+  spectralClass: "",
+  dominantRace: "",
+  economyType: "",
+  economyDescriptors: "",
+  conflictLevel: ""
 };
-
  
   regions[key].pointsData.push(pd);
 
@@ -2803,6 +2805,29 @@ document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
   if(level === 0) updateGalaxyTilesHasPoints();
 });
 
+// Obsługa przycisku "zapisz detale układu"
+document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => {
+  if (!selectedPoint) {
+    alert("Nie wybrano żadnego układu.");
+    return;
+  }
+
+  const regionKey = selectedPoint.metadata.regionKey;
+  const region = regions[regionKey];
+  if (!region) return;
+
+  const pd = region.pointsData.find(p => p.id === selectedPoint.metadata.id);
+  if (!pd) return;
+
+  pd.spectralClass = spectralClassSelect.value;
+  pd.dominantRace = dominantRaceSelect.value;
+  pd.economyType = economySelect.value;
+  pd.economyDescriptors = economyDescriptorsSelect.value;
+  pd.conflictLevel = conflictSelect.value;
+
+  alert("Detale układu zostały zapisane.");
+});
+	
 ////////////////////////////////////////////////////////////////////
 // ===== TRYB PRZEMIESZCZANIA UKŁADÓW =====
 ////////////////////////////////////////////////////////////////////
