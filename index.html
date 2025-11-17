@@ -2653,17 +2653,8 @@ function createMeshForPointData(pd) {
   sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
     BABYLON.ActionManager.OnPickTrigger,
     () => {
-      // zaznaczenie - pomarańczowe
-      if (selectedPoint) {
-        // przywróć kolor w zależności od klasy spektralnej poprzedniego punktu
-        const prevColor = spectralColors[selectedPoint.metadata.spectralClass || "Żółta"] || new BABYLON.Color3(1, 1, 0);
-        selectedPoint.material.emissiveColor = prevColor;
-      }
 
-      selectedPoint = sphere;
-      selectedPoint.material.emissiveColor = new BABYLON.Color3(1, 0.5, 0); // pomarańcz
-
-      // wypełnij inputy
+		// wypełnij inputy
       xInput.value = sphere.position.x.toFixed(2);
       yInput.value = sphere.position.y.toFixed(2);
       zInput.value = sphere.position.z.toFixed(2);
@@ -2870,6 +2861,7 @@ document.getElementById("editPointSolarSystem").addEventListener("click",()=>{
   refreshSolarListForLoadedRegion();
 });
 
+	//zapis detali układu planetarnego
 document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
   if(!selectedPoint) return alert("Nie zaznaczono punktu!");
   const id = selectedPoint.metadata && selectedPoint.metadata.id;
@@ -2887,12 +2879,12 @@ document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
   if(level === 0) updateGalaxyTilesHasPoints();
 });
 
-// Zapisz detale aktualnie wybranego układu (mesh -> pd)
 document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => {
   if (!selectedPoint || !selectedPoint.metadata) {
     alert("Nie wybrano żadnego układu.");
     return;
   }
+
   const regionKey = selectedPoint.metadata.regionKey;
   if (!regionKey || !regions[regionKey]) return;
 
@@ -2906,23 +2898,20 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
   const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
   const conflictSelect = document.getElementById("conflictSelect");
 
-  pd.spectralClass = spectralClassSelect ? spectralClassSelect.value : pd.spectralClass;
-  pd.dominantRace = dominantRaceSelect ? dominantRaceSelect.value : pd.dominantRace;
-  pd.economyType = economySelect ? economySelect.value : pd.economyType;
-  pd.economyDescriptors = economyDescriptorsSelect ? economyDescriptorsSelect.value : pd.economyDescriptors;
-  pd.conflictLevel = conflictSelect ? conflictSelect.value : pd.conflictLevel;
+  pd.spectralClass = spectralClassSelect.value;
+  pd.dominantRace = dominantRaceSelect.value;
+  pd.economyType = economySelect.value;
+  pd.economyDescriptors = economyDescriptorsSelect.value;
+  pd.conflictLevel = conflictSelect.value;
 
-  // zsynchronizuj metadata na mesh'u jeśli istnieje
-  const mesh = renderedPoints.find(m => m.metadata && m.metadata.id === pd.id);
-  if (mesh) {
-    mesh.metadata.spectralClass = pd.spectralClass;
-    mesh.metadata.dominantRace = pd.dominantRace;
-    mesh.metadata.economyType = pd.economyType;
-    mesh.metadata.economyDescriptors = pd.economyDescriptors;
-    mesh.metadata.conflictLevel = pd.conflictLevel;
-  }
+  // zsynchronizuj metadata
+  selectedPoint.metadata.spectralClass = pd.spectralClass;
+  selectedPoint.metadata.dominantRace = pd.dominantRace;
+  selectedPoint.metadata.economyType = pd.economyType;
+  selectedPoint.metadata.economyDescriptors = pd.economyDescriptors;
+  selectedPoint.metadata.conflictLevel = pd.conflictLevel;
 
-// zmień kolor mesha zgodnie z nową klasą spektralną
+  // kolory klas spektralnych
   const spectralColors = {
     "Żółta": new BABYLON.Color3(1, 1, 0),
     "Czerwona": new BABYLON.Color3(1, 0, 0),
@@ -2930,19 +2919,18 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
     "Niebieska": new BABYLON.Color3(0, 0, 1),
     "Fioletowa": new BABYLON.Color3(0.5, 0, 0.5)
   };
-  const baseColor = spectralColors || spectralColors["Żółta"];
 
-  // jeśli selectedPoint istnieje, ustaw kolor (zaznaczony pozostaje pomarańczowy,
-  // więc ustawiamy kolor bazowy i potem jeśli jest zaznaczony, nadpiszemy pomarańczem)
+  // poprawne pobranie koloru
+  const baseColor = spectralColors[pd.spectralClass] || spectralColors["Żółta"];
+
+  // ustaw kolor układu (jeśli zaznaczony – i tak za chwilę poprawimy na pomarańcz)
   selectedPoint.material.emissiveColor = baseColor;
 
-  // Jeżeli chcesz: natychmiast przywrócić "pomarańczowe" zaznaczenie,
-  // nadpisujemy go ponownie aby użytkownik widział że element jest dalej zaznaczony:
+  // przywróć kolor zaznaczenia
   selectedPoint.material.emissiveColor = new BABYLON.Color3(1, 0.5, 0);
-	
+
   alert("Detale układu zapisane.");
 });
-
 	
 ////////////////////////////////////////////////////////////////////
 // ===== TRYB PRZEMIESZCZANIA UKŁADÓW =====
