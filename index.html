@@ -485,7 +485,62 @@
   <option value="sky3">Skybox 3</option>
   </select>
   </div>
+	
+<div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div> 
+  <div>
+<label>Klasa spektralna:
+  <select id="spectralClassSelect">
+    <option value="Yellow">Żółty</option>
+    <option value="Red">Czerwony</option>
+    <option value="Green">Zielony</option>
+    <option value="Blue">Niebieski</option>
+    <option value="Purple">Fioletowy</option>
+  </select>
+</label>
 
+<label>Rasa dominująca:
+  <select id="dominantRaceSelect">
+    <option value="">Nie określono</option>
+    <option value="Vy’keen">Vy’keen</option>
+    <option value="Korvax">Korvax</option>
+    <option value="Gek">Gek</option>
+    <option value="Niezbadane">Niezbadane</option>
+    <option value="Opuszczone">Opuszczone</option>
+  </select>
+</label>
+
+<label>Gospodarka:
+  <select id="economySelect">
+    <option value="">Nie określono</option>
+    <option value="Advanced Materials">Zaawansowanych materiałów</option>
+    <option value="Manufacturing">Przemysłowa</option>
+    <option value="Mining">Górnicza</option>
+    <option value="Power Generation">Wytwarzania energii</option>
+    <option value="Scientific">Naukowa</option>
+    <option value="High Tech">Technologiczna</option>
+    <option value="Trading">Handlowa</option>
+  </select>
+</label>
+
+<label>Siła gospodarki:
+  <select id="economyDescriptorsSelect">
+    <option value="">Nie określono</option>
+    <option value="Weak">Słaba</option>
+    <option value="Average">Średnia</option>
+    <option value="Strong">Silna</option>
+  </select>
+</label>
+
+<label>Konflikt:
+  <select id="conflictSelect">
+    <option value="">Nie określono</option>
+    <option value="1">1 – niski</option>
+    <option value="2">2 – średni</option>
+    <option value="3">3 – wysoki</option>
+  </select>
+</label>
+</div>
+	
 </div>
   </div>
 	
@@ -2102,7 +2157,11 @@ if (newName) {
   //tworzymy nowy punkt
   const id = `pt_${uniqueIdCounter++}`;
   const pd = { id, x, y, z, galactic: gal || "", name: nameInput.value.trim() || "" };
-
+pd.spectralClass = spectralClass.value;
+pd.dominantRace = dominantRaceSelect.value;   
+pd.economyType = economySelect.value;       
+pd.economyDescriptors = economyDescriptors.value;
+pd.conflictLevel = conflictSelect.value; 
   regions[key].pointsData.push(pd);
 
   // rysujemy węzeł od zaznaczonego punktu, tylko jeśli istnieje zaznaczony w tym regionie
