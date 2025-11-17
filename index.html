@@ -2632,7 +2632,7 @@ function createMeshForPointData(pd) {
   const color = spectralColors[pd.spectralClass || "Żółta"] || new BABYLON.Color3(1, 1, 0);
 
   const mat = new BABYLON.StandardMaterial(`mat_${pd.id}`, babylonScene);
-  mat.emissiveColor = spectralColors[sc];  // kolor klasy spektralnej
+  mat.emissiveColor = spectralColors;  // kolor klasy spektralnej
   mat.disableLighting = true;
   sphere.material = mat;
 
