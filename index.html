@@ -2162,16 +2162,18 @@ const dominantRace = document.getElementById("dominantRaceSelect").value;
 const economyType = document.getElementById("economySelect").value;
 const economyDescriptors = document.getElementById("economyDescriptorsSelect").value;
 const conflictLevel = document.getElementById("conflictSelect").value;
-	
-  const pd = {id, x, y, z,
-  galactic: gal || "",
-  name: nameInput.value.trim() || "",
-  spectralClass: spectralClass.value,
-  dominantRace: dominantRaceSelect.value,
-  economyType: economySelect.value,
-  economyDescriptors: economyDescriptors.value,
-  conflictLevel: conflictSelect.value
+
+const pd = {
+    id, x, y, z,
+    galactic: gal || "",
+    name: nameInput.value.trim() || "",
+    spectralClass,
+    dominantRace,
+    economyType,
+    economyDescriptors,
+    conflictLevel
 };
+
  
   regions[key].pointsData.push(pd);
 
@@ -2675,11 +2677,14 @@ function loadRegionByKey(regionKey, options = {}) {
 		coordInput.value = mesh.metadata.galactic || "";
 		nameInput.value = mesh.metadata.name || "";
           
-		  spectralClassSelect.value = pd.spectralClass || "";
-		  dominantRaceSelect.value = pd.dominantRace || "";
-		  economySelect.value = pd.economyType || "";
-		  economyDescriptors.value = pd.economyDescriptors || "";
-		  conflictSelect.value = pd.conflictLevel || "";
+const meta = mesh.metadata;
+
+spectralClassSelect.value      = meta.spectralClass      || "";
+dominantRaceSelect.value       = meta.dominantRace       || "";
+economySelect.value            = meta.economyType        || "";
+economyDescriptorsSelect.value = meta.economyDescriptors || "";
+conflictSelect.value           = meta.conflictLevel      || "";
+
 		  
 		// highlight item
 		const li = solarListEl.querySelector(`[data-id="${selectId}"]`);
