@@ -2904,7 +2904,7 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
   pd.economyDescriptors = economyDescriptorsSelect.value;
   pd.conflictLevel = conflictSelect.value;
 
-  // zsynchronizuj metadata
+  // zsynchronizuj metadata na meshu
   selectedPoint.metadata.spectralClass = pd.spectralClass;
   selectedPoint.metadata.dominantRace = pd.dominantRace;
   selectedPoint.metadata.economyType = pd.economyType;
@@ -2920,15 +2920,13 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
     "Fioletowa": new BABYLON.Color3(0.5, 0, 0.5)
   };
 
-  // poprawne pobranie koloru
+  // ustaw kolor mesha zgodnie z klasą spektralną
   const baseColor = spectralColors[pd.spectralClass] || spectralColors["Żółta"];
-
-  // ustaw kolor układu (jeśli zaznaczony – i tak za chwilę poprawimy na pomarańcz)
   selectedPoint.material.emissiveColor = baseColor;
 
-  
-  alert("Detale układu zapisane.");
+  alert("Detale układu zapisane i kolor zaktualizowany.");
 });
+
 	
 ////////////////////////////////////////////////////////////////////
 // ===== TRYB PRZEMIESZCZANIA UKŁADÓW =====
