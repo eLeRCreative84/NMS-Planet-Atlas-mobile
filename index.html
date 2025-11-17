@@ -2629,12 +2629,12 @@ function createMeshForPointData(pd) {
     "Niebieska": new BABYLON.Color3(0, 0, 1),
     "Fioletowa": new BABYLON.Color3(0.5, 0, 0.5)
   };
-  const color = spectralColors[pd.spectralClass || "Żółta"] || new BABYLON.Color3(1, 1, 0);
+const color = spectralColors[pd.spectralClass] || spectralColors["Żółta"];
 
-  const mat = new BABYLON.StandardMaterial(`mat_${pd.id}`, babylonScene);
-  mat.emissiveColor = color;  // kolor klasy spektralnej
-  mat.disableLighting = true;
-  sphere.material = mat;
+const mat = new BABYLON.StandardMaterial(`mat_${pd.id}`, babylonScene);
+mat.emissiveColor = color;  
+mat.disableLighting = true;
+sphere.material = mat;
 
   // metadata
   sphere.metadata = {
@@ -2922,7 +2922,8 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
 
   // ustaw kolor mesha zgodnie z klasą spektralną
   const baseColor = spectralColors[pd.spectralClass] || spectralColors["Żółta"];
-  selectedPoint.material.emissiveColor = baseColor;
+selectedPoint.material.emissiveColor = baseColor;
+
 
   alert("Detale układu zapisane i kolor zaktualizowany.");
 });
