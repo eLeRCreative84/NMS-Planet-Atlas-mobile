@@ -2156,26 +2156,20 @@ if (newName) {
     z = Math.min(Math.max(z + randomOffset(), 0), REGION_DEPTH);
   }
 
-	//tworzymy nowy punkt
+	//tworzymy nowy punkt (detale są puste — zapisujemy je osobnym przyciskiem)
   const id = `pt_${uniqueIdCounter++}`;
-
-const spectralClass = document.getElementById("spectralClassSelect").value;
-const dominantRace = document.getElementById("dominantRaceSelect").value;
-const economyType = document.getElementById("economySelect").value;
-const economyDescriptors = document.getElementById("economyDescriptorsSelect").value;
-const conflictLevel = document.getElementById("conflictSelect").value;
-
-const pd = {
-  id, x, y, z,
-  galactic: gal || "",
-  name: nameInput.value.trim() || "",
-  
-  spectralClass: "",
-  dominantRace: "",
-  economyType: "",
-  economyDescriptors: "",
-  conflictLevel: ""
-};
+  const pd = {
+    id,
+    x, y, z,
+    galactic: gal || "",
+    name: newName || "",
+    // pola detali pozostawiamy puste na start
+    spectralClass: "",
+    dominantRace: "",
+    economyType: "",
+    economyDescriptors: "",
+    conflictLevel: ""
+  };
  
   regions[key].pointsData.push(pd);
 
@@ -2602,17 +2596,45 @@ function createMeshForPointData(pd) {
   const sphere = BABYLON.MeshBuilder.CreateSphere(`m_${pd.id}`, { diameter: 2 }, babylonScene);
   sphere.position.set(pd.x, pd.y, pd.z);
   sphere.material = pointMat.clone();
-  sphere.metadata = { id: pd.id, galactic: pd.galactic, name: pd.name || "" };
+    // metadata zawiera wszystko co potrzebne — potem łatwo odczytamy
+  sphere.metadata = {
+    id: pd.id,
+    galactic: pd.galactic || "",
+    name: pd.name || "",
+    regionKey: null, // będzie nadpisane przy pushu
+    spectralClass: pd.spectralClass || "",
+    dominantRace: pd.dominantRace || "",
+    economyType: pd.economyType || "",
+    economyDescriptors: pd.economyDescriptors || "",
+    conflictLevel: pd.conflictLevel || ""
+  };
   sphere.actionManager = new BABYLON.ActionManager(babylonScene);
   sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger,()=>{
-    if(selectedPoint) selectedPoint.material = pointMat.clone();
+    // zaznaczenie wizualne
+	if(selectedPoint) selectedPoint.material = pointMat.clone();
     selectedPoint = sphere; selectedPoint.material = selectedMat;
+
+	// uzupełnij inputy 
     document.getElementById("xInput").value = sphere.position.x.toFixed(2);
     document.getElementById("yInput").value = sphere.position.y.toFixed(2);
     document.getElementById("zInput").value = sphere.position.z.toFixed(2);
     document.getElementById("coordInput").value = sphere.metadata.galactic || "";
 	document.getElementById("nameInput").value = sphere.metadata.name || "";
 
+ // uzupełnij selektory detalów układu
+    // (upewnij się że istnieją elementy select o tych id)
+    const spectralClassSelect = document.getElementById("spectralClassSelect");
+    const dominantRaceSelect = document.getElementById("dominantRaceSelect");
+    const economySelect = document.getElementById("economySelect");
+    const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
+    const conflictSelect = document.getElementById("conflictSelect");
+
+    if (spectralClassSelect) spectralClassSelect.value = sphere.metadata.spectralClass || "";
+    if (dominantRaceSelect) dominantRaceSelect.value = sphere.metadata.dominantRace || "";
+    if (economySelect) economySelect.value = sphere.metadata.economyType || "";
+    if (economyDescriptorsSelect) economyDescriptorsSelect.value = sphere.metadata.economyDescriptors || "";
+    if (conflictSelect) conflictSelect.value = sphere.metadata.conflictLevel || "";
+	  
     // highlight corresponding item in list
     document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
     const li = solarListEl.querySelector(`[data-id="${pd.id}"]`);
@@ -2637,6 +2659,17 @@ function loadRegionByKey(regionKey, options = {}) {
   // tworzymy mesh dla każdego punktu w data
   region.pointsData.forEach(pd => {
     const mesh = createMeshForPointData(pd);
+// nadpiszemy metadata.regionKey oraz przekażemy detale do metadata (safety)
+    mesh.metadata.regionKey = regionKey;
+    mesh.metadata.name = pd.name || "";
+    mesh.metadata.galactic = pd.galactic || "";
+    mesh.metadata.spectralClass = pd.spectralClass || "";
+    mesh.metadata.dominantRace = pd.dominantRace || "";
+    mesh.metadata.economyType = pd.economyType || "";
+    mesh.metadata.economyDescriptors = pd.economyDescriptors || "";
+    mesh.metadata.conflictLevel = pd.conflictLevel || "";
+    renderedPoints.push(mesh);
+  	  
     renderedPoints.push(mesh);
     mesh.metadata.regionKey = regionKey; // dodajemy info, z którego regionu mesh pochodzi
   });
@@ -2679,14 +2712,19 @@ function loadRegionByKey(regionKey, options = {}) {
 		coordInput.value = mesh.metadata.galactic || "";
 		nameInput.value = mesh.metadata.name || "";
           
-spectralClassSelect.value = pd.spectralClass || "";
-dominantRaceSelect.value = pd.dominantRace || "";
-economySelect.value = pd.economyType || "";
-economyDescriptorsSelect.value = pd.economyDescriptors || "";
-conflictSelect.value = pd.conflictLevel || "";
+// Uzupełnij selektory detali układu z metadata (jeśli są)
+      const spectralClassSelect = document.getElementById("spectralClassSelect");
+      const dominantRaceSelect = document.getElementById("dominantRaceSelect");
+      const economySelect = document.getElementById("economySelect");
+      const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
+      const conflictSelect = document.getElementById("conflictSelect");
 
+      if (spectralClassSelect) spectralClassSelect.value = mesh.metadata.spectralClass || "";
+      if (dominantRaceSelect) dominantRaceSelect.value = mesh.metadata.dominantRace || "";
+      if (economySelect) economySelect.value = mesh.metadata.economyType || "";
+      if (economyDescriptorsSelect) economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
+      if (conflictSelect) conflictSelect.value = mesh.metadata.conflictLevel || "";
 
-		  
 		// highlight item
 		const li = solarListEl.querySelector(`[data-id="${selectId}"]`);
 		if (li) {
@@ -2805,28 +2843,44 @@ document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
   if(level === 0) updateGalaxyTilesHasPoints();
 });
 
-// Obsługa przycisku "zapisz detale układu"
+// Zapisz detale aktualnie wybranego układu (mesh -> pd)
 document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => {
-  if (!selectedPoint) {
+  if (!selectedPoint || !selectedPoint.metadata) {
     alert("Nie wybrano żadnego układu.");
     return;
   }
-
   const regionKey = selectedPoint.metadata.regionKey;
-  const region = regions[regionKey];
-  if (!region) return;
+  if (!regionKey || !regions[regionKey]) return;
 
-  const pd = region.pointsData.find(p => p.id === selectedPoint.metadata.id);
+  const pd = regions[regionKey].pointsData.find(p => p.id === selectedPoint.metadata.id);
   if (!pd) return;
 
-  pd.spectralClass = spectralClassSelect.value;
-  pd.dominantRace = dominantRaceSelect.value;
-  pd.economyType = economySelect.value;
-  pd.economyDescriptors = economyDescriptorsSelect.value;
-  pd.conflictLevel = conflictSelect.value;
+  // odczyt z selektorów
+  const spectralClassSelect = document.getElementById("spectralClassSelect");
+  const dominantRaceSelect = document.getElementById("dominantRaceSelect");
+  const economySelect = document.getElementById("economySelect");
+  const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
+  const conflictSelect = document.getElementById("conflictSelect");
 
-  alert("Detale układu zostały zapisane.");
+  pd.spectralClass = spectralClassSelect ? spectralClassSelect.value : pd.spectralClass;
+  pd.dominantRace = dominantRaceSelect ? dominantRaceSelect.value : pd.dominantRace;
+  pd.economyType = economySelect ? economySelect.value : pd.economyType;
+  pd.economyDescriptors = economyDescriptorsSelect ? economyDescriptorsSelect.value : pd.economyDescriptors;
+  pd.conflictLevel = conflictSelect ? conflictSelect.value : pd.conflictLevel;
+
+  // zsynchronizuj metadata na mesh'u jeśli istnieje
+  const mesh = renderedPoints.find(m => m.metadata && m.metadata.id === pd.id);
+  if (mesh) {
+    mesh.metadata.spectralClass = pd.spectralClass;
+    mesh.metadata.dominantRace = pd.dominantRace;
+    mesh.metadata.economyType = pd.economyType;
+    mesh.metadata.economyDescriptors = pd.economyDescriptors;
+    mesh.metadata.conflictLevel = pd.conflictLevel;
+  }
+
+  alert("Detale układu zapisane.");
 });
+
 	
 ////////////////////////////////////////////////////////////////////
 // ===== TRYB PRZEMIESZCZANIA UKŁADÓW =====
