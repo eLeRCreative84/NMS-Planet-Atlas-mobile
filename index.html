@@ -745,6 +745,13 @@ function initBabylon() {
  
  setSkybox("sky1");
 
+//Materiały
+    pointMat = new BABYLON.StandardMaterial("pointMat", babylonScene);
+    pointMat.emissiveColor = new BABYLON.Color3(0,1,0); // zielony
+
+    selectedMat = new BABYLON.StandardMaterial("selectedMat", babylonScene);
+    selectedMat.emissiveColor = new BABYLON.Color3(1,0,0); // czerwony
+	
   // === Inicjalizacja struktur regionów ===
   for (let iz = 0; iz < REGIONS_AXIS; iz++) {
     for (let ix = 0; ix < REGIONS_AXIS; ix++) {
