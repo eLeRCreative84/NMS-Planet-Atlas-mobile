@@ -471,6 +471,7 @@
     <button id="editPointSolarSystem">Edytuj</button>
     <button id="deletePointSolarSystem">Usuń</button>
 	<button id="addEdgeBtn">Dodaj węzeł</button>
+	<button id="deleteEdgeBtn">Usuń węzeł</button>
 
   </div>
  
@@ -666,6 +667,7 @@ const REGIONS_AXIS = GROUPS_PER_AXIS * REGIONS_PER_GROUP; // 16 regionów w osi
 let renderedPoints = [];
 let renderedEdges = [];
 let awaitingEdgeTarget = null;
+let awaitingEdgeDeletion = null;
 let selectedPoint = null;
 let regions = {};
 let uniqueIdCounter = 0;
@@ -2695,10 +2697,13 @@ function createMeshForPointData(pd) {
             () => selectMesh(sphere)
         )
     );
+
     return sphere;
 }
 
+
 function selectMesh(mesh) {
+
 // ======== TRYB TWORZENIA WĘZŁA ========
     if (awaitingEdgeTarget) {
 
@@ -2756,8 +2761,62 @@ function selectMesh(mesh) {
 
         return; // nie wykonuj zwykłej logiki zaznaczania
     }
+// ======== TRYB USUWANIA WĘZŁA ========
+if (awaitingEdgeDeletion) {
+
+    const first = awaitingEdgeDeletion;
+    const second = mesh;
+
+    // nie można połączyć układu z samym sobą
+    if (first === second) {
+        alert("Nie można usuwać węzła z tego samego układu.");
+        awaitingEdgeDeletion = null;
+        return;
+    }
+
+    const regionKey = first.metadata.regionKey;
+    const region = regions[regionKey];
+
+    if (!region) {
+        alert("Błąd regionu.");
+        awaitingEdgeDeletion = null;
+        return;
+    }
+
+    // sprawdź, czy taki węzeł istnieje
+    const idx = region.edges.findIndex(e =>
+        (e.fromId === first.metadata.id && e.toId === second.metadata.id) ||
+        (e.fromId === second.metadata.id && e.toId === first.metadata.id)
+    );
+
+    if (idx === -1) {
+        alert("Między tymi układami nie istnieje węzeł.");
+        awaitingEdgeDeletion = null;
+        return;
+    }
+
+    // usuwamy wpis z tablicy
+    const removedEdge = region.edges.splice(idx, 1)[0];
+
+    // usuwamy mesh linii ze sceny
+    const meshName1 = `edge_${removedEdge.fromId}_${removedEdge.toId}`;
+    const meshName2 = `edge_${removedEdge.toId}_${removedEdge.fromId}`;
+
+    let lineMesh =
+        babylonScene.getMeshByName(meshName1) ||
+        babylonScene.getMeshByName(meshName2);
+
+    if (lineMesh) lineMesh.dispose();
+
+    alert("Węzeł został usunięty.");
+    awaitingEdgeDeletion = null;
+
+    return;
+}
+
 
 //Zaznaczenie okręgiem
+
     // schowaj ring ze starego zaznaczenia
     if (selectedPoint) {
         selectionRing.setEnabled(false);
@@ -3057,6 +3116,17 @@ document.getElementById("addEdgeBtn").addEventListener("click", () => {
     alert("Wskaż drugi układ.");
 });
 
+// === Obsługa przycisku Usuń węzeł ===
+document.getElementById("deleteEdgeBtn").addEventListener("click", () => {
+    if (!selectedPoint) {
+        alert("Najpierw zaznacz pierwszy układ!");
+        return;
+    }
+
+    awaitingEdgeDeletion = selectedPoint;
+    awaitingEdgeTarget = null; // wyłącz tryb dodawania
+    alert("Wskaż drugi układ, z którego chcesz usunąć węzeł.");
+});
 
 	
 ////////////////////////////////////////////////////////////////////
