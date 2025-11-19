@@ -470,8 +470,16 @@
     <button id="addPointSolarSystem">Dodaj układ</button>
     <button id="editPointSolarSystem">Edytuj</button>
     <button id="deletePointSolarSystem">Usuń</button>
+	</div>
+	
+	<div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
+	<h2>Węzły</h2>
+	
+	<div>
 	<button id="addEdgeBtn">Dodaj węzeł</button>
 	<button id="deleteEdgeBtn">Usuń węzeł</button>
+	<label>Kolor węzłów:</label>
+	<input type="color" id="edgeColorPicker" value="#ffff00">
 
   </div>
  
@@ -668,6 +676,8 @@ let renderedPoints = [];
 let renderedEdges = [];
 let awaitingEdgeTarget = null;
 let awaitingEdgeDeletion = null;
+let edgeColor = new BABYLON.Color3(1, 1, 0); // domyślnie żółty
+
 let selectedPoint = null;
 let regions = {};
 let uniqueIdCounter = 0;
@@ -852,6 +862,11 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
           // pełna swoboda
           pickedMesh.position.copyFrom(newPos);
         }
+		
+		    // RING PODĄŻA ZA PUNKETEM
+    if (selectionRing && selectionRing.isEnabled()) {
+      selectionRing.position.copyFrom(pickedMesh.position);
+    }
 		
 		//aktualizacja węzłów
     updateEdgesForPoint(pickedMesh);
@@ -2112,8 +2127,9 @@ function createEdgeBetweenPoints(pd1, pd2) {
     new BABYLON.Vector3(pd2.x, pd2.y, pd2.z)
   ];
   const line = BABYLON.MeshBuilder.CreateLines(`edge_${pd1.id}_${pd2.id}`, { points, updatable: true }, babylonScene);
-  line.color = new BABYLON.Color3(1, 1, 0); // żółty
-  line.isPickable = false; // żeby nie przeszkadzało przy kliku
+    
+	line.color = edgeColor;   // używamy wybranego koloru
+    line.isPickable = false; // żeby nie przeszkadzało przy kliku
   
   // zapisujemy referencje do punktów
   line.metadata = { fromId: pd1.id, toId: pd2.id };
@@ -2522,36 +2538,11 @@ function refreshSolarListForLoadedRegion() {
 
       // znajdź mesh odpowiadający temu id w renderedPoints
       const mesh = renderedPoints.find(m => m.metadata && m.metadata.id === pd.id);
-      if (mesh) {
-	  
-// ukryj ring pod starym wybranym
-if (selectedPoint) {
-    selectionRing.setEnabled(false);
-}
+    if (mesh) {
 
-selectedPoint = mesh;
-
-// przenieś ring pod nowy mesh
-selectionRing.position = selectedPoint.position.clone();
-selectionRing.setEnabled(true);
-
-        // uzupełnij inputy
-        xInput.value = mesh.position.x.toFixed(2);
-        yInput.value = mesh.position.y.toFixed(2);
-        zInput.value = mesh.position.z.toFixed(2);
-        coordInput.value = mesh.metadata.galactic || "";
-        nameInput.value = mesh.metadata.name || "";
-
-        // 🔹 ustaw selektory detali układu
-        spectralClassSelect.value = mesh.metadata.spectralClass || "";
-        dominantRaceSelect.value = mesh.metadata.dominantRace || "";
-        economySelect.value = mesh.metadata.economyType || "";
-        economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
-        conflictSelect.value = mesh.metadata.conflictLevel || "";
-
-        // ustaw kamerę nad tym punktem
+        selectMesh(mesh);
         focusCameraOn(mesh);
-      }
+    }
     });
 
     solarListEl.appendChild(item);
@@ -2814,6 +2805,20 @@ if (awaitingEdgeDeletion) {
     return;
 }
 
+// ========== OBSŁUGA KLIKANIA W LISTĘ UKŁADÓW ==========
+solarListEl.addEventListener("click", (e) => {
+    const li = e.target.closest(".solarItem");
+    if (!li) return;
+
+    const id = li.dataset.id;
+
+    // znajdź mesh w scenie
+    const mesh = babylonScene.getMeshByName("point_" + id);
+    if (!mesh) return;
+
+    // tu wywołujemy tę samą logikę co przy kliknięciu w scenę:
+    selectMesh(mesh);
+});
 
 //Zaznaczenie okręgiem
 
@@ -3128,6 +3133,21 @@ document.getElementById("deleteEdgeBtn").addEventListener("click", () => {
     alert("Wskaż drugi układ, z którego chcesz usunąć węzeł.");
 });
 
+// === ZMIANA KOLORU WĘZŁÓW ===
+document.getElementById("edgeColorPicker").addEventListener("input", (e) => {
+    const hex = e.target.value;
+    const r = parseInt(hex.substr(1, 2), 16) / 255;
+    const g = parseInt(hex.substr(3, 2), 16) / 255;
+    const b = parseInt(hex.substr(5, 2), 16) / 255;
+
+    edgeColor = new BABYLON.Color3(r, g, b);
+
+    // aktualizuj wszystkie istniejące linie
+    renderedEdges.forEach(edge => {
+        edge.color = edgeColor;
+    });
+});
+
 	
 ////////////////////////////////////////////////////////////////////
 // ===== TRYB PRZEMIESZCZANIA UKŁADÓW =====
@@ -3206,6 +3226,12 @@ renderedEdges.forEach(edge => {
     });
   }
 });
+
+  // PRZYWRÓĆ POZYCJĘ RINGA
+  if (selectedPoint) {
+      selectionRing.position.copyFrom(selectedPoint.position);
+      selectionRing.setEnabled(true);
+  }
 
   exitMoveMode();
   console.log("Zmiany pozycji anulowane");
