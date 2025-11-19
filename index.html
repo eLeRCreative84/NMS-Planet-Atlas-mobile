@@ -470,6 +470,8 @@
     <button id="addPointSolarSystem">Dodaj układ</button>
     <button id="editPointSolarSystem">Edytuj</button>
     <button id="deletePointSolarSystem">Usuń</button>
+	<button id="addEdgeBtn">Dodaj węzeł</button>
+
   </div>
  
 <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div> 
@@ -663,6 +665,7 @@ const REGIONS_AXIS = GROUPS_PER_AXIS * REGIONS_PER_GROUP; // 16 regionów w osi
 
 let renderedPoints = [];
 let renderedEdges = [];
+let awaitingEdgeTarget = null;
 let selectedPoint = null;
 let regions = {};
 let uniqueIdCounter = 0;
@@ -2692,13 +2695,69 @@ function createMeshForPointData(pd) {
             () => selectMesh(sphere)
         )
     );
-
     return sphere;
 }
 
-
 function selectMesh(mesh) {
+// ======== TRYB TWORZENIA WĘZŁA ========
+    if (awaitingEdgeTarget) {
 
+        const first = awaitingEdgeTarget;
+        const second = mesh;
+
+        // kliknięto ten sam układ → anuluj
+        if (first === second) {
+            awaitingEdgeTarget = null;
+            alert("Nie można utworzyć węzła do tego samego układu.");
+            return;
+        }
+
+        const regionKey = first.metadata.regionKey;
+        const region = regions[regionKey];
+
+        if (!region) {
+            alert("Błąd regionu — nie można stworzyć węzła.");
+            awaitingEdgeTarget = null;
+            return;
+        }
+
+        // sprawdzenie czy taki węzeł już istnieje
+        const exists = region.edges.some(e =>
+            (e.fromId === first.metadata.id && e.toId === second.metadata.id) ||
+            (e.fromId === second.metadata.id && e.toId === first.metadata.id)
+        );
+
+        if (exists) {
+            alert("Taki węzeł już istnieje.");
+            awaitingEdgeTarget = null;
+            return;
+        }
+
+        // === UTWÓRZ WĘZEŁ ===
+		const pd1 = region.pointsData.find(p => p.id === first.metadata.id);
+		const pd2 = region.pointsData.find(p => p.id === second.metadata.id);
+
+			if (!pd1 || !pd2) {
+				alert("Błąd danych — nie mogę znaleźć współrzędnych układów.");
+				awaitingEdgeTarget = null;
+				return;
+			}
+
+			// dodaj węzeł
+			region.edges.push({
+				fromId: pd1.id,
+				toId: pd2.id
+			});
+
+			createEdgeBetweenPoints(pd1, pd2);
+
+        alert("Węzeł utworzony.");
+        awaitingEdgeTarget = null;
+
+        return; // nie wykonuj zwykłej logiki zaznaczania
+    }
+
+//Zaznaczenie okręgiem
     // schowaj ring ze starego zaznaczenia
     if (selectedPoint) {
         selectionRing.setEnabled(false);
@@ -2895,8 +2954,10 @@ document.getElementById("addPointSolarSystem").addEventListener("click", () => {
 
 });
 
+// === Obsługa przycisku Zoom punkt ===
 document.getElementById("zoomToPointSolarSystem").addEventListener("click",()=>{ if(selectedPoint) focusCameraOn(selectedPoint); });
 
+// === Obsługa przycisku Edytuj punkt ===
 document.getElementById("editPointSolarSystem").addEventListener("click",()=>{
   if(!selectedPoint) return alert("Nie zaznaczono punktu!");
   // znajdź entry w danych regionu i zaktualizuj
@@ -2922,6 +2983,7 @@ document.getElementById("editPointSolarSystem").addEventListener("click",()=>{
   refreshSolarListForLoadedRegion();
 });
 
+// === Obsługa przycisku Usuń punkt ===
 document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
   if(!selectedPoint) return alert("Nie zaznaczono punktu!");
   const id = selectedPoint.metadata && selectedPoint.metadata.id;
@@ -2938,7 +3000,8 @@ document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
   markRegionTileHasPoints(loadedRegionKey);
   if(level === 0) updateGalaxyTilesHasPoints();
 });
-	
+
+// === Obsługa przycisku Zapisz detale punktu ===	
 document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => {
 
     if (!selectedPoint || !selectedPoint.metadata) {
@@ -2983,6 +3046,16 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
 
 });
 
+// === Obsługa przycisku Dodaj węzeł ===
+document.getElementById("addEdgeBtn").addEventListener("click", () => {
+    if (!selectedPoint) {
+        alert("Najpierw zaznacz układ, od którego chcesz poprowadzić węzeł.");
+        return;
+    }
+
+    awaitingEdgeTarget = selectedPoint;   // zapamiętaj pierwszy punkt
+    alert("Wskaż drugi układ.");
+});
 
 
 	
