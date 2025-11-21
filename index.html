@@ -447,6 +447,7 @@
 <!-- Zakładka PODRÓŻ -->
 <div id="journey" class="tab-content">
 
+<h2>Układy planetarne</h2>
 <div id="coordRow" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
   X: <input type="number" id="xInput" value="0">
   Y: <input type="number" id="yInput" value="0">
@@ -462,14 +463,24 @@
 
 	<div class="field">
 	  <label for="nameInput">Nazwa układu:</label>
-	  <input id="nameInput" placeholder="Podaj nazwę nowego układu gwiezdnego" type="text">
+	  <input id="nameInput" placeholder="Podaj nazwę nowego układu planetarnego" type="text">
 	</div>
-  
+ 
+ <div class="field">
+  <label for="systemNotesInput">Notatki:</label>
+  <textarea id="systemNotesInput" placeholder="Twoje notatki dotyczące układu planetarnego..." rows="3"></textarea>
+</div>
+
   <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
   <div>
     <button id="addPointSolarSystem">Dodaj układ</button>
-    <button id="editPointSolarSystem">Edytuj</button>
-    <button id="deletePointSolarSystem">Usuń</button>
+    <button id="editPointSolarSystem">Zaktualizuj dane</button>
+    <button id="deletePointSolarSystem">Usuń układ</button>
+	
+	<button id="movePointsMode">Przemieszczaj układy</button>
+	<button id="confirmMove" style="display:none;">Zatwierdź zmiany</button>
+	<button id="cancelMove" style="display:none;">Anuluj</button>
+
 	</div>
 	
 	<div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div>
@@ -478,18 +489,17 @@
 	<div>
 	<button id="addEdgeBtn">Dodaj węzeł</button>
 	<button id="deleteEdgeBtn">Usuń węzeł</button>
+	<button id="cancelEdgeDeletion" style="display:none;">Anuluj</button>
 	<label>Kolor węzłów:</label>
 	<input type="color" id="edgeColorPicker" value="#ffff00">
 
   </div>
  
 <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div> 
+<h2>Widok</h2>
   <div>
-    <button id="zoomToPointSolarSystem">Zoom</button>
-	  <button id="showSystemPlanetsBtn">Pokaż planety układu</button>
-	<button id="movePointsMode">Przemieszczaj układy</button>
-<button id="confirmMove" style="display:none;">Zatwierdź zmiany</button>
-<button id="cancelMove" style="display:none;">Anuluj</button>
+    <button id="zoomToPointSolarSystem">Ustaw widok na danym układzie</button>
+<label>Wybierz skybox</label>	  
 <select id="skyboxSelect" onchange="setSkybox(this.value)">
   <option value="sky1">Supernova</option>
   <option value="sky2">Deep Ocean</option>
@@ -501,6 +511,7 @@
 <div style="height:0.5px; background:#102b56; margin:0.5rem 0; border-radius:4px;"></div> 
 	<h2>Detale układu planetarnego</h2>
   <div>
+  <button id="showSystemPlanetsBtn">Pokaż planety układu</button>
 <label>Klasa spektralna:
   <select id="spectralClassSelect">
 <option value="Żółta">Żółta</option>
@@ -686,6 +697,9 @@ let loadedRegionKey = null;
 // globalne zmienne materiałów
 let selectionRing = null;
 let ringMat = null;
+
+// Tworzymy czarną teksturę globalnie.
+  const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
 // ======= FUNKCJA TWORZĄCA KLUCZ REGIONU =======
 function regionIndexKey(ix, iz) {
@@ -2207,6 +2221,10 @@ if (newName) {
     z = Math.min(Math.max(z + randomOffset(), 0), REGION_DEPTH);
   }
 
+	//Notatki układu planetranego
+	const notesInput = document.getElementById("systemNotesInput");
+	const systemNotes = notesInput.value.trim();
+
 	//tworzymy nowy punkt (detale są puste — zapisujemy je osobnym przyciskiem)
   const id = `pt_${uniqueIdCounter++}`;
   const pd = {
@@ -2214,6 +2232,7 @@ if (newName) {
     x, y, z,
     galactic: gal || "",
     name: newName || "",
+	notes: systemNotes || "", 
     // pola detali pozostawiamy puste na start
     spectralClass: "Żółta",   // domyślna żółta
     dominantRace: "",
@@ -2251,6 +2270,7 @@ if (newName) {
   } else {
     pd.connectedToPrev = false;
   }
+
 
   // oznacz kafelek w mapie (jeśli pokazujemy grupę)
   markRegionTileHasPoints(key);
@@ -2677,7 +2697,8 @@ function createMeshForPointData(pd) {
         dominantRace: pd.dominantRace || "",
         economyType: pd.economyType || "",
         economyDescriptors: pd.economyDescriptors || "",
-        conflictLevel: pd.conflictLevel || ""
+        conflictLevel: pd.conflictLevel || "",
+		notes: pd.notes || ""
     };
 
     // kliknięcie — wybór obiektu
@@ -2705,6 +2726,8 @@ function selectMesh(mesh) {
         if (first === second) {
             awaitingEdgeTarget = null;
             alert("Nie można utworzyć węzła do tego samego układu.");
+			setUIBlocked(false);
+			document.getElementById("cancelEdgeDeletion").style.display = "none";
             return;
         }
 
@@ -2714,6 +2737,8 @@ function selectMesh(mesh) {
         if (!region) {
             alert("Błąd regionu — nie można stworzyć węzła.");
             awaitingEdgeTarget = null;
+			setUIBlocked(false);
+			document.getElementById("cancelEdgeDeletion").style.display = "none";
             return;
         }
 
@@ -2726,6 +2751,8 @@ function selectMesh(mesh) {
         if (exists) {
             alert("Taki węzeł już istnieje.");
             awaitingEdgeTarget = null;
+			setUIBlocked(false);
+			document.getElementById("cancelEdgeDeletion").style.display = "none";
             return;
         }
 
@@ -2749,19 +2776,22 @@ function selectMesh(mesh) {
 
         alert("Węzeł utworzony.");
         awaitingEdgeTarget = null;
-
+		setUIBlocked(false);
+		document.getElementById("cancelEdgeDeletion").style.display = "none";
         return; // nie wykonuj zwykłej logiki zaznaczania
     }
 // ======== TRYB USUWANIA WĘZŁA ========
 if (awaitingEdgeDeletion) {
-
-    const first = awaitingEdgeDeletion;
+	
+	const first = awaitingEdgeDeletion;
     const second = mesh;
 
     // nie można połączyć układu z samym sobą
     if (first === second) {
         alert("Nie można usuwać węzła z tego samego układu.");
         awaitingEdgeDeletion = null;
+		setUIBlocked(false);
+		document.getElementById("cancelEdgeDeletion").style.display = "none";
         return;
     }
 
@@ -2771,6 +2801,8 @@ if (awaitingEdgeDeletion) {
     if (!region) {
         alert("Błąd regionu.");
         awaitingEdgeDeletion = null;
+		setUIBlocked(false);
+		document.getElementById("cancelEdgeDeletion").style.display = "none";
         return;
     }
 
@@ -2783,6 +2815,8 @@ if (awaitingEdgeDeletion) {
     if (idx === -1) {
         alert("Między tymi układami nie istnieje węzeł.");
         awaitingEdgeDeletion = null;
+		setUIBlocked(false);
+		document.getElementById("cancelEdgeDeletion").style.display = "none";
         return;
     }
 
@@ -2801,7 +2835,8 @@ if (awaitingEdgeDeletion) {
 
     alert("Węzeł został usunięty.");
     awaitingEdgeDeletion = null;
-
+    setUIBlocked(false);
+	document.getElementById("cancelEdgeDeletion").style.display = "none";
     return;
 }
 
@@ -2839,6 +2874,10 @@ solarListEl.addEventListener("click", (e) => {
     zInput.value = mesh.position.z.toFixed(2);
     coordInput.value = mesh.metadata.galactic || "";
     nameInput.value = mesh.metadata.name || "";
+	
+	  // NOTATKI — ustaw input notatek z metadata
+  const notesInput = document.getElementById("systemNotesInput");
+  if (notesInput) notesInput.value = mesh.metadata.notes || "";
 
     // detale
     spectralClassSelect.value = mesh.metadata.spectralClass;
@@ -2878,6 +2917,7 @@ function loadRegionByKey(regionKey, options = {}) {
     mesh.metadata.economyType = pd.economyType || "";
     mesh.metadata.economyDescriptors = pd.economyDescriptors || "";
     mesh.metadata.conflictLevel = pd.conflictLevel || "";
+	mesh.metadata.notes = pd.notes || "";
     renderedPoints.push(mesh);
   	  
     renderedPoints.push(mesh);
@@ -3024,6 +3064,10 @@ document.getElementById("zoomToPointSolarSystem").addEventListener("click",()=>{
 // === Obsługa przycisku Edytuj punkt ===
 document.getElementById("editPointSolarSystem").addEventListener("click",()=>{
   if(!selectedPoint) return alert("Nie zaznaczono punktu!");
+  
+  const confirmEditPoin = confirm("Czy nadpisać dane układu?");
+  if (!confirmEditPoin) return;
+  
   // znajdź entry w danych regionu i zaktualizuj
   const id = selectedPoint.metadata && selectedPoint.metadata.id;
   if (!id || !loadedRegionKey) return;
@@ -3035,11 +3079,13 @@ document.getElementById("editPointSolarSystem").addEventListener("click",()=>{
   entry.z = parseFloat(zInput.value);
   entry.galactic = coordInput.value.trim();
   entry.name = nameInput.value.trim();
+  entry.notes = systemNotesInput.value.trim(); 
 
   // zaktualizuj mesh
   selectedPoint.position.set(entry.x, entry.y, entry.z);
   selectedPoint.metadata.galactic = entry.galactic;
   selectedPoint.metadata.name = entry.name;
+  selectedPoint.metadata.notes = entry.notes; 
 
   updateEdgesForPoint(selectedPoint);
 
@@ -3052,6 +3098,9 @@ document.getElementById("deletePointSolarSystem").addEventListener("click",()=>{
   if(!selectedPoint) return alert("Nie zaznaczono punktu!");
   const id = selectedPoint.metadata && selectedPoint.metadata.id;
   if (!id || !loadedRegionKey) return;
+
+  const confirmDelete = confirm("Czy na pewno chcesz usunąć ten układ?");
+  if (!confirmDelete) return;
 
   // usuń z danych regionu
   const region = regions[loadedRegionKey];
@@ -3116,7 +3165,8 @@ document.getElementById("addEdgeBtn").addEventListener("click", () => {
         alert("Najpierw zaznacz układ, od którego chcesz poprowadzić węzeł.");
         return;
     }
-
+    setUIBlocked(true);
+	document.getElementById("cancelEdgeDeletion").style.display = "inline-block";
     awaitingEdgeTarget = selectedPoint;   // zapamiętaj pierwszy punkt
     alert("Wskaż drugi układ.");
 });
@@ -3127,10 +3177,21 @@ document.getElementById("deleteEdgeBtn").addEventListener("click", () => {
         alert("Najpierw zaznacz pierwszy układ!");
         return;
     }
-
+    setUIBlocked(true);
+	document.getElementById("cancelEdgeDeletion").style.display = "inline-block";
     awaitingEdgeDeletion = selectedPoint;
     awaitingEdgeTarget = null; // wyłącz tryb dodawania
     alert("Wskaż drugi układ, z którego chcesz usunąć węzeł.");
+});
+
+// === Obsługa przycisku Anuluj Dodaj/Usuń węzeł ===
+document.getElementById("cancelEdgeDeletion").addEventListener("click", () => {
+  awaitingEdgeDeletion = false;
+
+  document.getElementById("cancelEdgeDeletion").style.display = "none";
+  awaitingEdgeTarget = null;
+  awaitingEdgeDeletion = null;
+  setMoveModeUI(false);   // odblokowujesz UI
 });
 
 // === ZMIANA KOLORU WĘZŁÓW ===
@@ -3148,6 +3209,41 @@ document.getElementById("edgeColorPicker").addEventListener("input", (e) => {
     });
 });
 
+
+// 🔒 BLOKOWANIE / ODBLOKOWANIE UI
+function setUIBlocked(isBlocked) {
+  
+  const toDisable = [
+    "addPointSolarSystem",
+    "editPointSolarSystem",
+    "deletePointSolarSystem",
+    "addEdgeBtn",
+    "deleteEdgeBtn",
+    "zoomToPointSolarSystem",
+    "showSystemPlanetsBtn",
+	"movePointsMode",
+    "saveSystemDetailsBtn",
+
+    "spectralClassSelect",
+    "dominantRaceSelect",
+    "economySelect",
+    "economyDescriptorsSelect",
+    "conflictSelect",
+
+    "edgeColorPicker",
+    "skyboxSelect"
+  ];
+
+  toDisable.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = isBlocked;
+  });
+
+  // blokowanie zakładek
+  document.querySelectorAll(".lock-while-edit").forEach(btn => {
+    btn.disabled = isBlocked;
+  });
+}
 	
 ////////////////////////////////////////////////////////////////////
 // ===== TRYB PRZEMIESZCZANIA UKŁADÓW =====
@@ -3166,7 +3262,7 @@ moveBtn.addEventListener("click", () => {
     alert("Nie ma układów do przemieszczania!");
     return;
   }
-
+  setMoveModeUI(true);
   moveModeActive = true;
   moveBtn.style.display = "none";
   confirmBtn.style.display = "inline-block";
@@ -3187,7 +3283,8 @@ moveBtn.addEventListener("click", () => {
 // === Zatwierdzenie zmian ===
 confirmBtn.addEventListener("click", () => {
   if (!moveModeActive) return;
-
+  
+  setMoveModeUI(false);
   // zapisujemy nowe pozycje do regionu
   const region = regions[loadedRegionKey];
   if (region && region.pointsData) {
@@ -3208,7 +3305,8 @@ confirmBtn.addEventListener("click", () => {
 // === Anulowanie zmian ===
 cancelBtn.addEventListener("click", () => {
   if (!moveModeActive) return;
-
+  
+  setMoveModeUI(false);
   // przywróć oryginalne pozycje
   renderedPoints.forEach(m => {
     const orig = originalPositions.get(m.metadata.id);
@@ -3262,6 +3360,39 @@ function updateEdgesForPoint(mesh) {
         });
       }
     }
+  });
+}
+
+//funkcja blokującą/przywracającą przyciski w trybie przemieszczania układów
+function setMoveModeUI(isActive) {
+  const toDisable = [
+    "addPointSolarSystem",
+    "editPointSolarSystem",
+    "deletePointSolarSystem",
+    "addEdgeBtn",
+    "deleteEdgeBtn",
+    "zoomToPointSolarSystem",
+    "showSystemPlanetsBtn",
+    "saveSystemDetailsBtn",
+	
+	"spectralClassSelect",
+	"dominantRaceSelect",
+	"economySelect",
+	"economyDescriptorsSelect",
+	"conflictSelect",
+	
+	"edgeColorPicker",
+	"skyboxSelect"
+  ];
+
+  toDisable.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = isActive;
+  });
+  
+   // blokowanie zakładek 
+    document.querySelectorAll(".lock-while-edit").forEach(btn => {
+    btn.disabled = isActive;
   });
 }
 
@@ -4602,6 +4733,7 @@ function exportAtlas() {
           z: p.z,
           galactic: p.galactic || "",
           name: p.name || "",
+		  notes: p.notes || "",
           connectedToPrev: !!p.connectedToPrev,
         })) || [],
         edges: region.edges?.map(e => ({
@@ -4774,10 +4906,7 @@ function initGlobe() {
     console.warn("Globe już zainicjalizowany — pomiń lub najpierw wywołaj destroyGlobe().");
     return;
   }
-
-  // Tworzymy czarną teksturę globalnie, która zastąpi globeImageUrl(null). 
-  const blackTextureURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
-
+  
   // Inicjalizacja globu — używamy https aby tło zawsze się załadowało
   globe = Globe()(document.getElementById("globeViz"))
     .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png') // gwiazdy w tle
