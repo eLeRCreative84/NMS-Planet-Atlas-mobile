@@ -2438,6 +2438,10 @@ exitBtn.addEventListener("click", ()=>{
   loadedRegionKey = null;
   updateGalaxyTilesHasPoints();
   updateGalaxyCenterPosition(145, 113);
+  
+  if (selectedPoint) selectedPoint = null;
+  if (selectionRing) selectionRing.setEnabled(false);
+  
 });
 
 drawGalaxyGrid();
@@ -2693,6 +2697,7 @@ function createMeshForPointData(pd) {
         galactic: pd.galactic || "",
         name: pd.name || "",
         regionKey: null,
+		
         spectralClass: pd.spectralClass || "Żółta",
         dominantRace: pd.dominantRace || "",
         economyType: pd.economyType || "",
@@ -2919,9 +2924,7 @@ function loadRegionByKey(regionKey, options = {}) {
     mesh.metadata.conflictLevel = pd.conflictLevel || "";
 	mesh.metadata.notes = pd.notes || "";
     renderedPoints.push(mesh);
-  	  
-    renderedPoints.push(mesh);
-    mesh.metadata.regionKey = regionKey; // dodajemy info, z którego regionu mesh pochodzi
+  	mesh.metadata.regionKey = regionKey; // dodajemy info, z którego regionu mesh pochodzi
   });
 
   // renderujemy istniejące węzły w regionie
