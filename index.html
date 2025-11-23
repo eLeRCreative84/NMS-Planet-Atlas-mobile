@@ -492,6 +492,8 @@
 	<button id="cancelEdgeDeletion" style="display:none;">Anuluj</button>
 	<label>Kolor węzłów:</label>
 	<input type="color" id="edgeColorPicker" value="#ffff00">
+	<button id="addTradeRouteBtn">Dodaj szlak handlowy</button>
+    <button id="deleteTradeRouteBtn">Usuń szlak handlowy</button>
 
   </div>
  
@@ -685,8 +687,11 @@ const REGIONS_AXIS = GROUPS_PER_AXIS * REGIONS_PER_GROUP; // 16 regionów w osi
 
 let renderedPoints = [];
 let renderedEdges = [];
+let renderedTradeEdges = [];
 let awaitingEdgeTarget = null;
 let awaitingEdgeDeletion = null;
+let awaitingTradeRouteStart = null;
+let awaitingTradeRouteDeletion = null;
 let edgeColor = new BABYLON.Color3(1, 1, 0); // domyślnie żółty
 
 let selectedPoint = null;
@@ -815,7 +820,10 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
       const pickInfo = pointerInfo.pickInfo;
       if (pickInfo.hit && pickInfo.pickedMesh && renderedPoints.includes(pickInfo.pickedMesh)) {
         pickedMesh = pickInfo.pickedMesh;
-
+		
+		// synchronizacja UI — zaznacz ten układ na liście sidebar
+		selectMesh(pickedMesh);
+		
         // utwórz płaszczyznę prostopadłą do kierunku patrzenia kamery,
         // przechodzącą przez pozycję punktu
         const camForward = babylonCamera.getDirection(BABYLON.Axis.Z);
@@ -884,6 +892,7 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
 		
 		//aktualizacja węzłów
     updateEdgesForPoint(pickedMesh);
+	updateTradeEdgesForPoint(pickedMesh);
       }
       break;
     }
@@ -2282,6 +2291,50 @@ if (newName) {
 
   return id;
 }
+
+//	Funkcja tworzenia łuku - trasy handlowe
+function createTradeRoute(pd1, pd2) {
+    // środka łuku
+    const mid = new BABYLON.Vector3(
+        (pd1.x + pd2.x) / 2,
+        (pd1.y + pd2.y) / 2 + 10, // lekkie uniesienie łuku
+        (pd1.z + pd2.z) / 2
+    );
+
+    const points = [];
+    const steps = 20;
+
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+
+        // Bezier: P0, P1, P2
+        const p = BABYLON.Vector3.Lerp(
+            BABYLON.Vector3.Lerp(new BABYLON.Vector3(pd1.x, pd1.y, pd1.z), mid, t),
+            BABYLON.Vector3.Lerp(mid, new BABYLON.Vector3(pd2.x, pd2.y, pd2.z), t),
+            t
+        );
+
+        points.push(p);
+    }
+
+    const route = BABYLON.MeshBuilder.CreateLines(
+        `trade_${pd1.id}_${pd2.id}`,
+        { points, updatable: true },
+        babylonScene
+    );
+
+    route.color = new BABYLON.Color3(0, 1, 1); // turkus
+    route.metadata = {
+        type: "tradeRoute",
+        fromId: pd1.id,
+        toId: pd2.id
+    };
+
+renderedTradeEdges.push(route);
+return route;
+
+}
+	
 	
 /* ==============================
 --- TUTAJ DOPISUJEMY SIATKĘ ---
@@ -2663,6 +2716,12 @@ function clearRenderedPoints(){
     try { e.dispose(); } catch(e){ }
   });
   renderedEdges = [];
+  
+    // usuń również trasy handlowe
+  if (renderedTradeEdges && renderedTradeEdges.length) {
+    renderedTradeEdges.forEach(t => { try { t.dispose(); } catch(e){} });
+    renderedTradeEdges = [];
+  }
 }
 
 function createMeshForPointData(pd) {
@@ -2844,6 +2903,106 @@ if (awaitingEdgeDeletion) {
 	document.getElementById("cancelEdgeDeletion").style.display = "none";
     return;
 }
+
+// ======== TRYB TWORZENIA SZLAKU HANDLOWEGO ========
+if (awaitingTradeRouteStart) {
+
+    const first = awaitingTradeRouteStart;
+    const second = mesh;
+
+    if (first === second) {
+        awaitingTradeRouteStart = null;
+        alert("Nie można utworzyć szlaku do tego samego układu.");
+        return;
+    }
+
+    const region = regions[first.metadata.regionKey];
+    if (!region) return;
+
+    // sprawdź czy taki szlak istnieje
+    const exists = region.tradeRoutes?.some(r =>
+        (r.fromId === first.metadata.id && r.toId === second.metadata.id) ||
+        (r.fromId === second.metadata.id && r.toId === first.metadata.id)
+    );
+
+    if (exists) {
+        alert("Taki szlak już istnieje.");
+        awaitingTradeRouteStart = null;
+        return;
+    }
+
+    // --- utwórz zapis szlaku ---
+    if (!region.tradeRoutes) region.tradeRoutes = [];
+    region.tradeRoutes.push({
+        fromId: first.metadata.id,
+        toId: second.metadata.id
+    });
+
+    const pd1 = region.pointsData.find(p => p.id === first.metadata.id);
+    const pd2 = region.pointsData.find(p => p.id === second.metadata.id);
+    createTradeRoute(pd1, pd2);
+
+    awaitingTradeRouteStart = null;
+    alert("Szlak handlowy utworzony!");
+    return;
+}
+
+// ======== TRYB USUWANIA SZLAKU HANDLOWEGO ========
+if (awaitingTradeRouteDeletion) {
+
+    const first = awaitingTradeRouteDeletion;
+    const second = mesh;
+
+    if (first === second) {
+        awaitingTradeRouteDeletion = null;
+        alert("Nie można usuwać szlaku z tego samego układu.");
+        return;
+    }
+
+    const region = regions[first.metadata.regionKey];
+    if (!region || !region.tradeRoutes) return;
+
+    const idx = region.tradeRoutes.findIndex(r =>
+        (r.fromId === first.metadata.id && r.toId === second.metadata.id) ||
+        (r.fromId === second.metadata.id && r.toId === first.metadata.id)
+    );
+
+    if (idx === -1) {
+        awaitingTradeRouteDeletion = null;
+        alert("Między tymi układami nie istnieje szlak handlowy.");
+        return;
+    }
+
+    const removed = region.tradeRoutes.splice(idx, 1)[0];
+
+    const mesh1 = babylonScene.getMeshByName(`trade_${removed.fromId}_${removed.toId}`);
+    const mesh2 = babylonScene.getMeshByName(`trade_${removed.toId}_${removed.fromId}`);
+
+    const route = mesh1 || mesh2;
+    if (route) {
+  route.dispose();
+
+  // usuń z renderedTradeEdges
+  renderedTradeEdges = renderedTradeEdges.filter(r => r && r.metadata && !(
+    (r.metadata.fromId === removed.fromId && r.metadata.toId === removed.toId) ||
+    (r.metadata.fromId === removed.toId && r.metadata.toId === removed.fromId)
+  ));
+
+  // jeśli przypadkiem trasy znajdują się też w renderedEdges, też je usuń
+  renderedEdges = renderedEdges.filter(e => {
+    if (!e || !e.metadata) return false;
+    return !(
+      (e.metadata.fromId === removed.fromId && e.metadata.toId === removed.toId) ||
+      (e.metadata.fromId === removed.toId && e.metadata.toId === removed.fromId)
+    );
+  });
+}
+
+    awaitingTradeRouteDeletion = null;
+    alert("Szlak handlowy usunięty!");
+    return;
+}
+
 
 // ========== OBSŁUGA KLIKANIA W LISTĘ UKŁADÓW ==========
 solarListEl.addEventListener("click", (e) => {
@@ -3197,6 +3356,31 @@ document.getElementById("cancelEdgeDeletion").addEventListener("click", () => {
   setMoveModeUI(false);   // odblokowujesz UI
 });
 
+// === Obsługa przycisku Dodaj szlak handlowy ===
+document.getElementById("addTradeRouteBtn").addEventListener("click", () => {
+    if (!selectedPoint) {
+        alert("Najpierw wybierz pierwszy układ.");
+        return;
+    }
+
+    awaitingTradeRouteStart = selectedPoint;
+    awaitingTradeRouteDeletion = null;
+    alert("Wskaż drugi układ, aby utworzyć szlak handlowy.");
+});
+
+// === Obsługa przycisku Usuń szlak handlowy ===
+document.getElementById("deleteTradeRouteBtn").addEventListener("click", () => {
+    if (!selectedPoint) {
+        alert("Najpierw wybierz pierwszy układ.");
+        return;
+    }
+
+    awaitingTradeRouteDeletion = selectedPoint;
+    awaitingTradeRouteStart = null;
+    alert("Wskaż drugi układ, aby usunąć szlak handlowy.");
+});
+
+
 // === ZMIANA KOLORU WĘZŁÓW ===
 document.getElementById("edgeColorPicker").addEventListener("input", (e) => {
     const hex = e.target.value;
@@ -3222,6 +3406,10 @@ function setUIBlocked(isBlocked) {
     "deletePointSolarSystem",
     "addEdgeBtn",
     "deleteEdgeBtn",
+	
+	"addTradeRouteBtn",
+    "deleteTradeRouteBtn",
+	
     "zoomToPointSolarSystem",
     "showSystemPlanetsBtn",
 	"movePointsMode",
@@ -3328,6 +3516,27 @@ renderedEdges.forEach(edge => {
   }
 });
 
+// przywróć trasy handlowe do pierwotnych pozycji
+renderedTradeEdges.forEach(route => {
+  if (!route || !route.metadata) return;
+  const fromMesh = renderedPoints.find(m => m.metadata && m.metadata.id === route.metadata.fromId);
+  const toMesh   = renderedPoints.find(m => m.metadata && m.metadata.id === route.metadata.toId);
+  if (fromMesh && toMesh) {
+    // przerysuj krzywą
+    const p1 = fromMesh.position;
+    const p2 = toMesh.position;
+    const bendStrength = BABYLON.Vector3.Distance(p1, p2) * 0.4;
+    const mid = p1.add(p2).scale(0.5);
+    mid.y += bendStrength;
+    const curve = BABYLON.Curve3.CreateQuadraticBezier(p1, mid, p2, 20);
+
+    BABYLON.MeshBuilder.CreateLines(
+      null,
+      { points: curve.getPoints(), instance: route }
+    );
+  }
+});
+
   // PRZYWRÓĆ POZYCJĘ RINGA
   if (selectedPoint) {
       selectionRing.position.copyFrom(selectedPoint.position);
@@ -3353,9 +3562,11 @@ function exitMoveMode() {
 // === Aktualizuje linie (edges) dla konkretnego punktu ===
 function updateEdgesForPoint(mesh) {
   renderedEdges.forEach(edge => {
+    if (!edge || !edge.metadata) return; // <- bezpiecznik
+
     if (edge.metadata.fromId === mesh.metadata.id || edge.metadata.toId === mesh.metadata.id) {
-      const fromMesh = renderedPoints.find(m => m.metadata.id === edge.metadata.fromId);
-      const toMesh = renderedPoints.find(m => m.metadata.id === edge.metadata.toId);
+      const fromMesh = renderedPoints.find(m => m.metadata && m.metadata.id === edge.metadata.fromId);
+      const toMesh   = renderedPoints.find(m => m.metadata && m.metadata.id === edge.metadata.toId);
       if (fromMesh && toMesh) {
         BABYLON.MeshBuilder.CreateLines(null, {
           points: [fromMesh.position, toMesh.position],
@@ -3366,6 +3577,37 @@ function updateEdgesForPoint(mesh) {
   });
 }
 
+
+// === Aktualizuje linie handlowe dla konkretnego punktu ===
+function updateTradeEdgesForPoint(mesh) {
+  renderedTradeEdges.forEach(route => {
+    if (!route || !route.metadata) return; // <- bezpiecznik
+
+    if (route.metadata.fromId === mesh.metadata.id || route.metadata.toId === mesh.metadata.id) {
+      const pd1Mesh = renderedPoints.find(m => m.metadata && m.metadata.id === route.metadata.fromId);
+      const pd2Mesh = renderedPoints.find(m => m.metadata && m.metadata.id === route.metadata.toId);
+
+      if (pd1Mesh && pd2Mesh) {
+        const p1 = pd1Mesh.position;
+        const p2 = pd2Mesh.position;
+
+        const bendStrength = BABYLON.Vector3.Distance(p1, p2) * 0.4;
+
+        const mid = p1.add(p2).scale(0.5);
+        mid.y += bendStrength;
+
+        const curve = BABYLON.Curve3.CreateQuadraticBezier(p1, mid, p2, 20);
+
+        BABYLON.MeshBuilder.CreateLines(
+          null,
+          { points: curve.getPoints(), instance: route }
+        );
+      }
+    }
+  });
+}
+
+
 //funkcja blokującą/przywracającą przyciski w trybie przemieszczania układów
 function setMoveModeUI(isActive) {
   const toDisable = [
@@ -3374,6 +3616,8 @@ function setMoveModeUI(isActive) {
     "deletePointSolarSystem",
     "addEdgeBtn",
     "deleteEdgeBtn",
+	"addTradeRouteBtn",
+    "deleteTradeRouteBtn",
     "zoomToPointSolarSystem",
     "showSystemPlanetsBtn",
     "saveSystemDetailsBtn",
