@@ -494,6 +494,7 @@
 	<input type="color" id="edgeColorPicker" value="#ffff00">
 	<button id="addTradeRouteBtn">Dodaj szlak handlowy</button>
     <button id="deleteTradeRouteBtn">Usuń szlak handlowy</button>
+	<button id="cancelTradeRouteDeletion" style="display:none;">Anuluj</button>
 
   </div>
  
@@ -2913,6 +2914,8 @@ if (awaitingTradeRouteStart) {
     if (first === second) {
         awaitingTradeRouteStart = null;
         alert("Nie można utworzyć szlaku do tego samego układu.");
+		  setUIBlocked(false);
+		  document.getElementById("cancelTradeRouteDeletion").style.display = "none";
         return;
     }
 
@@ -2928,6 +2931,8 @@ if (awaitingTradeRouteStart) {
     if (exists) {
         alert("Taki szlak już istnieje.");
         awaitingTradeRouteStart = null;
+		setUIBlocked(false);
+		document.getElementById("cancelTradeRouteDeletion").style.display = "none";
         return;
     }
 
@@ -2943,6 +2948,8 @@ if (awaitingTradeRouteStart) {
     createTradeRoute(pd1, pd2);
 
     awaitingTradeRouteStart = null;
+	setUIBlocked(false);
+	document.getElementById("cancelTradeRouteDeletion").style.display = "none";
     alert("Szlak handlowy utworzony!");
     return;
 }
@@ -2956,6 +2963,8 @@ if (awaitingTradeRouteDeletion) {
     if (first === second) {
         awaitingTradeRouteDeletion = null;
         alert("Nie można usuwać szlaku z tego samego układu.");
+		setUIBlocked(false);
+		document.getElementById("cancelTradeRouteDeletion").style.display = "none";
         return;
     }
 
@@ -2970,6 +2979,8 @@ if (awaitingTradeRouteDeletion) {
     if (idx === -1) {
         awaitingTradeRouteDeletion = null;
         alert("Między tymi układami nie istnieje szlak handlowy.");
+		setUIBlocked(false);
+		document.getElementById("cancelTradeRouteDeletion").style.display = "none";
         return;
     }
 
@@ -2988,18 +2999,12 @@ if (awaitingTradeRouteDeletion) {
     (r.metadata.fromId === removed.toId && r.metadata.toId === removed.fromId)
   ));
 
-  // jeśli przypadkiem trasy znajdują się też w renderedEdges, też je usuń
-  renderedEdges = renderedEdges.filter(e => {
-    if (!e || !e.metadata) return false;
-    return !(
-      (e.metadata.fromId === removed.fromId && e.metadata.toId === removed.toId) ||
-      (e.metadata.fromId === removed.toId && e.metadata.toId === removed.fromId)
-    );
-  });
 }
 
     awaitingTradeRouteDeletion = null;
     alert("Szlak handlowy usunięty!");
+	setUIBlocked(false);
+	document.getElementById("cancelTradeRouteDeletion").style.display = "none";
     return;
 }
 
@@ -3059,103 +3064,123 @@ solarListEl.addEventListener("click", (e) => {
 // Ładuje region do sceny na podstawie klucza regionu (np. "3_5")
 // opcje: { selectId: 'pt_x' } => po załadowaniu zaznacz ten punkt
 function loadRegionByKey(regionKey, options = {}) {
-  // czyścimy bieżące mesh'e
-  clearRenderedPoints();
-  loadedRegionKey = regionKey;
+    // --- czyścimy bieżące mesh'e
+    clearRenderedPoints();
+    loadedRegionKey = regionKey;
 
-  const region = regions[regionKey];
-  if (!region || !region.pointsData) {
-    refreshSolarListForLoadedRegion();
-    return;
-  }
-
-  // tworzymy mesh dla każdego punktu w data
-  region.pointsData.forEach(pd => {
-    const mesh = createMeshForPointData(pd);
-// nadpiszemy metadata.regionKey oraz przekażemy detale do metadata (safety)
-    mesh.metadata.regionKey = regionKey;
-    mesh.metadata.name = pd.name || "";
-    mesh.metadata.galactic = pd.galactic || "";
-    mesh.metadata.spectralClass = pd.spectralClass || "";
-    mesh.metadata.dominantRace = pd.dominantRace || "";
-    mesh.metadata.economyType = pd.economyType || "";
-    mesh.metadata.economyDescriptors = pd.economyDescriptors || "";
-    mesh.metadata.conflictLevel = pd.conflictLevel || "";
-	mesh.metadata.notes = pd.notes || "";
-    renderedPoints.push(mesh);
-  	mesh.metadata.regionKey = regionKey; // dodajemy info, z którego regionu mesh pochodzi
-  });
-
-  // renderujemy istniejące węzły w regionie
-  if (region.edges && region.edges.length > 0) {
-  region.edges.forEach(edgeObj => {
-    const fromPd = region.pointsData.find(p => p.id === edgeObj.fromId);
-    const toPd = region.pointsData.find(p => p.id === edgeObj.toId);
-    if (fromPd && toPd) {
-      const line = createEdgeBetweenPoints(fromPd, toPd);
-      renderedEdges.push(line);
+    const region = regions[regionKey];
+    if (!region || !region.pointsData) {
+        refreshSolarListForLoadedRegion();
+        return;
     }
-  });
+
+    renderedEdges = [];
+    renderedTradeEdges = [];
+
+    // --- jeśli Babylon nieaktywny, nie rysujemy, tylko zapisujemy dane
+    if (typeof babylonScene === "undefined" || !babylonScene) {
+        console.log("Babylon nieaktywny – meshe nie tworzone");
+        return;
+    }
+
+    // --- tworzymy mesh dla każdego punktu
+    region.pointsData.forEach(pd => {
+        const mesh = createMeshForPointData(pd);
+
+        mesh.metadata.regionKey = regionKey;
+        mesh.metadata.id = pd.id; // bardzo ważne dla autowyboru
+        mesh.metadata.name = pd.name || "";
+        mesh.metadata.galactic = pd.galactic || "";
+        mesh.metadata.spectralClass = pd.spectralClass || "";
+        mesh.metadata.dominantRace = pd.dominantRace || "";
+        mesh.metadata.economyType = pd.economyType || "";
+        mesh.metadata.economyDescriptors = pd.economyDescriptors || "";
+        mesh.metadata.conflictLevel = pd.conflictLevel || "";
+        mesh.metadata.notes = pd.notes || "";
+
+        // przywracanie koloru
+        if (pd.color) {
+            mesh.material = new BABYLON.StandardMaterial("colmat", babylonScene);
+            mesh.material.diffuseColor = BABYLON.Color3.FromHexString(pd.color);
+        }
+
+        renderedPoints.push(mesh);
+    });
+
+    // --- renderujemy zwykłe krawędzie
+    if (region.edges && region.edges.length > 0) {
+        region.edges.forEach(edgeObj => {
+            const fromPd = region.pointsData.find(p => p.id === edgeObj.fromId);
+            const toPd = region.pointsData.find(p => p.id === edgeObj.toId);
+            if (fromPd && toPd) {
+                const line = createEdgeBetweenPoints(fromPd, toPd);
+                renderedEdges.push(line);
+            }
+        });
+    }
+
+    // --- renderujemy szlaki handlowe
+    if (region.tradeRoutes && region.tradeRoutes.length > 0) {
+        region.tradeRoutes.forEach(r => {
+            const pd1 = region.pointsData.find(p => p.id === r.fromId);
+            const pd2 = region.pointsData.find(p => p.id === r.toId);
+
+            if (pd1 && pd2) {
+                const route = createTradeRoute(pd1, pd2);
+                renderedTradeEdges.push(route);
+            }
+        });
+    }
+
+    // --- odśwież listę układów
+    refreshSolarListForLoadedRegion();
+
+    // --- logika autowyboru elementu
+    let selectId = options.selectId;
+    if (!selectId && region.pointsData.length > 0) {
+        selectId = region.pointsData[region.pointsData.length - 1].id;
+    }
+
+    if (selectId) {
+        const mesh = renderedPoints.find(m => m.metadata && m.metadata.id === selectId);
+        if (mesh) {
+            if (selectedPoint) selectionRing.setEnabled(false);
+
+            selectedPoint = mesh;
+            selectionRing.position = selectedPoint.position.clone();
+            selectionRing.setEnabled(true);
+
+            // aktualizacja inputów
+            xInput.value = mesh.position.x.toFixed(2);
+            yInput.value = mesh.position.y.toFixed(2);
+            zInput.value = mesh.position.z.toFixed(2);
+            coordInput.value = mesh.metadata.galactic || "";
+            nameInput.value = mesh.metadata.name || "";
+
+            const spectralClassSelect = document.getElementById("spectralClassSelect");
+            const dominantRaceSelect = document.getElementById("dominantRaceSelect");
+            const economySelect = document.getElementById("economySelect");
+            const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
+            const conflictSelect = document.getElementById("conflictSelect");
+
+            if (spectralClassSelect) spectralClassSelect.value = mesh.metadata.spectralClass || "";
+            if (dominantRaceSelect) dominantRaceSelect.value = mesh.metadata.dominantRace || "";
+            if (economySelect) economySelect.value = mesh.metadata.economyType || "";
+            if (economyDescriptorsSelect) economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
+            if (conflictSelect) conflictSelect.value = mesh.metadata.conflictLevel || "";
+
+            // highlight w sidebarze
+            const li = solarListEl.querySelector(`[data-id="${selectId}"]`);
+            if (li) {
+                document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
+                li.classList.add("selected");
+            }
+
+            focusCameraOn(mesh, 200);
+        }
+    }
 }
 
-  // odśwież listę w sidebar
-  refreshSolarListForLoadedRegion();
-
-	// opcjonalnie zaznacz nowo dodany lub ostatni punkt
-	let selectId = options.selectId;
-	if (!selectId) {
-	  const region = regions[regionKey];
-	  if (region && region.pointsData.length > 0) {
-		// automatycznie wybierz ostatnio dodany punkt
-		selectId = region.pointsData[region.pointsData.length - 1].id;
-	  }
-	}
-
-	if (selectId) {
-	  const mesh = renderedPoints.find(m => m.metadata && m.metadata.id === selectId);
-	  if (mesh) {
-	  
-// ukryj ring pod starym wybranym
-if (selectedPoint) {
-    selectionRing.setEnabled(false);
-}
-
-selectedPoint = mesh;
-
-// przenieś ring pod nowy mesh
-selectionRing.position = selectedPoint.position.clone();
-selectionRing.setEnabled(true);
-
-		// uzupełnij inputy
-		xInput.value = mesh.position.x.toFixed(2);
-		yInput.value = mesh.position.y.toFixed(2);
-		zInput.value = mesh.position.z.toFixed(2);
-		coordInput.value = mesh.metadata.galactic || "";
-		nameInput.value = mesh.metadata.name || "";
-          
-// Uzupełnij selektory detali układu z metadata (jeśli są)
-      const spectralClassSelect = document.getElementById("spectralClassSelect");
-      const dominantRaceSelect = document.getElementById("dominantRaceSelect");
-      const economySelect = document.getElementById("economySelect");
-      const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
-      const conflictSelect = document.getElementById("conflictSelect");
-
-      if (spectralClassSelect) spectralClassSelect.value = mesh.metadata.spectralClass || "";
-      if (dominantRaceSelect) dominantRaceSelect.value = mesh.metadata.dominantRace || "";
-      if (economySelect) economySelect.value = mesh.metadata.economyType || "";
-      if (economyDescriptorsSelect) economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
-      if (conflictSelect) conflictSelect.value = mesh.metadata.conflictLevel || "";
-
-		// highlight item
-		const li = solarListEl.querySelector(`[data-id="${selectId}"]`);
-		if (li) {
-		  document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
-		  li.classList.add("selected");
-		}
-		focusCameraOn(mesh, 200);
-	  }
-	}
-}
 
 // === Obsługa przycisku Dodaj punkt ===
 document.getElementById("addPointSolarSystem").addEventListener("click", () => {
@@ -3356,13 +3381,24 @@ document.getElementById("cancelEdgeDeletion").addEventListener("click", () => {
   setMoveModeUI(false);   // odblokowujesz UI
 });
 
+// === Obsługa przycisku Anuluj Dodaj/Usuń szlak handlowy ===
+document.getElementById("cancelTradeRouteDeletion").addEventListener("click", () => {
+  awaitingTradeRouteDeletion = false;
+
+  document.getElementById("cancelTradeRouteDeletion").style.display = "none";
+  awaitingTradeRouteStart = null;
+  awaitingTradeRouteDeletion = null;
+  setMoveModeUI(false);   // odblokowujesz UI
+});
+
 // === Obsługa przycisku Dodaj szlak handlowy ===
 document.getElementById("addTradeRouteBtn").addEventListener("click", () => {
     if (!selectedPoint) {
         alert("Najpierw wybierz pierwszy układ.");
         return;
     }
-
+	setUIBlocked(true);
+	document.getElementById("cancelTradeRouteDeletion").style.display = "inline-block";
     awaitingTradeRouteStart = selectedPoint;
     awaitingTradeRouteDeletion = null;
     alert("Wskaż drugi układ, aby utworzyć szlak handlowy.");
@@ -3374,7 +3410,9 @@ document.getElementById("deleteTradeRouteBtn").addEventListener("click", () => {
         alert("Najpierw wybierz pierwszy układ.");
         return;
     }
-
+	
+	setUIBlocked(true);
+	document.getElementById("cancelTradeRouteDeletion").style.display = "inline-block";
     awaitingTradeRouteDeletion = selectedPoint;
     awaitingTradeRouteStart = null;
     alert("Wskaż drugi układ, aby usunąć szlak handlowy.");
@@ -4951,123 +4989,130 @@ function changeTexturePage(delta) {
   renderTexturePage();
 }
 
-
 ////////////////////////////////////////////////////////////////////
 //---------------- Eksport / Import Atlasu ---------------//
 ////////////////////////////////////////////////////////////////////  
 
 function exportAtlas() {
-  const exportData = {
-    atlas,
-    planetDetails,
-    planetData,
-    textures,
-    galaxiesAtlas: {}, // 🌌 teraz trzymamy regiony w ramach galaktyk
-  };
-
-  // Eksport każdej galaktyki
-  for (const [galaxyName, galaxyData] of Object.entries(galaxiesAtlas)) {
-    exportData.galaxiesAtlas[galaxyName] = {
-      regions: {},
+    const exportData = {
+        atlas,
+        planetDetails,
+        planetData,
+        textures,
+        galaxiesAtlas: {}
     };
 
-    for (const [key, region] of Object.entries(galaxyData.regions || {})) {
-      exportData.galaxiesAtlas[galaxyName].regions[key] = {
-        pointsData: region.pointsData?.map(p => ({
-          id: p.id,
-          x: p.x,
-          y: p.y,
-          z: p.z,
-          galactic: p.galactic || "",
-          name: p.name || "",
-		  notes: p.notes || "",
-          connectedToPrev: !!p.connectedToPrev,
-        })) || [],
-        edges: region.edges?.map(e => ({
-          fromId: e.fromId,
-          toId: e.toId,
-        })) || [],
-      };
-    }
-  }
+    for (const [galaxyName, galaxyData] of Object.entries(galaxiesAtlas)) {
+        exportData.galaxiesAtlas[galaxyName] = { regions: {} };
 
-  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "atlas.json";
-  a.click();
-  URL.revokeObjectURL(url);
+        for (const [key, region] of Object.entries(galaxyData.regions || {})) {
+            exportData.galaxiesAtlas[galaxyName].regions[key] = {
+                pointsData: region.pointsData?.map(p => ({
+                    id: p.id,
+                    x: p.x,
+                    y: p.y,
+                    z: p.z,
+                    name: p.name || "",
+                    galactic: p.galactic || "",
+                    notes: p.notes || "",
+                    color: p.color || null,
+                    connectedToPrev: !!p.connectedToPrev,
+                    spectralClass: p.spectralClass || "",
+                    dominantRace: p.dominantRace || "",
+                    economyType: p.economyType || "",
+                    economyDescriptors: p.economyDescriptors || "",
+                    conflictLevel: p.conflictLevel || ""
+                })) || [],
+
+                edges: region.edges?.map(e => ({
+                    fromId: e.fromId,
+                    toId: e.toId
+                })) || [],
+
+                tradeRoutes: region.tradeRoutes?.map(r => ({
+                    fromId: r.fromId,
+                    toId: r.toId
+                })) || []
+            };
+        }
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+    a.download = "atlas.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
 }
 
 function importAtlas(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
+    const file = event.target.files[0];
+    if (!file) return;
 
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
+    const reader = new FileReader();
 
-      if (data.atlas) atlas = data.atlas;
-      if (data.planetDetails) planetDetails = data.planetDetails;
-      if (data.planetData) planetData = data.planetData;
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
 
-      if (data.textures) {
-        textures.length = 0;
-        textures.push(...data.textures);
-        currentTexturePage = 0;
-        renderTexturePage();
-      }
+            // --- podstawowe dane ---
+            if (data.atlas) atlas = data.atlas;
+            if (data.planetDetails) planetDetails = data.planetDetails;
+            if (data.planetData) planetData = data.planetData;
 
-      // Obsługa importu dla nowego formatu (multi-galaktyki)
-      if (data.galaxiesAtlas) {
-        galaxiesAtlas = data.galaxiesAtlas;
-        console.log("Zaimportowano galaktyki:", Object.keys(galaxiesAtlas));
-      }
+            if (data.textures) {
+                textures.length = 0;
+                textures.push(...data.textures);
+                currentTexturePage = 0;
+                renderTexturePage();
+            }
 
-      // Kompatybilność ze starym formatem (jeden zestaw regions)
-      else if (data.regions) {
-        galaxiesAtlas = {
-          [currentGalaxy]: { regions: data.regions },
-        };
-        console.log("Zaimportowano regiony w starej strukturze:", Object.keys(data.regions).length);
-      }
+            // --- multi-galaxy wsparcie ---
+            if (data.galaxiesAtlas) {
+                galaxiesAtlas = data.galaxiesAtlas;
+            } else {
+                // zgodność wstecz
+                galaxiesAtlas = {
+                    [currentGalaxy]: { regions: data.regions || {} }
+                };
+            }
+			
+			// Na chwilę odpalamy babylon aby poprawnie zaimportowało dane do sceny			
+			initBabylon();
 
-      // Przywróć aktywną galaktykę i regiony
-      setActiveGalaxyForBabylon(currentGalaxy);
+            // ustaw regiony aktywnej galaktyki
+            if (galaxiesAtlas[currentGalaxy]) {
+                regions = galaxiesAtlas[currentGalaxy].regions || {};
+            } else {
+                regions = {};
+            }
+			
+			drawGalaxyGrid();
+			updateGalaxyTilesHasPoints();
+			//Wyłączamy banylon
+			babylonRenderLoopActive = false;
 
-      const planets = Object.keys(atlas);
-      currentPlanet = planets[0] || null;
+            // --- odśwież UI niezależnie od sceny ---
+            refreshGalaxySidebar();
+            refreshSolarListForLoadedRegion();
+            updateCurrentPlanetHeader();
+            refreshPlanetList();
+            refreshPointsList();
+            refreshGlobePoints();
+            updateNoPlanetsMessage();
+            refreshPlanetSidebar();
 
-      if (currentPlanet) selectPlanet(currentPlanet);
-      else globe.globeImageUrl(blackTextureURL);
+            alert("Import zakończony!");
+        } catch (err) {
+            console.error(err);
+            alert("Błąd importu!");
+        }
+    };
 
-      updateCurrentPlanetHeader();
-      refreshPlanetList();
-      refreshPointsList();
-      refreshGlobePoints();
-      updateNoPlanetsMessage();
-      refreshPlanetSidebar();
-      refreshGalaxySidebar();
-
-      // Odśwież scenę Babylon
-      if (typeof loadRegionByKey === "function") {
-        clearRenderedPoints();
-        loadedRegionKey = null;
-        drawGalaxyGrid();
-        updateGalaxyTilesHasPoints();
-      }
-
-      alert(translations[currentLang].alert_import_done);
-    } catch (err) {
-      console.error(err);
-      alert(translations[currentLang].alert_import_error);
-    }
-  };
-
-  reader.readAsText(file);
+    reader.readAsText(file);
 }
+
 
 ////////////////////////////////////////////////////////////////////
 //---------------- Skalowanie Globu i Punktów ----------------//
