@@ -2726,6 +2726,7 @@ function clearRenderedPoints(){
 }
 
 function createMeshForPointData(pd) {
+	console.log("pd used to create mesh:", pd);
     const sphere = BABYLON.MeshBuilder.CreateSphere(
         `m_${pd.id}`,
         { diameter: 2 },
