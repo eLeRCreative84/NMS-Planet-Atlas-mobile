@@ -2243,6 +2243,7 @@ if (newName) {
     galactic: gal || "",
     name: newName || "",
 	notes: systemNotes || "", 
+	regionKey: key,
     // pola detali pozostawiamy puste na start
     spectralClass: "Żółta",   // domyślna żółta
     dominantRace: "",
@@ -2726,7 +2727,7 @@ function clearRenderedPoints(){
 }
 
 function createMeshForPointData(pd) {
-	console.log("pd used to create mesh:", pd);
+	   
     const sphere = BABYLON.MeshBuilder.CreateSphere(
         `m_${pd.id}`,
         { diameter: 2 },
@@ -2757,7 +2758,7 @@ function createMeshForPointData(pd) {
         id: pd.id,
         galactic: pd.galactic || "",
         name: pd.name || "",
-        regionKey: null,
+        regionKey: pd.regionKey,
 		
         spectralClass: pd.spectralClass || "Żółta",
         dominantRace: pd.dominantRace || "",
@@ -2780,7 +2781,7 @@ function createMeshForPointData(pd) {
 }
 
 function selectMesh(mesh) {
-console.log("metadata for clicked mesh:", mesh.metadata);
+
 // ======== TRYB TWORZENIA WĘZŁA ========
     if (awaitingEdgeTarget) {
 
