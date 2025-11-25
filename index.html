@@ -2726,6 +2726,12 @@ function clearRenderedPoints(){
   }
 }
 
+const spectralClassSelect = document.getElementById("spectralClassSelect");
+const dominantRaceSelect = document.getElementById("dominantRaceSelect");
+const economySelect = document.getElementById("economySelect");
+const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
+const conflictSelect = document.getElementById("conflictSelect");
+	
 function createMeshForPointData(pd) {
 	   
     const sphere = BABYLON.MeshBuilder.CreateSphere(
@@ -2782,6 +2788,43 @@ function createMeshForPointData(pd) {
 
 function selectMesh(mesh) {
 
+	//Zaznaczenie okręgiem
+
+    // schowaj okrąg ze starego zaznaczenia
+    if (selectedPoint) {
+        selectionRing.setEnabled(false);
+    }
+
+    selectedPoint = mesh;
+
+    // przenieś ring i pokaż
+    selectionRing.position = mesh.position.clone();
+    selectionRing.setEnabled(true);
+
+    // uzupełnij inputy w panelu
+    xInput.value = mesh.position.x.toFixed(2);
+    yInput.value = mesh.position.y.toFixed(2);
+    zInput.value = mesh.position.z.toFixed(2);
+    coordInput.value = mesh.metadata.galactic || "";
+    nameInput.value = mesh.metadata.name || "";
+	
+	  // NOTATKI — ustaw input notatek z metadata
+  const notesInput = document.getElementById("systemNotesInput");
+  if (notesInput) notesInput.value = mesh.metadata.notes || "";
+
+    // detale
+    spectralClassSelect.value = mesh.metadata.spectralClass;
+    dominantRaceSelect.value = mesh.metadata.dominantRace;
+    economySelect.value = mesh.metadata.economyType;
+    economyDescriptorsSelect.value = mesh.metadata.economyDescriptors;
+    conflictSelect.value = mesh.metadata.conflictLevel;
+
+    // zaznaczenie w liście
+    document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
+    const li = solarListEl.querySelector(`[data-id="${mesh.metadata.id}"]`);
+    if (li) li.classList.add("selected");
+
+	
 // ======== TRYB TWORZENIA WĘZŁA ========
     if (awaitingEdgeTarget) {
 
@@ -3009,56 +3052,17 @@ if (awaitingTradeRouteDeletion) {
     return;
 }
 
-//Zaznaczenie okręgiem
 
-    // schowaj ring ze starego zaznaczenia
-    if (selectedPoint) {
-        selectionRing.setEnabled(false);
-    }
-
-    selectedPoint = mesh;
-
-    // przenieś ring i pokaż
-    selectionRing.position = mesh.position.clone();
-    selectionRing.setEnabled(true);
-
-    // uzupełnij inputy w panelu
-    xInput.value = mesh.position.x.toFixed(2);
-    yInput.value = mesh.position.y.toFixed(2);
-    zInput.value = mesh.position.z.toFixed(2);
-    coordInput.value = mesh.metadata.galactic || "";
-    nameInput.value = mesh.metadata.name || "";
-	
-	  // NOTATKI — ustaw input notatek z metadata
-  const notesInput = document.getElementById("systemNotesInput");
-  if (notesInput) notesInput.value = mesh.metadata.notes || "";
-
-    // detale
-    spectralClassSelect.value = mesh.metadata.spectralClass;
-    dominantRaceSelect.value = mesh.metadata.dominantRace;
-    economySelect.value = mesh.metadata.economyType;
-    economyDescriptorsSelect.value = mesh.metadata.economyDescriptors;
-    conflictSelect.value = mesh.metadata.conflictLevel;
-
-    // highlight w liście
-    document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
-    const li = solarListEl.querySelector(`[data-id="${mesh.metadata.id}"]`);
-    if (li) li.classList.add("selected");
 }
 
-const spectralClassSelect = document.getElementById("spectralClassSelect");
-const dominantRaceSelect = document.getElementById("dominantRaceSelect");
-const economySelect = document.getElementById("economySelect");
-const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
-const conflictSelect = document.getElementById("conflictSelect");
-
-// Ładuje region do sceny na podstawie klucza regionu (np. "3_5")
-// opcje: { selectId: 'pt_x' } => po załadowaniu zaznacz ten punkt
+// Ładuje region do sceny gdy przełączamy się między nimi
 function loadRegionByKey(regionKey, options = {}) {
-    // --- czyścimy bieżące mesh'e
+    
+	// Skasuj poprzedni region
     clearRenderedPoints();
     loadedRegionKey = regionKey;
 
+	// Pobierz dane regionu
     const region = regions[regionKey];
     if (!region || !region.pointsData) {
         refreshSolarListForLoadedRegion();
@@ -3068,7 +3072,7 @@ function loadRegionByKey(regionKey, options = {}) {
     renderedEdges = [];
     renderedTradeEdges = [];
 
-    // --- tworzymy mesh dla każdego punktu
+    // Utwórz MESHE dla wszystkich układów (punktów)
     region.pointsData.forEach(pd => {
         const mesh = createMeshForPointData(pd);
 
@@ -3083,7 +3087,7 @@ function loadRegionByKey(regionKey, options = {}) {
         mesh.metadata.conflictLevel = pd.conflictLevel || "";
         mesh.metadata.notes = pd.notes || "";
 
-        // przywracanie koloru
+        // przywracanie koloru spektralnego układów planetarnych
         if (pd.color) {
             mesh.material = new BABYLON.StandardMaterial("colmat", babylonScene);
             mesh.material.diffuseColor = BABYLON.Color3.FromHexString(pd.color);
@@ -3092,7 +3096,7 @@ function loadRegionByKey(regionKey, options = {}) {
         renderedPoints.push(mesh);
     });
 
-    // --- renderujemy zwykłe krawędzie
+    // Renderuj połączenia między układami
     if (region.edges && region.edges.length > 0) {
         region.edges.forEach(edgeObj => {
             const fromPd = region.pointsData.find(p => p.id === edgeObj.fromId);
@@ -3104,7 +3108,7 @@ function loadRegionByKey(regionKey, options = {}) {
         });
     }
 
-    // --- renderujemy szlaki handlowe
+    //Renderuj szlaki handlowe
     if (region.tradeRoutes && region.tradeRoutes.length > 0) {
         region.tradeRoutes.forEach(r => {
             const pd1 = region.pointsData.find(p => p.id === r.fromId);
@@ -3117,10 +3121,10 @@ function loadRegionByKey(regionKey, options = {}) {
         });
     }
 
-    // --- odśwież listę układów
+    //Odśwież listę układów w sidebarze
     refreshSolarListForLoadedRegion();
 
-    // --- logika autowyboru elementu
+    //Autowybór układu
     let selectId = options.selectId;
     if (!selectId && region.pointsData.length > 0) {
         selectId = region.pointsData[region.pointsData.length - 1].id;
@@ -3130,12 +3134,13 @@ function loadRegionByKey(regionKey, options = {}) {
         const mesh = renderedPoints.find(m => m.metadata && m.metadata.id === selectId);
         if (mesh) {
             if (selectedPoint) selectionRing.setEnabled(false);
-
+		    
+			// Ustaw wybrany mesh jako aktywny
             selectedPoint = mesh;
             selectionRing.position = selectedPoint.position.clone();
             selectionRing.setEnabled(true);
 
-            // aktualizacja inputów
+            //Aktualizuj wszystkie inputy i selektory UI
             xInput.value = mesh.position.x.toFixed(2);
             yInput.value = mesh.position.y.toFixed(2);
             zInput.value = mesh.position.z.toFixed(2);
@@ -3148,13 +3153,14 @@ function loadRegionByKey(regionKey, options = {}) {
 			economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
 			conflictSelect.value = mesh.metadata.conflictLevel || "";
 
-            // highlight w sidebarze
+            // Podświetl odpowiedni element na liście
             const li = solarListEl.querySelector(`[data-id="${selectId}"]`);
             if (li) {
                 document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
                 li.classList.add("selected");
             }
-
+			
+			//Przesuń kamerę na wybrany układ
             focusCameraOn(mesh, 200);
         }
     }
