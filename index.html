@@ -3068,12 +3068,6 @@ function loadRegionByKey(regionKey, options = {}) {
     renderedEdges = [];
     renderedTradeEdges = [];
 
-    // --- jeśli Babylon nieaktywny, nie rysujemy, tylko zapisujemy dane
-    if (typeof babylonScene === "undefined" || !babylonScene) {
-        console.log("Babylon nieaktywny – meshe nie tworzone");
-        return;
-    }
-
     // --- tworzymy mesh dla każdego punktu
     region.pointsData.forEach(pd => {
         const mesh = createMeshForPointData(pd);
@@ -3153,12 +3147,6 @@ function loadRegionByKey(regionKey, options = {}) {
 			economySelect.value = mesh.metadata.economyType || "";
 			economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
 			conflictSelect.value = mesh.metadata.conflictLevel || "";
-
-            if (spectralClassSelect) spectralClassSelect.value = mesh.metadata.spectralClass || "";
-            if (dominantRaceSelect) dominantRaceSelect.value = mesh.metadata.dominantRace || "";
-            if (economySelect) economySelect.value = mesh.metadata.economyType || "";
-            if (economyDescriptorsSelect) economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
-            if (conflictSelect) conflictSelect.value = mesh.metadata.conflictLevel || "";
 
             // highlight w sidebarze
             const li = solarListEl.querySelector(`[data-id="${selectId}"]`);
