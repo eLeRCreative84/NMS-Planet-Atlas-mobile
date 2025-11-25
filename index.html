@@ -3008,22 +3008,6 @@ if (awaitingTradeRouteDeletion) {
     return;
 }
 
-
-// ========== OBSŁUGA KLIKANIA W LISTĘ UKŁADÓW ==========
-solarListEl.addEventListener("click", (e) => {
-    const li = e.target.closest(".solarItem");
-    if (!li) return;
-
-    const id = li.dataset.id;
-
-    // znajdź mesh w scenie
-    const mesh = babylonScene.getMeshByName("point_" + id);
-    if (!mesh) return;
-
-    // tu wywołujemy tę samą logikę co przy kliknięciu w scenę:
-    selectMesh(mesh);
-});
-
 //Zaznaczenie okręgiem
 
     // schowaj ring ze starego zaznaczenia
@@ -3060,6 +3044,12 @@ solarListEl.addEventListener("click", (e) => {
     const li = solarListEl.querySelector(`[data-id="${mesh.metadata.id}"]`);
     if (li) li.classList.add("selected");
 }
+
+const spectralClassSelect = document.getElementById("spectralClassSelect");
+const dominantRaceSelect = document.getElementById("dominantRaceSelect");
+const economySelect = document.getElementById("economySelect");
+const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
+const conflictSelect = document.getElementById("conflictSelect");
 
 // Ładuje region do sceny na podstawie klucza regionu (np. "3_5")
 // opcje: { selectId: 'pt_x' } => po załadowaniu zaznacz ten punkt
@@ -3157,11 +3147,11 @@ function loadRegionByKey(regionKey, options = {}) {
             coordInput.value = mesh.metadata.galactic || "";
             nameInput.value = mesh.metadata.name || "";
 
-            const spectralClassSelect = document.getElementById("spectralClassSelect");
-            const dominantRaceSelect = document.getElementById("dominantRaceSelect");
-            const economySelect = document.getElementById("economySelect");
-            const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
-            const conflictSelect = document.getElementById("conflictSelect");
+			spectralClassSelect.value = mesh.metadata.spectralClass || "";
+			dominantRaceSelect.value = mesh.metadata.dominantRace || "";
+			economySelect.value = mesh.metadata.economyType || "";
+			economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
+			conflictSelect.value = mesh.metadata.conflictLevel || "";
 
             if (spectralClassSelect) spectralClassSelect.value = mesh.metadata.spectralClass || "";
             if (dominantRaceSelect) dominantRaceSelect.value = mesh.metadata.dominantRace || "";
@@ -3181,6 +3171,20 @@ function loadRegionByKey(regionKey, options = {}) {
     }
 }
 
+// ========== OBSŁUGA KLIKANIA W LISTĘ UKŁADÓW ==========
+solarListEl.addEventListener("click", (e) => {
+    const li = e.target.closest(".solarItem");
+    if (!li) return;
+
+    const id = li.dataset.id;
+
+    // znajdź mesh w scenie
+    const mesh = babylonScene.getMeshByName("point_" + id);
+    if (!mesh) return;
+
+    // tu wywołujemy tę samą logikę co przy kliknięciu w scenę:
+    selectMesh(mesh);
+});
 
 // === Obsługa przycisku Dodaj punkt ===
 document.getElementById("addPointSolarSystem").addEventListener("click", () => {
@@ -3343,6 +3347,8 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
     newMat.emissiveColor = newColor.clone();
 
     selectedPoint.material = newMat;
+	
+	alert("Detale układu zapisane.");
 
 });
 
