@@ -700,6 +700,8 @@ let regions = {};
 let uniqueIdCounter = 0;
 let loadedRegionKey = null;
 
+let galaxyPlane = null;
+
 // globalne zmienne materiałów
 let selectionRing = null;
 let ringMat = null;
@@ -905,6 +907,11 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   // === Render loop (raz na zawsze) ===
   babylonEngine.runRenderLoop(() => {
     if (babylonRenderLoopActive && babylonScene.activeCamera) {
+	
+	        if (galaxyMode) {
+            updateGalaxyPlaneTransform();
+        }
+	
       babylonScene.render();
     }
   });
@@ -913,9 +920,95 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   window.addEventListener("resize", () => {
     if (babylonEngine) babylonEngine.resize();
   });
+  
+  createGalaxyPlane();
 
   console.log("Babylon.js scene initialized");
 }
+
+
+let galaxyMode = true;
+
+function enterGalaxyView() {
+    galaxyMode = true;
+    if (!galaxyPlane) createGalaxyPlane();
+    galaxyPlane.setEnabled(true);
+}
+
+function enterRegionView() {
+    galaxyMode = false;
+    if (galaxyPlane) galaxyPlane.setEnabled(false);
+}
+
+function enableGalaxyCameraLock() {
+    const canvas = babylonEngine.getRenderingCanvas();
+
+    // blokujemy kontrolę myszy
+    babylonCamera.detachControl(canvas);
+
+}
+
+function disableGalaxyCameraLock() {
+    const canvas = babylonEngine.getRenderingCanvas();
+
+    // przywracamy sterowanie
+    babylonCamera.attachControl(canvas, true);
+
+
+}
+
+
+ // === GALAXY PLANE ===
+
+function createGalaxyPlane() {
+    // Jeśli już istnieje, usuwamy
+    if (galaxyPlane) {
+        galaxyPlane.dispose();
+    }
+
+    // Rozmiar tak duży, by zasłonił ekran
+    const planeSize = 5000;
+
+    galaxyPlane = BABYLON.MeshBuilder.CreatePlane(
+        "galaxyPlane",
+        { size: planeSize },
+        babylonScene
+    );
+
+    // Materiał
+	const galaxyTexture = new BABYLON.Texture(
+    "https://raw.githubusercontent.com/eLeRCreative84/NMS-Planet-Atlas-mobile/main/textures/plane/galaxy.png",
+    babylonScene );
+	
+	const galaxyMat = new BABYLON.StandardMaterial("galaxyMat", babylonScene);
+	galaxyMat.emissiveTexture = galaxyTexture;
+	galaxyMat.disableLighting = true;
+	galaxyMat.backFaceCulling = false;
+
+    galaxyPlane.material = galaxyMat;
+
+    galaxyPlane.layerMask = 0xFFFFFFFF; 
+    galaxyPlane.isPickable = false;
+
+    updateGalaxyPlaneTransform();
+}
+
+// aktualizacja pozycji i rotacji plane względem kamery
+function updateGalaxyPlaneTransform() {
+    if (!galaxyPlane) return;
+
+    const forward = babylonCamera.getDirection(BABYLON.Axis.Z);
+
+    const distance = 3000;
+    galaxyPlane.position = babylonCamera.position.add(forward.scale(distance));
+
+    galaxyPlane.lookAt(babylonCamera.position);
+
+    // odwracamy go przodem do kamery
+    galaxyPlane.rotate(BABYLON.Axis.Y, Math.PI, BABYLON.Space.LOCAL);
+}
+
+
 
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
 function showBabylonScene() {
@@ -2470,6 +2563,9 @@ enterBtn.addEventListener("click", ()=>{
 
   updateGalaxyCenterPosition(currentGroupX, currentGroupZ);
 
+  enterRegionView()
+  disableGalaxyCameraLock();
+
   // === Po wejściu do grupy, ustaw kamerę nad środkiem obszaru
   babylonCamera.setTarget(new BABYLON.Vector3(REGION_WIDTH/2, REGION_HEIGHT/2, REGION_DEPTH/2));
   babylonCamera.alpha = Math.PI / 4;
@@ -2477,6 +2573,8 @@ enterBtn.addEventListener("click", ()=>{
   babylonCamera.radius = 600;
   babylonCamera.minZ = 0.1;
   babylonCamera.maxZ = 20000;
+  
+    
 });
 
 exitBtn.addEventListener("click", ()=>{
@@ -2496,6 +2594,9 @@ exitBtn.addEventListener("click", ()=>{
   
   if (selectedPoint) selectedPoint = null;
   if (selectionRing) selectionRing.setEnabled(false);
+  
+  enterGalaxyView()
+  enableGalaxyCameraLock();
   
 });
 
