@@ -5094,7 +5094,28 @@ function importAtlas(event) {
             } else {
                 regions = {};
             }
+
+			//aby po imporcie nie zduplikowane ID meshów względem nowo tworzonych układów
+			// --- wyliczamy najwyższe istniejące ID w całej galaktyce
+			let maxId = 0;
 			
+			for (const key in regions) {
+			    if (!regions[key] || !regions[key].pointsData) continue;
+			
+			    regions[key].pointsData.forEach(pd => {
+			        if (typeof pd.id === "string" && pd.id.startsWith("pt_")) {
+			            const num = parseInt(pd.id.replace("pt_", ""));
+			            if (!isNaN(num) && num > maxId) {
+			                maxId = num;
+			            }
+			        }
+			    });
+			}
+			
+			// ustawiamy licznik ID na najwyższy + 1
+			uniqueIdCounter = maxId + 1;
+
+			//Odtwórz kafelkową mapę galaktyki
 			drawGalaxyGrid();
 			updateGalaxyTilesHasPoints();
 			//Wyłączamy banylon
