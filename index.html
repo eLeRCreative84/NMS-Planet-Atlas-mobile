@@ -2813,11 +2813,11 @@ function selectMesh(mesh) {
   if (notesInput) notesInput.value = mesh.metadata.notes || "";
 
     // detale
-    spectralClassSelect.value = mesh.metadata.spectralClass;
-    dominantRaceSelect.value = mesh.metadata.dominantRace;
-    economySelect.value = mesh.metadata.economyType;
-    economyDescriptorsSelect.value = mesh.metadata.economyDescriptors;
-    conflictSelect.value = mesh.metadata.conflictLevel;
+        spectralClassSelect.value = mesh.metadata.spectralClass || "";
+        dominantRaceSelect.value = mesh.metadata.dominantRace || "";
+        economySelect.value = mesh.metadata.economyType || "";
+        economyDescriptorsSelect.value = mesh.metadata.economyDescriptors || "";
+        conflictSelect.value = mesh.metadata.conflictLevel || "";
 
     // zaznaczenie w liście
     document.querySelectorAll(".solarItem").forEach(el => el.classList.remove("selected"));
