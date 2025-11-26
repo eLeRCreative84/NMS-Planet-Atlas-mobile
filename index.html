@@ -2725,12 +2725,6 @@ function clearRenderedPoints(){
     renderedTradeEdges = [];
   }
 }
-
-const spectralClassSelect = document.getElementById("spectralClassSelect");
-const dominantRaceSelect = document.getElementById("dominantRaceSelect");
-const economySelect = document.getElementById("economySelect");
-const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
-const conflictSelect = document.getElementById("conflictSelect");
 	
 function createMeshForPointData(pd) {
 	   
@@ -3314,6 +3308,13 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
 
     const pd = region.pointsData.find(p => p.id === selectedPoint.metadata.id);
     if (!pd) return;
+  
+	// odczyt z selektorów
+const spectralClassSelect = document.getElementById("spectralClassSelect");
+const dominantRaceSelect = document.getElementById("dominantRaceSelect");
+const economySelect = document.getElementById("economySelect");
+const economyDescriptorsSelect = document.getElementById("economyDescriptorsSelect");
+const conflictSelect = document.getElementById("conflictSelect");
 
     // pobieramy wartości
     pd.spectralClass = spectralClassSelect.value;
@@ -3323,7 +3324,11 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
     pd.conflictLevel = conflictSelect.value;
 
     // aktualizacja metadata
-    selectedPoint.metadata.spectralClass = pd.spectralClass;
+  selectedPoint.metadata.spectralClass = pd.spectralClass;
+  selectedPoint.metadata.dominantRace = pd.dominantRace;
+  selectedPoint.metadata.economyType = pd.economyType;
+  selectedPoint.metadata.economyDescriptors = pd.economyDescriptors;
+  selectedPoint.metadata.conflictLevel = pd.conflictLevel;
 
     // map kolorów
     const spectralColors = {
@@ -3334,6 +3339,7 @@ document.getElementById("saveSystemDetailsBtn").addEventListener("click", () => 
         "Fioletowa": new BABYLON.Color3(0.5, 0, 0.5)
     };
 
+	// ustaw kolor mesha zgodnie z klasą spektralną
     const newColor = spectralColors[pd.spectralClass] || spectralColors["Żółta"];
 
     // każdy mesh musi dostać NOWY materiał
