@@ -1008,7 +1008,7 @@ function updateGalaxyPlaneTransform() {
     const distance = 3000;
     galaxyPlane.position = babylonCamera.position.add(forward.scale(distance));
 
-
+	galaxyPlane.lookAt(babylonCamera.position);
 }
 
 
