@@ -907,11 +907,7 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   // === Render loop (raz na zawsze) ===
   babylonEngine.runRenderLoop(() => {
     if (babylonRenderLoopActive && babylonScene.activeCamera) {
-	
-	        if (galaxyMode) {
-            updateGalaxyPlaneTransform();
-        }
-	
+
       babylonScene.render();
     }
   });
@@ -1021,6 +1017,7 @@ function showBabylonScene() {
 
 	if (galaxyMode) {
     enableGalaxyCameraLock()
+	updateGalaxyPlaneTransform();
 	}
 }
 
@@ -2568,6 +2565,7 @@ enterBtn.addEventListener("click", ()=>{
   updateGalaxyCenterPosition(currentGroupX, currentGroupZ);
 
   enterRegionView()
+  updateGalaxyPlaneTransform();
   disableGalaxyCameraLock();
 
   // === Po wejściu do grupy, ustaw kamerę nad środkiem obszaru
@@ -2600,7 +2598,9 @@ exitBtn.addEventListener("click", ()=>{
   if (selectionRing) selectionRing.setEnabled(false);
   
   enterGalaxyView()
+  updateGalaxyPlaneTransform();
   enableGalaxyCameraLock();
+	
   
 });
 
