@@ -701,7 +701,7 @@ let uniqueIdCounter = 0;
 let loadedRegionKey = null;
 
 let galaxyPlane = null;
-let galaxyRotationSpeed = 0.1; // bardzo wolna rotacja
+let galaxyRotation = 0; // bardzo wolna rotacja
 
 // globalne zmienne materiałów
 let selectionRing = null;
@@ -914,9 +914,10 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   babylonEngine.runRenderLoop(() => {
     if (babylonRenderLoopActive && babylonScene.activeCamera) {
 
-    // --- powolna rotacja galaktyki ---
+    // === POWOLNA ROTACJA GALAXY PLANE ===
     if (galaxyPlane && galaxyPlane.isEnabled()) {
-        galaxyPlane.rotation.z += galaxyRotationSpeed;
+        galaxyRotation += 0.0002; // PRĘDKOŚĆ OBROTU (bardzo powoli)
+        galaxyPlane.rotation.z = galaxyRotation; // obrót w osi Z (jak tarcza)
     }
 		
       babylonScene.render();
