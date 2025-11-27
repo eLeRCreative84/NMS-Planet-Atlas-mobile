@@ -786,9 +786,8 @@ function initBabylon() {
     enableGalaxyCameraLock()
 	updateGalaxyPlaneTransform();
 	}
-	
- setTimeout(100);
- setSkybox("sky1");
+ 
+ setSkybox("black");
  
  //efekt glow dla układów
  const glow = new BABYLON.GlowLayer("glow", babylonScene);
@@ -923,6 +922,8 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   window.addEventListener("resize", () => {
     if (babylonEngine) babylonEngine.resize();
   });
+
+  setSkybox("sky1");
   console.log("Babylon.js scene initialized");
 }
 
