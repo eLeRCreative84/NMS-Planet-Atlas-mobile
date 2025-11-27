@@ -1019,7 +1019,7 @@ function showBabylonScene() {
   babylonRenderLoopActive = true;
   setTimeout(() => babylonEngine.resize(), 100);
 
-	if (!galaxyMode) {
+	if (galaxyMode) {
     enableGalaxyCameraLock()
 	}
 }
