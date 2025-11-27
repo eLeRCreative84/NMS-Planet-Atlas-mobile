@@ -785,8 +785,7 @@ function initBabylon() {
  //efekt glow dla układów
  const glow = new BABYLON.GlowLayer("glow", babylonScene);
 glow.intensity = 1.0; // dowolna wartość 0–2
- 
- 
+
 // === Selection Ring ===
 selectionRing = BABYLON.MeshBuilder.CreateTorus("selectionRing", {
     thickness: 0.4,
@@ -918,6 +917,11 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   });
   
   createGalaxyPlane();
+	
+		if (galaxyMode) {
+    enableGalaxyCameraLock()
+	updateGalaxyPlaneTransform();
+	}
 
   console.log("Babylon.js scene initialized");
 }
@@ -1013,12 +1017,6 @@ function showBabylonScene() {
 
   if (!babylonEngine) initBabylon();
   babylonRenderLoopActive = true;
-
-	if (galaxyMode) {
-    enableGalaxyCameraLock()
-	updateGalaxyPlaneTransform();
-	}
-	
   setTimeout(() => babylonEngine.resize(), 100);
 
 }
