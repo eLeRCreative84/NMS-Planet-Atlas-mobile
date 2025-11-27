@@ -779,7 +779,14 @@ function initBabylon() {
 
 
   new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
- 
+
+  createGalaxyPlane();
+	
+		if (galaxyMode) {
+    enableGalaxyCameraLock()
+	updateGalaxyPlaneTransform();
+	}
+	
  setSkybox("sky1");
  
  //efekt glow dla układów
@@ -915,14 +922,6 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   window.addEventListener("resize", () => {
     if (babylonEngine) babylonEngine.resize();
   });
-  
-  createGalaxyPlane();
-	
-		if (galaxyMode) {
-    enableGalaxyCameraLock()
-	updateGalaxyPlaneTransform();
-	}
-
   console.log("Babylon.js scene initialized");
 }
 
