@@ -1026,6 +1026,7 @@ function createGalaxyMarker() {
     mat.emissiveColor = new BABYLON.Color3(1, 0.3, 0.1);
     mat.alpha = 0.9;
     galaxyMarker.material = mat;
+    galaxyMarker.parent = galaxyPlane;
 
     galaxyMarker.isPickable = false;
     galaxyMarker.layerMask = 0xFFFFFFFF;
