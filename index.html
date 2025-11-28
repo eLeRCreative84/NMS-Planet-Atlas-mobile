@@ -2668,9 +2668,10 @@ exitBtn.addEventListener("click", ()=>{
   enterGalaxyView()
   updateGalaxyPlaneTransform();
   enableGalaxyCameraLock();
-	updateGalaxyMarker(pd)
 	
-  
+	    if (selectedPoint && selectedPoint.metadata) {
+        updateGalaxyMarker(selectedPoint.metadata);
+    }
 });
 
 drawGalaxyGrid();
