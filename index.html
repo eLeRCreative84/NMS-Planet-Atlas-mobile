@@ -2634,6 +2634,7 @@ enterBtn.addEventListener("click", ()=>{
   enterRegionView()
   updateGalaxyPlaneTransform();
   disableGalaxyCameraLock();
+	
 
   // === Po wejściu do grupy, ustaw kamerę nad środkiem obszaru
   babylonCamera.setTarget(new BABYLON.Vector3(REGION_WIDTH/2, REGION_HEIGHT/2, REGION_DEPTH/2));
@@ -2667,6 +2668,7 @@ exitBtn.addEventListener("click", ()=>{
   enterGalaxyView()
   updateGalaxyPlaneTransform();
   enableGalaxyCameraLock();
+	updateGalaxyMarker(pd)
 	
   
 });
