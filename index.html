@@ -2663,18 +2663,19 @@ exitBtn.addEventListener("click", ()=>{
   loadedRegionKey = null;
   updateGalaxyTilesHasPoints();
   updateGalaxyCenterPosition(145, 113);
-  
-  if (selectedPoint) selectedPoint = null;
-  if (selectionRing) selectionRing.setEnabled(false);
-  
+    
   enterGalaxyView()
   updateGalaxyPlaneTransform();
   enableGalaxyCameraLock();
 	
-	    if (selectedPoint && selectedPoint.metadata) {
+  if (selectedPoint && selectedPoint.metadata) {
         updateGalaxyMarker(selectedPoint.metadata);
-			console.log("UPDATE MARKER:", selectedPoint?.metadata);
+        console.log("UPDATE MARKER:", selectedPoint.metadata);
     }
+
+  if (selectedPoint) selectedPoint = null;
+  if (selectionRing) selectionRing.setEnabled(false);
+	
 });
 
 drawGalaxyGrid();
