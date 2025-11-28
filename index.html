@@ -1026,11 +1026,13 @@ function createGalaxyMarker() {
     mat.emissiveColor = new BABYLON.Color3(1, 0.3, 0.1);
     mat.alpha = 0.9;
     galaxyMarker.material = mat;
-    galaxyMarker.position.z += 0.1;
 
     galaxyMarker.isPickable = false;
     galaxyMarker.layerMask = 0xFFFFFFFF;
     galaxyMarker.setEnabled(false);
+
+    // najważniejsze — NIE jest dzieckiem plane
+    galaxyMarker.parent = null;
 }
 
 // Mapowanie lokalizacji w galaktyce	
@@ -1050,30 +1052,30 @@ function mapToGalaxyPlane(globalX, globalZ) {
     const galaxySize = 4096;
     const margin = (planeSize - galaxySize) / 2;
 
-    // skala 1:1
     const mappedX = (globalX / galaxySize) * galaxySize - planeSize/2 + margin;
-    const mappedZ = (globalZ / galaxySize) * galaxySize - planeSize/2 + margin;
+    const mappedY = (globalZ / galaxySize) * galaxySize - planeSize/2 + margin;
 
-    // Babylon plane leży w X,Y → Z idzie w głąb
-    return {
-        x: mappedX,
-        y: mappedZ
-    };
+    return { x: mappedX, y: mappedY };
 }
 
+
 function updateGalaxyMarker(pd) {
-    if (!pd) return;
+    if (!pd || !galaxyMarker || !galaxyPlane) return;
 
     const g = getGlobalCoords(pd);
     if (!g) return;
 
     const mapped = mapToGalaxyPlane(g.globalX, g.globalZ);
 
-    galaxyMarker.position.x = mapped.x;
-    galaxyMarker.position.y = mapped.y;
+    // umieszczamy globalnie, względem plane
+    galaxyMarker.position.x = galaxyPlane.position.x + mapped.x;
+    galaxyMarker.position.y = galaxyPlane.position.y + mapped.y;
 
-    // odsuwamy marker trochę przed plane (żeby nie migał)
-    galaxyMarker.position.z = galaxyPlane.position.z - 2;
+    // odsunięcie w kierunku kamery
+    const forward = babylonCamera.getDirection(BABYLON.Axis.Z);
+    galaxyMarker.position.z = galaxyPlane.position.z + forward.z * -20;
+
+    galaxyMarker.setEnabled(true);
 }
 	
 
