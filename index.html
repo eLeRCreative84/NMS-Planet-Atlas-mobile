@@ -618,6 +618,17 @@
 	 <!-- Babylon.js (ukryty na start) -->
 <canvas id="babylonCanvas" style="width:100%; height:100%; display:none;"></canvas> 
 	
+	<!-- Widok galaktyki HTML -->
+<div id="galaxyHtmlView" style="width:100%; height:100%; display:block; position:absolute; top:0; left:0; overflow:hidden;">
+
+    <!-- Rotująca tekstura galaktyki -->
+    <div id="galaxyHtmlBackground"></div>
+
+    <!-- Marker systemu w galaktyce -->
+    <div id="galaxyHtmlMarker"></div>
+
+</div>
+	
 	<!-- Tooltip z podpowiedziami -->
 	  <div id="moveTooltip" class="floating-tooltip">
 		💡 <b>Ctrl</b> – przesuwanie tylko w osi <b>Y</b><br>
@@ -700,8 +711,7 @@ let regions = {};
 let uniqueIdCounter = 0;
 let loadedRegionKey = null;
 
-let galaxyPlane = null;
-let galaxyRotation = 0; // bardzo wolna rotacja
+
 let galaxyMarker = null;
 
 // globalne zmienne materiałów
@@ -755,8 +765,9 @@ function setSkybox(name) {
 
 function initBabylon() {
   const canvas = document.getElementById("babylonCanvas");
-  canvas.style.display = "block";
+  
   babylonEngine = new BABYLON.Engine(canvas, true);
+  babylonEngine.setHardwareScalingLevel(1 / window.devicePixelRatio);
   babylonScene = new BABYLON.Scene(babylonEngine);
 
   // === Kamera i światło ===
@@ -782,13 +793,6 @@ function initBabylon() {
 
   new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), babylonScene);
 
-  createGalaxyPlane();
-  createGalaxyMarker()
-		if (galaxyMode) {
-    enableGalaxyCameraLock()
-	updateGalaxyPlaneTransform();
-	}
-	
 	setSkybox("sky1");
  
  //efekt glow dla układów
@@ -916,12 +920,6 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
   babylonEngine.runRenderLoop(() => {
     if (babylonRenderLoopActive && babylonScene.activeCamera) {
 
-    // === POWOLNA ROTACJA GALAXY PLANE ===
-    if (galaxyPlane && galaxyPlane.isEnabled()) {
-        galaxyRotation += 0.0002; // PRĘDKOŚĆ OBROTU (bardzo powoli)
-        galaxyPlane.rotation.z = galaxyRotation; // obrót w osi Z (jak tarcza)
-    }
-		
       babylonScene.render();
     }
   });
@@ -934,149 +932,6 @@ babylonScene.onPointerObservable.add((pointerInfo) => {
     console.log("Babylon.js scene initialized");
 }
 
-
-let galaxyMode = true;
-
-function enterGalaxyView() {
-    galaxyMode = true;
-    if (!galaxyPlane) createGalaxyPlane();
-    galaxyPlane.setEnabled(true);
-	if (galaxyMarker) galaxyMarker.setEnabled(true);
-}
-
-function enterRegionView() {
-    galaxyMode = false;
-    if (galaxyPlane) galaxyPlane.setEnabled(false);
-	if (galaxyMarker) galaxyMarker.setEnabled(false);
-}
-
-function enableGalaxyCameraLock() {
-    const canvas = babylonEngine.getRenderingCanvas();
-
-    // blokujemy kontrolę myszy
-    babylonCamera.detachControl(canvas);
-
-}
-
-function disableGalaxyCameraLock() {
-    const canvas = babylonEngine.getRenderingCanvas();
-
-    // przywracamy sterowanie
-    babylonCamera.attachControl(canvas, true);
-
-
-}
-
-
- // === GALAXY PLANE ===
-
-function createGalaxyPlane() {
-    // Jeśli już istnieje, usuwamy
-    if (galaxyPlane) {
-        galaxyPlane.dispose();
-    }
-
-    // Rozmiar tak duży, by zasłonił ekran
-    const planeSize = 5000;
-
-    galaxyPlane = BABYLON.MeshBuilder.CreatePlane(
-        "galaxyPlane",
-        { size: planeSize },
-        babylonScene
-    );
-
-    // Materiał
-	const galaxyTexture = new BABYLON.Texture(
-    "https://raw.githubusercontent.com/eLeRCreative84/NMS-Planet-Atlas-mobile/main/textures/plane/galaxy.png",
-    babylonScene );
-	
-	const galaxyMat = new BABYLON.StandardMaterial("galaxyMat", babylonScene);
-	galaxyMat.emissiveTexture = galaxyTexture;
-	galaxyMat.disableLighting = true;
-	galaxyMat.backFaceCulling = false;
-
-    galaxyPlane.material = galaxyMat;
-
-    galaxyPlane.layerMask = 0xFFFFFFFF; 
-    galaxyPlane.isPickable = false;
-
-    updateGalaxyPlaneTransform();
-}
-
-// aktualizacja pozycji i rotacji plane względem kamery
-function updateGalaxyPlaneTransform() {
-    if (!galaxyPlane) return;
-
-    const forward = babylonCamera.getDirection(BABYLON.Axis.Z);
-
-    const distance = 3000;
-    galaxyPlane.position = babylonCamera.position.add(forward.scale(distance));
-
-	galaxyPlane.lookAt(babylonCamera.position);
-}
-	
-//Tworzenie znacznika galaktyki
-function createGalaxyMarker() {
-    galaxyMarker = BABYLON.MeshBuilder.CreateDisc("galaxyMarker", {
-        radius: 60,
-        tessellation: 64
-    }, babylonScene);
-
-    const mat = new BABYLON.StandardMaterial("markerMat", babylonScene);
-    mat.emissiveColor = new BABYLON.Color3(1, 0.3, 0.1);
-    mat.alpha = 0.9;
-    galaxyMarker.material = mat;
-
-    galaxyMarker.isPickable = false;
-    galaxyMarker.layerMask = 0xFFFFFFFF;
-    galaxyMarker.setEnabled(false);
-
-    // najważniejsze — NIE jest dzieckiem plane
-    galaxyMarker.parent = null;
-}
-
-// Mapowanie lokalizacji w galaktyce	
-function getGlobalCoords(pd) {
-    if (!pd || !pd.regionKey) return null;
-
-    const [rx, rz] = pd.regionKey.split("_").map(Number);
-
-    const globalX = rx * REGION_WIDTH + pd.x;
-    const globalZ = rz * REGION_DEPTH + pd.z;
-
-    return { globalX, globalZ };
-}
-	
-function mapToGalaxyPlane(globalX, globalZ) {
-    const planeSize = 5000;
-    const galaxySize = 4096;
-    const margin = (planeSize - galaxySize) / 2;
-
-    const mappedX = (globalX / galaxySize) * galaxySize - planeSize/2 + margin;
-    const mappedY = (globalZ / galaxySize) * galaxySize - planeSize/2 + margin;
-
-    return { x: mappedX, y: mappedY };
-}
-
-
-function updateGalaxyMarker(pd) {
-    if (!pd || !galaxyMarker || !galaxyPlane) return;
-
-    const g = getGlobalCoords(pd);
-    if (!g) return;
-
-    const mapped = mapToGalaxyPlane(g.globalX, g.globalZ);
-
-    // umieszczamy globalnie, względem plane
-    galaxyMarker.position.x = galaxyPlane.position.x + mapped.x;
-    galaxyMarker.position.y = galaxyPlane.position.y + mapped.y;
-
-    // odsunięcie w kierunku kamery
-    const forward = babylonCamera.getDirection(BABYLON.Axis.Z);
-    galaxyMarker.position.z = galaxyPlane.position.z + forward.z * -20;
-
-    galaxyMarker.setEnabled(true);
-}
 	
 
 // === WŁĄCZ / WYŁĄCZ BABYLON ===
@@ -1094,7 +949,9 @@ function hideBabylonScene() {
   document.getElementById("babylonWrapper").style.display = "none";
   document.getElementById("globeWrapper").style.display = "block";
   babylonRenderLoopActive = false;
-}
+  document.getElementById("galaxyHtmlView").style.display = "block";
+ }
+ 
 	
 ///////////////////////////////////////////////////////// Tłumaczenie //////////////////////////////////////////
 let currentLang = "pl"; // domyślny język
@@ -1954,25 +1811,29 @@ document.getElementById("gotoSystemBtn").addEventListener("click", () => {
     // ------------------------------
     // 🔥 Przełącz na Babylon
     // ------------------------------
-   destroyGlobe();
-    showBabylonScene();
-    openTab("journey");
+   
+// PRZEŁĄCZ ZAKŁADKĘ
 
-	// podświetl kafelek na mapie
-highlightRegionOnGalaxyMap(found.regionKey);
-	
+openTab("journey");
+
+
+    // podświetl kafelek na mapie
+    highlightRegionOnGalaxyMap(found.regionKey);
+
     // jeśli region nie jest wczytany → wczytaj
     if (loadedRegionKey !== found.regionKey) {
-    loadRegionByKey(found.regionKey, () => {
-        refreshSolarListForLoadedRegion(); 
+        loadRegionByKey(found.regionKey, () => {
+            refreshSolarListForLoadedRegion();
+            highlightSolarListItem(systemKey);
+            selectBabylonSolarSystemByName(systemKey);
+        });
+    } else {
+        refreshSolarListForLoadedRegion();
         highlightSolarListItem(systemKey);
         selectBabylonSolarSystemByName(systemKey);
-    });
-} else {
-    refreshSolarListForLoadedRegion();
-    highlightSolarListItem(systemKey);
-    selectBabylonSolarSystemByName(systemKey);
-}
+    }
+
+
 });
 
 	// Programowo (nie poprzez kliknięcie) zaznacza układ na liście Babylon
@@ -1997,7 +1858,22 @@ function highlightRegionOnGalaxyMap(regionKey) {
 
     // Jeśli jesteśmy w widoku regionu → wróć do widoku galaktyki
     if (level === 1) {
-        exitBtn.click(); 
+          
+	  level = 0;
+	  currentGroupX = 0; currentGroupZ = 0;
+		solarListEl.innerHTML = ""; //wyczyść widok układów
+	  drawGalaxyGrid();
+	  // wróć do napisu podpowiedzi
+	  groupNameLabel.textContent = "Wybierz regiony";
+	  // czyścimy załadowany region ze sceny (jeśli chcesz, możesz zostawić)
+	  clearRenderedPoints();
+	  updateControlsState();
+	  loadedRegionKey = null;
+	  updateGalaxyTilesHasPoints();
+	  updateGalaxyCenterPosition(145, 113);
+    
+	  if (selectedPoint) selectedPoint = null;
+	  if (selectionRing) selectionRing.setEnabled(false); 
     }	
     // regionKey: "ix_iz"
     const [ix, iz] = regionKey.split("_").map(Number);
@@ -2017,8 +1893,16 @@ function highlightRegionOnGalaxyMap(regionKey) {
             selectedTile = groupTile;
             groupTile.classList.add("selected");
         }
-
-        // wejdź do grupy
+        
+		// === Włącz Babylon Canvas przy wejściu do regionu ===
+		document.getElementById("galaxyHtmlView").style.display = "none";
+		document.getElementById("babylonCanvas").style.display = "block";
+		requestAnimationFrame(() => {
+			babylonEngine.setHardwareScalingLevel(1 / window.devicePixelRatio);
+			babylonEngine.resize();
+		});
+       
+	   // wejdź do grupy
         currentGroupX = gx;
         currentGroupZ = gz;
         level = 1;
@@ -2632,21 +2516,15 @@ enterBtn.addEventListener("click", ()=>{
   updateControlsState();
 
   updateGalaxyCenterPosition(currentGroupX, currentGroupZ);
-
-  enterRegionView()
-  updateGalaxyPlaneTransform();
-  disableGalaxyCameraLock();
-	
-
-  // === Po wejściu do grupy, ustaw kamerę nad środkiem obszaru
-  babylonCamera.setTarget(new BABYLON.Vector3(REGION_WIDTH/2, REGION_HEIGHT/2, REGION_DEPTH/2));
-  babylonCamera.alpha = Math.PI / 4;
-  babylonCamera.beta = Math.PI / 4;
-  babylonCamera.radius = 600;
-  babylonCamera.minZ = 0.1;
-  babylonCamera.maxZ = 20000;
-  
     
+	// === Włącz Babylon Canvas przy wejściu do regionu ===
+document.getElementById("galaxyHtmlView").style.display = "none";
+document.getElementById("babylonCanvas").style.display = "block";
+requestAnimationFrame(() => {
+    babylonEngine.setHardwareScalingLevel(1 / window.devicePixelRatio);
+    babylonEngine.resize();
+});
+
 });
 
 exitBtn.addEventListener("click", ()=>{
@@ -2664,18 +2542,16 @@ exitBtn.addEventListener("click", ()=>{
   updateGalaxyTilesHasPoints();
   updateGalaxyCenterPosition(145, 113);
     
-  enterGalaxyView()
-  updateGalaxyPlaneTransform();
-  enableGalaxyCameraLock();
 	
-  if (selectedPoint && selectedPoint.metadata) {
-        updateGalaxyMarker(selectedPoint.metadata);
-        console.log("UPDATE MARKER:", selectedPoint.metadata);
-    }
+
 
   if (selectedPoint) selectedPoint = null;
   if (selectionRing) selectionRing.setEnabled(false);
 	
+	// === Wyłącz Babylon Canvas przy wyjściu z regionu ===
+document.getElementById("galaxyHtmlView").style.display = "block";
+document.getElementById("babylonCanvas").style.display = "none";
+
 });
 
 drawGalaxyGrid();
@@ -2842,8 +2718,7 @@ document.getElementById("showSystemPlanetsBtn").addEventListener("click", () => 
     }
 
     const firstPlanet = planets[0];
-	hideBabylonScene();
-	initGlobe();
+
 	openTab("planety");
 	
 	setTimeout(() => {
