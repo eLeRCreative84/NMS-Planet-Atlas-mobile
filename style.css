@@ -735,16 +735,6 @@ button:disabled {
     to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-#galaxyHtmlMarker {
-    width: 18px;
-    height: 18px;
-    border: 2px solid orange;
-    border-radius: 50%;
-    position: absolute;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    display: none;
-}
 
 
 
