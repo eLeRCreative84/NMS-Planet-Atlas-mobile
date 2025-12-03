@@ -181,7 +181,10 @@
 <!-- Sub-zakładka Szukaj -->
 <div id="planetSearchTab">
   <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap;">
-    <input type="text" id="planetSearchInput" placeholder="Nazwa planety..." data-i18n-placeholder="planet_search_placeholder" oninput="refreshPlanetList()" />
+    
+	<button id="toggleFavoritesFilterBtn">Pokaż ulubione</button>
+
+	<input type="text" id="planetSearchInput" placeholder="Nazwa planety..." data-i18n-placeholder="planet_search_placeholder" oninput="refreshPlanetList()" />
     <select id="biomeFilter" onchange="refreshPlanetList()" data-i18n="planet_filter_biome"></select>
     <select id="biomeAliasFilter" onchange="refreshPlanetList()" data-i18n="planet_filter_biomeAlias"></select>
     <select id="resourceFilter" onchange="refreshPlanetList()" data-i18n="planet_filter_resource">
@@ -221,6 +224,7 @@
       <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
         <button onclick="showPlanetSearchTab()" data-i18n="planet_btn_search">Szukaj</button>
       </div>
+      
 
       <!-- nazwa planety -->
       <input type="text" id="newPlanetName" class="lock-while-edit" placeholder="Nazwa nowej planety" data-i18n-placeholder="planet_new_name" oninput="checkNewPlanetInput()" onkeydown="if(event.key === 'Enter') addNewPlanet()" />
@@ -240,7 +244,7 @@
 		</table>
 	  
       <button id="generatePlanetNameBtn" onclick="generatePlanetName()" style="flex:1;" data-i18n="planet_btn_generateName">Generuj nazwę</button>
-	  	  
+	  	<button id="toggleFavoritePlanetBtn" class="lock-while-edit">Dodaj do ulubionych</button>  
     </div>
 
       <!-- label + piker -->
@@ -624,8 +628,6 @@
     <!-- Rotująca tekstura galaktyki -->
     <div id="galaxyHtmlBackground"></div>
 
-    <!-- Marker systemu w galaktyce -->
-    <div id="galaxyHtmlMarker"></div>
 
 </div>
 	
@@ -667,6 +669,7 @@ let myLocationPoint = null;
 let isEditing = false; // globalna flaga
 let highlightTimeout = null;
 let headerLock = true; // blokada na starcie celem zablokowania możliwości nadpisania nagłówka
+let showOnlyFavorites = false;
 
 // === GLOBALNY ATLAS GALAKTYK ===
 let galaxiesAtlas = {};  // każda galaktyka trzyma własne regiony
@@ -710,9 +713,6 @@ let selectedPoint = null;
 let regions = {};
 let uniqueIdCounter = 0;
 let loadedRegionKey = null;
-
-
-let galaxyMarker = null;
 
 // globalne zmienne materiałów
 let selectionRing = null;
@@ -1310,6 +1310,11 @@ listContainer.appendChild(starHeader);
         li.style.padding = "2px 0";
         li.textContent = planetName;
 
+		// ciemnozielone tło dla ulubionej planety
+		if (planetDetails[planetName]?.isFavorite) {
+			li.style.background = "#0a3d0a";
+		}
+
         // podświetlenie wybranej planety
         if (planetName === currentPlanet) {
           li.style.fontWeight = "bold";
@@ -1329,6 +1334,7 @@ listContainer.appendChild(starHeader);
           loadPlanetDetails();
 			renderPlanetResourcesPanel();
 			updatePlanetMiniPanel();
+			updateFavoriteButtonLabel();
         };
 
         listContainer.appendChild(li);
@@ -1341,6 +1347,12 @@ listContainer.appendChild(starHeader);
 			  moonLi.style.marginLeft = "1rem"; // wcięcie
 			  moonLi.style.fontStyle = "italic";
 			  moonLi.style.cursor = "pointer";
+			  
+			  // ⭐ ciemnozielone tło dla ulubionego księżyca
+				if (planetDetails[moonName]?.isFavorite) {
+					moonLi.style.background = "#0a3d0a";
+				}
+			  
 				// podświetlenie
 				  if (moonName === currentPlanet) {
 					moonLi.style.fontWeight = "bold";
@@ -1359,6 +1371,7 @@ listContainer.appendChild(starHeader);
 				loadPlanetDetails();
 				renderPlanetResourcesPanel();
 				updatePlanetMiniPanel();
+				updateFavoriteButtonLabel();
 			  };
 
 			  listContainer.appendChild(moonLi);
@@ -3099,7 +3112,6 @@ if (awaitingTradeRouteDeletion) {
 	document.getElementById("cancelTradeRouteDeletion").style.display = "none";
     return;
 }
-updateGalaxyMarker(selectedPoint.metadata);
 
 }
 
@@ -3830,8 +3842,10 @@ function addNewPlanet() {
     updated: "",
     coords: "",
     notes: "",
+	isFavorite: false,
     parentPlanetId: parentPlanet,
     isMoon: !!parentPlanet
+
   };
 
   // Dodanie nowego wpisu do planetData
@@ -3917,6 +3931,22 @@ function getGroupedPlanets() {
   });
 }
 
+//Obsługa przycisku "Pokaż ulubione"
+document.addEventListener("DOMContentLoaded", () => {
+
+  const favBtn = document.getElementById("toggleFavoritesFilterBtn");
+  if (favBtn) {
+    favBtn.addEventListener("click", () => {
+      showOnlyFavorites = !showOnlyFavorites;
+      favBtn.textContent = showOnlyFavorites ? "Pokaż wszystkie" : "Pokaż ulubione";
+      refreshPlanetList();
+    });
+  }
+
+});
+
+
+
 // Renderuje nagłówki i planety.
   function refreshPlanetList() {
   const list = document.getElementById("planetList");
@@ -3941,6 +3971,9 @@ function getGroupedPlanets() {
     const biome = (details.biome || "").toLowerCase();
     const biomeAlias = (details.biomeAlias || "").toLowerCase();
     const resources = (details.resources || []).map(r => r.toLowerCase());
+
+    const isFav = !!details.isFavorite;
+    if (showOnlyFavorites && !isFav) return false;
 
     const nameMatch = !query || name.includes(query);
     const biomeMatch = !selectedBiome || biome === selectedBiome.toLowerCase();
@@ -4514,6 +4547,45 @@ function toggleMiniPanel() {
 // Podłącz przycisk
 document.getElementById("toggleMiniPanelBtn").addEventListener("click", toggleMiniPanel);
 
+
+//Dodaj do ulubionych
+function toggleFavoritePlanet() {
+  if (!currentPlanet) {
+        alert("Najpierw wybierz planetę lub księżyc.");
+        return;
+    }
+
+  const details = planetDetails[currentPlanet];
+  details.isFavorite = !details.isFavorite;
+
+  // zapisz w planetData
+  updatePlanetData(currentPlanet, { isFavorite: details.isFavorite });
+
+  refreshPlanetList();
+  refreshPlanetSidebar();
+  updatePlanetMiniPanel();
+  updateFavoriteButtonLabel();
+}
+
+//Obsługa przycisku Dodaj do ulubionych
+document.getElementById("toggleFavoritePlanetBtn")
+  .addEventListener("click", toggleFavoritePlanet);
+
+//Funkcja aktualizująca napis przycisku Dodaj / usuń z ulubionych
+function updateFavoriteButtonLabel() {
+  const btn = document.getElementById("toggleFavoritePlanetBtn");
+
+  if (!currentPlanet || !planetDetails[currentPlanet]) {
+    btn.textContent = "Dodaj do ulubionych";
+    return;
+  }
+
+  if (planetDetails[currentPlanet].isFavorite) {
+    btn.textContent = "Usuń z ulubionych";
+  } else {
+    btn.textContent = "Dodaj do ulubionych";
+  }
+}
 
 ////////////////////////////////////////////////////////////////////
 //--------------- Punkty, lista, tworzenie, edycja ---------------//
