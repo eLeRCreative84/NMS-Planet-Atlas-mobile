@@ -382,44 +382,23 @@
     <option data-i18n="weather_electric">Burze elektryczne</option>
   </select>
 
+<div class="auto-field">
   <label data-i18n="detail_sentinels_label">Strażnicy</label>
-  <select id="detailSentinels">
-    <option value="" data-i18n="sentinels_none">-- wybierz --</option>
-    <option data-i18n="sentinels_passive">Pasywne</option>
-    <option data-i18n="sentinels_no">Brak</option>
-    <option data-i18n="sentinels_relaxed">Zrelaksowane</option>
-    <option data-i18n="sentinels_limited">Ograniczone</option>
-    <option data-i18n="sentinels_low">Niskie</option>
-    <option data-i18n="sentinels_low_security">Niskie bezpieczeństwo</option>
-    <option data-i18n="sentinels_minimal">Minimalne</option>
-    <option data-i18n="sentinels_active">Aktywne</option>
-    <option data-i18n="sentinels_medium">Średnie</option>
-    <option data-i18n="sentinels_standard">Standardowe</option>
-    <option data-i18n="sentinels_typical">Typowe</option>
-    <option data-i18n="sentinels_alert">Uważne</option>
-  </select>
+  <input id="detailSentinels" autocomplete="off">
+  <div id="sentinelsDropdown" class="auto-dropdown"></div>
+</div>
 
+<div class="auto-field">
   <label data-i18n="detail_flora_label">Flora</label>
-  <select id="detailFlora">
-    <option value="" data-i18n="flora_none">-- wybierz --</option>
-    <option data-i18n="flora_none2">Brak</option>
-    <option data-i18n="flora_sparse">Sporadyczna</option>
-    <option data-i18n="flora_low">Skąpa</option>
-    <option data-i18n="flora_medium">Średnia</option>
-    <option data-i18n="flora_rich">Obfita</option>
-    <option data-i18n="flora_extreme">Ekstremalna</option>
-  </select>
+  <input id="detailFlora" autocomplete="off">
+  <div id="floraDropdown" class="auto-dropdown"></div>
+</div>
 
+<div class="auto-field">
   <label data-i18n="detail_fauna_label">Fauna</label>
-  <select id="detailFauna">
-    <option value="" data-i18n="fauna_none">-- wybierz --</option>
-    <option data-i18n="fauna_none2">Brak</option>
-    <option data-i18n="fauna_sparse">Sporadyczna</option>
-    <option data-i18n="fauna_low">Skąpa</option>
-    <option data-i18n="fauna_medium">Średnia</option>
-    <option data-i18n="fauna_rich">Obfita</option>
-    <option data-i18n="fauna_extreme">Ekstremalna</option>
-  </select>
+  <input id="detailFauna" autocomplete="off">
+  <div id="faunaDropdown" class="auto-dropdown"></div>
+</div>
 
   <label data-i18n="detail_discovered_label">Odkryty przez</label>
   <input type="text" id="detailDiscovered" />
@@ -999,6 +978,9 @@ document.querySelectorAll("[data-i18n], [data-i18n-placeholder]").forEach(el => 
 		// odśwież filtry i interfejsy
 		document.dispatchEvent(new Event("languageChanged"));
 		
+        // odbuduj dynamiczne dropdowny po zmianie języka
+		initDynamicDropdowns();
+		
           updateCurrentPlanetHeader();
           refreshGlobePoints();
           refreshPointsList();
@@ -1152,6 +1134,90 @@ if (biomeInput) {
   }
 }
 
+// Dynamiczny dropdown dla flora / fauna / strażnicy. 
+// Wprowadzamy w input nazwę -> zapisz detale -> nazwa dostępna w rozwijanym selektorze. 
+// Z podziałem na kategorie i języki. tzn jeśłi wprowadzamy w PL to w EN dropdown się nie pojawi
+
+//Struktura baz danych
+const dynamicDB = {
+  flora:     { pl: new Set(), en: new Set() },
+  fauna:     { pl: new Set(), en: new Set() },
+  sentinels: { pl: new Set(), en: new Set() }
+};
+
+//Funkcja do dynamicznych dropdownów
+function attachDynamicAutocomplete(inputId, dropdownId, dbSet) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+
+  if (!input || !dropdown) return;
+
+  input.addEventListener("input", () => {
+    const val = input.value.toLowerCase().trim();
+    dropdown.innerHTML = "";
+
+    if (!val) {
+      dropdown.style.display = "none";
+      return;
+    }
+
+    const items = [...dbSet].filter(v => v.toLowerCase().includes(val));
+
+    if (items.length === 0) {
+      dropdown.style.display = "none";
+      return;
+    }
+
+    items.forEach(item => {
+      const option = document.createElement("div");
+      option.textContent = item;
+
+      option.addEventListener("click", () => {
+        input.value = item;
+        dropdown.style.display = "none";
+      });
+
+      dropdown.appendChild(option);
+    });
+
+    dropdown.style.display = "block";
+  });
+
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".auto-field")) {
+      dropdown.style.display = "none";
+    }
+  });
+}
+
+//Inicjalizacja przy starcie (dla aktualnego języka)
+document.addEventListener("DOMContentLoaded", () => {
+  attachDynamicAutocomplete(
+    "detailFlora",
+    "floraDropdown",
+    dynamicDB.flora[currentLang]
+  );
+
+  attachDynamicAutocomplete(
+    "detailFauna",
+    "faunaDropdown",
+    dynamicDB.fauna[currentLang]
+  );
+
+  attachDynamicAutocomplete(
+    "detailSentinels",
+    "sentinelsDropdown",
+    dynamicDB.sentinels[currentLang]
+  );
+});
+
+//Funkcja dodająca wartości do odpowiedniej bazy przy zapisie
+function addToLanguageDB(category, value) {
+  if (!value || !value.trim()) return;
+  dynamicDB[category][currentLang].add(value.trim());
+}
+
+
 function savePlanetDetails(){
   if(!currentPlanet) return;
 
@@ -1230,6 +1296,16 @@ function savePlanetDetails(){
 		  moon.planetSystem = planetSystemVal || "Nieznany";
 		}
 	  });
+
+	//Dodawanie wartości do odpowiedniej bazy przy zapisie
+	addToLanguageDB("flora", planetDetails[currentPlanet].flora);
+	addToLanguageDB("fauna", planetDetails[currentPlanet].fauna);
+	addToLanguageDB("sentinels", planetDetails[currentPlanet].sentinels);
+	
+	// Odśwież dropdowny
+	setupAutoComplete("sentinels", "detailSentinels", "sentinelsDropdown");
+	setupAutoComplete("flora", "detailFlora", "floraDropdown");
+	setupAutoComplete("fauna", "detailFauna", "faunaDropdown");
 
   alert(translations[currentLang].alert_savedPlanetDetails);
   refreshPlanetList();
@@ -5132,7 +5208,23 @@ function exportAtlas() {
         planetDetails,
         planetData,
         textures,
-        galaxiesAtlas: {}
+        galaxiesAtlas: {},
+		
+		//Dynamiczny dropdown
+		dynamicDB: {
+        flora: {
+            pl: [...dynamicDB.flora.pl],
+            en: [...dynamicDB.flora.en]
+        },
+        fauna: {
+            pl: [...dynamicDB.fauna.pl],
+            en: [...dynamicDB.fauna.en]
+        },
+        sentinels: {
+            pl: [...dynamicDB.sentinels.pl],
+            en: [...dynamicDB.sentinels.en]
+        }
+    }
     };
 
     for (const [galaxyName, galaxyData] of Object.entries(galaxiesAtlas)) {
@@ -5179,6 +5271,75 @@ function exportAtlas() {
     URL.revokeObjectURL(a.href);
 }
 
+//Odbuduj dropdown strażnicy / flora / fauna po imoprcie
+function initDynamicDropdowns() {
+    setupAutoComplete("sentinels", "detailSentinels", "sentinelsDropdown");
+    setupAutoComplete("flora", "detailFlora", "floraDropdown");
+    setupAutoComplete("fauna", "detailFauna", "faunaDropdown");
+}
+
+//Funkcja budująca kompletny dropdown + eventy
+function setupAutoComplete(category, inputId, dropdownId) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+
+    if (!input || !dropdown) return;
+
+    function refreshOptions(filter = "") {
+        dropdown.innerHTML = "";
+
+        const items = [...dynamicDB[category][currentLang]].sort();
+        const filtered = filter
+            ? items.filter(v => v.toLowerCase().includes(filter.toLowerCase()))
+            : items;
+
+        filtered.forEach(value => {
+            const wrapper = document.createElement("div");
+            wrapper.className = "auto-option";
+
+            // Tekst opcji
+            const text = document.createElement("span");
+            text.textContent = value;
+            text.className = "auto-option-text";
+
+            // Przycisk usuń
+            const del = document.createElement("span");
+            del.textContent = "X";
+            del.className = "auto-option-delete";
+
+            // Kliknięcie wartości — wybór do inputa
+            text.addEventListener("click", () => {
+                input.value = value;
+                dropdown.style.display = "none";
+            });
+
+            // Kliknięcie X — usuwa wpis
+            del.addEventListener("click", e => {
+                e.stopPropagation(); // żeby nie kliknęło opcji
+                dynamicDB[category][currentLang].delete(value);
+                refreshOptions(filter);
+            });
+
+            wrapper.appendChild(text);
+            wrapper.appendChild(del);
+            dropdown.appendChild(wrapper);
+        });
+
+        dropdown.style.display = filtered.length ? "block" : "none";
+    }
+
+    input.addEventListener("input", () => refreshOptions(input.value));
+
+    document.addEventListener("click", e => {
+        if (!e.target.closest(`#${dropdownId}`) && !e.target.closest(`#${inputId}`)) {
+            dropdown.style.display = "none";
+        }
+    });
+
+    refreshOptions();
+}
+
+
 function importAtlas(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -5200,6 +5361,18 @@ function importAtlas(event) {
                 currentTexturePage = 0;
                 renderTexturePage();
             }
+
+			// --- dynamiczne dropdowny ---
+			if (data.dynamicDB) {
+				dynamicDB.flora.pl = new Set(data.dynamicDB.flora?.pl || []);
+				dynamicDB.flora.en = new Set(data.dynamicDB.flora?.en || []);
+
+				dynamicDB.fauna.pl = new Set(data.dynamicDB.fauna?.pl || []);
+				dynamicDB.fauna.en = new Set(data.dynamicDB.fauna?.en || []);
+
+				dynamicDB.sentinels.pl = new Set(data.dynamicDB.sentinels?.pl || []);
+				dynamicDB.sentinels.en = new Set(data.dynamicDB.sentinels?.en || []);
+			}
 
             // --- multi-galaxy wsparcie ---
             if (data.galaxiesAtlas) {
@@ -5256,6 +5429,7 @@ function importAtlas(event) {
             refreshGlobePoints();
             updateNoPlanetsMessage();
             refreshPlanetSidebar();
+			initDynamicDropdowns();
 
             alert("Import zakończony!");
         } catch (err) {
@@ -6046,6 +6220,13 @@ document.addEventListener("DOMContentLoaded", () => {
 //Włączenie tłumaczeń przy starcie strony
 document.addEventListener("DOMContentLoaded", () => {
   setLanguage(currentLang); // ustaw domyślny język
+});
+
+//buduje kompletny dropdown + eventy dla strażnicy / fauna / flora
+document.addEventListener("DOMContentLoaded", () => {
+    setupAutoComplete("sentinels", "detailSentinels", "sentinelsDropdown");
+    setupAutoComplete("flora", "detailFlora", "floraDropdown");
+    setupAutoComplete("fauna", "detailFauna", "faunaDropdown");
 });
 	
 // start
