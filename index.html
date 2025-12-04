@@ -355,32 +355,11 @@
   <div id="biomeAliasDropdown" class="dropdown"></div>
 </div>
 
+<div class="auto-field">
   <label data-i18n="detail_weather_label">Pogoda</label>
-  <select id="detailWeather">
-    <option value="" data-i18n="weather_none">-- wybierz --</option>
-    <option data-i18n="weather_none_atmosphere">Brak atmosfery</option>
-    <option data-i18n="weather_sunny">Słonecznie</option>
-    <option data-i18n="weather_cool">Chłodno</option>
-    <option data-i18n="weather_frosty">Mroźno</option>
-    <option data-i18n="weather_warm">Ciepło</option>
-    <option data-i18n="weather_hot">Gorąco</option>
-    <option data-i18n="weather_humid">Wilgotno</option>
-    <option data-i18n="weather_rainy">Deszczowo</option>
-    <option data-i18n="weather_stormy">Burzowo</option>
-    <option data-i18n="weather_radioactive">Radioaktywne</option>
-    <option data-i18n="weather_toxic">Toksyczne</option>
-    <option data-i18n="weather_acidic">Kwasyczne</option>
-    <option data-i18n="weather_dusty">Pyłowe</option>
-    <option data-i18n="weather_volcanic">Wulkaniczne</option>
-    <option data-i18n="weather_sandstorm">Burze piaskowe</option>
-    <option data-i18n="weather_tornado">Tornada</option>
-    <option data-i18n="weather_meteor">Meteoryty</option>
-    <option data-i18n="weather_firestorm">Burze ogniste</option>
-    <option data-i18n="weather_high_pressure">Wysokie ciśnienie</option>
-    <option data-i18n="weather_low_pressure">Niskie ciśnienie</option>
-    <option data-i18n="weather_magnetic">Burze magnetyczne</option>
-    <option data-i18n="weather_electric">Burze elektryczne</option>
-  </select>
+  <input id="detailWeather" autocomplete="off">
+  <div id="weatherDropdown" class="auto-dropdown"></div>
+</div>
 
 <div class="auto-field">
   <label data-i18n="detail_sentinels_label">Strażnicy</label>
@@ -1140,6 +1119,7 @@ if (biomeInput) {
 
 //Struktura baz danych
 const dynamicDB = {
+  weather:   { pl: new Set(), en: new Set() },
   flora:     { pl: new Set(), en: new Set() },
   fauna:     { pl: new Set(), en: new Set() },
   sentinels: { pl: new Set(), en: new Set() }
@@ -1192,6 +1172,12 @@ function attachDynamicAutocomplete(inputId, dropdownId, dbSet) {
 
 //Inicjalizacja przy starcie (dla aktualnego języka)
 document.addEventListener("DOMContentLoaded", () => {
+  attachDynamicAutocomplete(
+    "detailWeather",
+    "weatherDropdown",
+    dynamicDB.weather[currentLang]
+  );
+
   attachDynamicAutocomplete(
     "detailFlora",
     "floraDropdown",
@@ -1298,11 +1284,14 @@ function savePlanetDetails(){
 	  });
 
 	//Dodawanie wartości do odpowiedniej bazy przy zapisie
+	
+	addToLanguageDB("weather", planetDetails[currentPlanet].weather);
 	addToLanguageDB("flora", planetDetails[currentPlanet].flora);
 	addToLanguageDB("fauna", planetDetails[currentPlanet].fauna);
 	addToLanguageDB("sentinels", planetDetails[currentPlanet].sentinels);
 	
 	// Odśwież dropdowny
+	setupAutoComplete("weather", "detailWeather", "weatherDropdown");
 	setupAutoComplete("sentinels", "detailSentinels", "sentinelsDropdown");
 	setupAutoComplete("flora", "detailFlora", "floraDropdown");
 	setupAutoComplete("fauna", "detailFauna", "faunaDropdown");
@@ -5210,8 +5199,13 @@ function exportAtlas() {
         textures,
         galaxiesAtlas: {},
 		
+		
 		//Dynamiczny dropdown
 		dynamicDB: {
+		weather: {
+            pl: [...dynamicDB.weather.pl],
+            en: [...dynamicDB.weather.en]
+        },
         flora: {
             pl: [...dynamicDB.flora.pl],
             en: [...dynamicDB.flora.en]
@@ -5273,7 +5267,8 @@ function exportAtlas() {
 
 //Odbuduj dropdown strażnicy / flora / fauna po imoprcie
 function initDynamicDropdowns() {
-    setupAutoComplete("sentinels", "detailSentinels", "sentinelsDropdown");
+    setupAutoComplete("weather", "detailWeather", "weatherDropdown");
+	setupAutoComplete("sentinels", "detailSentinels", "sentinelsDropdown");
     setupAutoComplete("flora", "detailFlora", "floraDropdown");
     setupAutoComplete("fauna", "detailFauna", "faunaDropdown");
 }
@@ -6224,6 +6219,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 //buduje kompletny dropdown + eventy dla strażnicy / fauna / flora
 document.addEventListener("DOMContentLoaded", () => {
+    setupAutoComplete("weather", "detailWeather", "weatherDropdown");
     setupAutoComplete("sentinels", "detailSentinels", "sentinelsDropdown");
     setupAutoComplete("flora", "detailFlora", "floraDropdown");
     setupAutoComplete("fauna", "detailFauna", "faunaDropdown");
