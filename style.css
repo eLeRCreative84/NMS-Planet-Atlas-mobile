@@ -362,7 +362,59 @@ button:disabled {
   background: #eee;
 }
 
-	/* Panel galaktyk – taki sam styl jak planetSidebar */
+/* Selektror Strażnicy / Fauna / Flora */
+.auto-field {
+  position: relative;
+}
+
+.auto-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #222;
+  border: 1px solid #555;
+  max-height: 160px;
+  overflow-y: auto;
+  z-index: 999;
+}
+
+.auto-dropdown div {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.auto-dropdown div:hover {
+  background: #444;
+}
+
+.auto-option {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.auto-option:hover {
+    background: #333;
+}
+
+.auto-option-delete {
+    margin-left: 10px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.auto-option-delete:hover {
+    opacity: 1;
+    color: red;
+}
+
+
+
+
+/* Panel galaktyk – taki sam styl jak planetSidebar */
 #galaxySidebar {
   position: absolute; 
   right: 0;
