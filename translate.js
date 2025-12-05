@@ -199,6 +199,7 @@ const translations = {
     unknown_planetSystem: "Nieznany układ planetarny",
 	
 	alert_planet_exists: "Planeta / Księżyc o tej nazwie już istnieje!",
+	alert_moon_assigned: "Nowy księżyc został przypisany do planety {planet}.",
 	alert_select_planet_for_moon: "Wybierz planetę, do której chcesz przypisać nowy księżyc!",
 	alert_added_object: "Dodano nowy obiekt: {objectType} - {name}",
 	alert_no_planet_selected: "Najpierw zaznacz planetę.",
@@ -215,6 +216,7 @@ const translations = {
 	alert_texture_load_error: "Nie udało się załadować obrazu. Sprawdź URL lub lokalną ścieżkę.",
 	alert_import_done: "Import zakończony!",
 	alert_import_error: "Błąd importu JSON",
+
     
   },
   "en": {
@@ -410,6 +412,7 @@ const translations = {
     unknown_sentinels: "Unknown sentinels",
 
   alert_planet_exists: "A planet or moon with this name already exists!",
+  alert_moon_assigned: "New moon has been assigned to planet {planet}.",
   alert_select_planet_for_moon: "Select a planet to assign the new moon to!",
   alert_added_object: "Added new object: {objectType} - {name}",
   alert_no_planet_selected: "Select a planet first.",
